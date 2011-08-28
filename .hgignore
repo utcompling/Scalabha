@@ -1,0 +1,13 @@
+# use glob syntax.
+syntax: glob
+
+output
+netbeans
+*.gz
+target
+tmp
+*~
+project/boot
+lib_managed
+#*
+project/plugins/src_managed

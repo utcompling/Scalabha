@@ -1,0 +1,233 @@
+----------------------------------------------------------
+The Fogbow toolkit
+
+Author: Jason Baldridge (jasonbaldridge@gmail.com)
+	Matt Lease (matt.lease@gmail.com)
+----------------------------------------------------------
+
+
+Introduction
+============
+
+This package provides example code for instruction for Hadoop. It
+provides a build structure that ensures that all the packages
+necessary for building basic Hadoop applications are available for
+compilation, and further, that they are available for running
+applications using a pre-configured classpath or bottleds-up assembly
+jar that contains Fogbow and all its dependencies. 
+
+The toolkit is called Fogbow because of the prevalent use of
+meteorological terms in cloud computing packages. (The word "fogbow"
+itself means a rainbow formed from fog rather than clouds.)
+
+There are just two classes in Fogbow.
+
+ * fogbow.example.WordCount - word count in Java (from the
+   standard Hadoop distribution)
+
+ * fogbow.scala.WordCount - word count in Scala (adapted from the
+   Java)
+
+This file contains the configuration and build instructions. 
+
+Requirements
+============
+
+* Version 1.6 of the Java 2 SDK (http://java.sun.com)
+* Version 0.20.2 of Hadoop: http://hadoop.apache.org/common/releases.html
+
+
+Configuring your environment variables
+======================================
+
+The easiest thing to do is to set the environment variables JAVA_HOME
+and FOGBOW_DIR to the relevant locations on your system. Set JAVA_HOME
+to match the top level directory containing the Java installation you
+want to use.
+
+For example, on Windows:
+
+C:\> set JAVA_HOME=C:\Program Files\jdk1.5.0_04
+
+or on Unix:
+
+% setenv JAVA_HOME /usr/local/java
+  (csh)
+> export JAVA_HOME=/usr/java
+  (ksh, bash)
+
+On Windows, to get these settings to persist, it's actually easiest to
+set your environment variables through the System Properties from the
+Control Panel. For example, under WinXP, go to Control Panel, click on
+System Properties, choose the Advanced tab, click on Environment
+Variables, and add your settings in the User variables area.
+
+Next, likewise set FOGBOW_DIR to be the top level directory where you
+unzipped the Fogbow download. In Unix, type 'pwd' in the directory
+where this file is and use the path given to you by the shell as
+FOGBOW_DIR.  You can set this in the same manner as for JAVA_HOME
+above.
+
+Next, add the directory FOGBOW_DIR/bin to your path. For example, you
+can set the path in your .bashrc file as follows:
+
+export PATH=$PATH:$FOGBOW_DIR/bin
+
+Once you have taken care of these three things, you should be able to
+build and use the Fogbow Library.
+
+Note: Spaces are allowed in JAVA_HOME but not in FOGBOW_DIR.  To set
+an environment variable with spaces in it, you need to put quotes around
+the value when on Unix, but you must *NOT* do this when under Windows.
+
+It is assumed that you have Hadoop 0.20.2 installed and in your path,
+and that you have set HADOOP_HOME to be the location of your Hadoop
+0.20.2 installation.
+
+
+Building the system from source
+===============================
+
+Fogbow uses SBT (Simple Build Tool) with a standard directory
+structure.  To build Fogbow, type (in the $FOGBOW_DIR directory):
+
+$ fogbow build update compile
+
+This will compile the source files and put them in
+./target/classes. If this is your first time running it, you will see
+messages about Scala being dowloaded -- this is fine and
+expected. Once that is over, the Fogbow code will be compiled.
+
+To try out other build targets, do:
+
+$ fogbow build
+
+This will drop you into the SBT interface. To see the actions that are
+possible, hit the TAB key. (In general, you can do auto-completion on
+any command prefix in SBT, hurrah!)
+
+Documentation for SBT is here:
+
+https://github.com/harrah/xsbt/wiki
+
+Note: if you have SBT 0.10.1 already installed on your system, you can
+also just call it directly with "sbt" in FOGBOW_DIR.
+
+
+Trying it out
+=============
+
+Assuming you have completed all of the above steps, including running
+the "compile" action in SBT, you should now be able to try out the
+word count example on a single machine in non-distributed mode. As an
+example, let's do word count on the Adventures of Sherlock Holmes.
+
+Obtain the text:
+
+$ wget http://www.gutenberg.org/cache/epub/1661/pg1661.txt
+
+To do Java word count, run:
+
+$ fogbow run fogbow.example.WordCount pg1661.txt wc_out_holmes_java
+
+To do Scala word count, run:
+
+$ fogbow run fogbow.example.WordCountScala pg1661.txt wc_out_holmes_scala
+
+
+Using the Fogbow assembly jar and calling it with Hadoop
+========================================================
+
+Using the 'fogbow' shell script will work for debugging your
+applications on a single machine in non-distributed mode (and without
+using HDFS). To deploy your application on HDFS, you need a jar file
+that you can call with the 'hadoop' exectuble.  For this, Fogbow
+allows you to build an assembly jar that packages all the dependencies
+of Fogbow in a single jar file.
+
+To build the assembly jar, do the following:
+
+$ fogbow build assembly
+
+This will create fogbow-assembly.jar in the $FOGBOW_DIR/target
+directory.
+
+As before, you can try it out on a single machine in non-distributed
+mode on Sherlock Holmes.
+
+To do Java word count, run:
+
+$ hadoop jar $FOGBOW_DIR/target/fogbow-assembly.jar fogbow.example.WordCount pg1661.txt wc_out_holmes_java_assembly
+
+To do Scala word count, run:
+
+$ hadoop jar $FOGBOW_DIR/target/fogbow-assembly.jar fogbow.example.WordCountScala pg1661.txt wc_out_holmes_scala_assembly
+
+Note: If you have set up HDFS and have put pg1661.txt onto it (e.g.,
+using "hadoop fs -put pg1661.txt pg1661.txt"), then this *will* run in
+distributed mode.
+
+
+Try out Cloud9
+==============
+
+Fogbow includes Cloud9, a Hadoop package created by Jimmy Lin for
+teaching MapReduce at the University of Maryland. Try out the Cloud9
+word count as follows.
+
+Get the Cloud9 file that has the Bible and Shakespeare bundled
+together:
+
+$ wget --no-check-certificate https://github.com/lintool/Cloud9/raw/603977334b5e25ecf23a182a77fda136fe1df5ff/data/bible+shakes.nopunc.gz
+
+Unzip the file:
+
+$ gunzip bible+shakes.nopunc.gz
+
+Run Cloud9 word count:
+
+$ fogbow run edu.umd.cloud9.example.simple.DemoWordCount bible+shakes.nopunc wc 1
+
+This says to count the words in the file bible+shakes.nopunc,
+outputting the results to the directory "wc", and using one reducer.
+
+Check that you obtained the desired output:
+
+$ grep othello wc/part-r-00000
+othello	339
+othello's	11
+
+
+
+Now what?
+=============
+
+The purpose of this package is to allow people to easily build a jar
+of their own without needing anything other than the command line, a
+Hadoop installation, and Java. You should be able to adapt the SBT
+build to your own project and start creating your own packages based
+on these fairly straightforwardly. You'll want to:
+
+ * Change $FOGBOW_DIR/build.sbt properties and configurations to be
+   appropriate for your project. If you need to specify new managed
+   dependencies, you can do so easily in that file (see SBT
+   documentation for details). If you prefer to add dependencies
+   manually, just add them to $FOGBOW_DIR/lib and they'll get picked
+   up without any fuss.
+
+ * Change $FOGBOW_DIR/bin to be an executable of your choice, named
+   for your project, and adapt as necessary (including changing
+   $FOGBOW to your project name, etc).
+
+Good luck!
+
+
+Questions or suggestions?
+=========================
+
+Email Jason Baldridge: jasonbaldrige@gmail.com
+
+Or, create an issue on Bitbucket: 
+
+    https://bitbucket.org/jasonbaldridge/fogbow/issues
+

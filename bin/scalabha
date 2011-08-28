@@ -1,0 +1,58 @@
+#!/bin/bash
+
+JARS=`echo $SCALABHA_DIR/lib/*.jar $SCALABHA_DIR/target/*.jar $HADOOP_HOME/*.jar $HADOOP_HOME/lib/*.jar | tr ' ' ':'`
+
+JARS_MANAGED=
+if [ -e $SCALABHA_DIR/lib_managed ]
+then
+    JARS_MANAGED=`find $SCALABHA_DIR/lib_managed -name '*.jar' -print | tr '\n' ':'`
+fi
+
+SCALA_LIB="$SCALABHA_DIR/project/boot/scala-2.9.0/lib/scala-library.jar"
+
+CP=$SCALABHA_DIR/target/classes:$JARS:$JARS_MANAGED:$SCALA_LIB:$CLASSPATH
+
+if [ -z $JAVA_MEM_FLAG ] 
+then
+    JAVA_MEM_FLAG=-Xmx2g
+fi
+
+JAVA_COMMAND="java $JAVA_MEM_FLAG -classpath $CP"
+
+CMD=$1
+shift
+
+help()
+{
+cat <<EOF
+Scalabha 0.1 commands: 
+
+  build         build Scalabha with SBT
+  run           run the main method of a given class
+
+Include --help with any option for more information
+EOF
+}
+
+if [ $CMD = 'build' ]; then
+
+    if test -f ~/.sbtconfig; then
+	. ~/.sbtconfig
+    fi
+    java -Dfile.encoding=UTF8 -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m ${SBT_OPTS} -jar $SCALABHA_DIR/bin/sbt-launch.jar "$@"
+
+else 
+
+    CLASS=
+
+    case $CMD in
+	run) CLASS=$1; shift;;
+	help) help; exit 1;;
+	*) echo "Unrecognized command: $CMD"; help; exit 1;;
+    esac
+
+    $JAVA_COMMAND $CLASS $*
+
+fi
+
+
