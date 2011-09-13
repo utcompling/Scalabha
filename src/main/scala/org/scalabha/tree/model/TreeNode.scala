@@ -1,5 +1,6 @@
 package org.scalabha.model
 
-class TreeNode(name:String, children:Option[List[TreeNode]]) {
-  
-}
+abstract class TreeNode
+case class Empty() extends TreeNode
+case class Value(name: String) extends TreeNode
+case class Node(name: String, children:List[TreeNode]) extends TreeNode
