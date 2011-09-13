@@ -23,8 +23,6 @@ object Tokenizer {
       (s) => unescapeHtml4(s),
       (s) => "([knrwyz])\u001A([aeiou])".r.replaceAllIn(s, (m) => "%s'%s".format(m.group(1), m.group(2))), //FIXME: if kin
       (s) => "[\u0000-\u0007\u000E-\u001F\u007F]".r.replaceAllIn(s, ""),
-//      (s) => """\u001a""".r.replaceAllIn(s, ""),
-      (s) => "\\xC2\\x80".r.replaceAllIn(s, ""),
       (s) => "([knrwyz]?)\u0220([aeiou]?)".r.replaceAllIn(s, (m) => "%s:)%s".format(m.group(1), m.group(2)))
     ))
   }
