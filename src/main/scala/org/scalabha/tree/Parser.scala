@@ -3,6 +3,8 @@ package org.scalabha.tree
 import org.clapper.argot._
 import collection.mutable.MutableList
 import org.scalabha.model._
+import org.scalabha.log.SimpleLogger
+import java.io.{OutputStreamWriter, BufferedWriter}
 
 object Parser {
 
@@ -11,41 +13,67 @@ object Parser {
   val parser = new ArgotParser("org.scalabha.lang.Tokenizer", preUsage = Some("Version 0.0"))
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val input = parser.option[String](List("i", "input"), "FILE", "input file to tokenize")
+  val log = new SimpleLogger("Parser", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
+  val noLog = new SimpleLogger("Parser", SimpleLogger.NONE, new BufferedWriter(new OutputStreamWriter(System.err)))
 
-  def apply(line: String, prefix: String): (TreeNode, String) = {
-    println("%sparsing:<<%s>>".format(prefix, line))
+  def apply(line: String, prefix: String, log:SimpleLogger): Option[(TreeNode, String)] = {
+    log.info("%sparsing:<<%s>>\n".format(prefix, line))
     val regex = """\s*(\(?)\s*([^\s)]+)(.*)""".r
 
-    val regex(open, sym, rest) = line
-    if (open != "") {
-      // then sym is the name\
-      val name = sym
-      var children = List[TreeNode]()
-      // parse the next piece
-//      val (a, b) = apply(rest, "|\t%s".format(prefix), Empty())
-      var next: TreeNode = null
-      var rest2 = rest
-//      children = children ::: List(next)
-      while (!rest2.matches("\\s*\\).*")) {
-        val (a, b) = apply(rest2, "|\t%s".format(prefix))
-        next = a
-        rest2 = b
-        children = children ::: List(next)
-      }
-      val cutoff = rest2.indexOf(')')
-      println("%sresult: %s,\"%s\"".format(prefix, Node(name, children), rest2.substring(cutoff+1)))
-      return (Node(name, children), rest2.substring(cutoff+1))
-    } else {
-      // then sym is a value
-      println("%sresult: %s,\"%s\"".format(prefix, Value(sym), rest))
-      return (Value(sym), rest)
+    line match {
+      case regex(open, sym, rest) =>
+        if (open != "") {
+          // then we are parsing a full node.
+          val name = sym
+          var children = List[TreeNode]()
+          var next: TreeNode = null
+          var rest2 = rest
+          while (!rest2.matches("\\s*\\).*")) {
+            if (rest2 == "") {
+              log.err("Missing closing paren in:<<%s>>\n".format(line))
+              return None
+            }
+            apply(rest2, "|\t%s".format(prefix), log) match {
+              case Some((a, b)) =>
+                next = a
+                rest2 = b
+                children = children ::: List(next)
+              case None => return None
+            }
+          }
+          val cutoff = rest2.indexOf(')')
+          log.info("%sresult: %s,\"%s\"\n".format(prefix, Node(name, children), rest2.substring(cutoff + 1)))
+          return Some((Node(name, children), rest2.substring(cutoff + 1)))
+        } else {
+          // then we are only looking at a value
+          log.info("%sresult: %s,\"%s\"\n".format(prefix, Value(sym), rest))
+          return Some((Value(sym), rest))
+        }
+      case _ =>
+        log.err("Got an empty input line\n")
+        return None
     }
-
-    (Empty(), "")
   }
 
-  def apply(line: String) {
-    apply(line, "")
+  def apply(line: String, log:SimpleLogger): Option[TreeNode] = {
+    apply(line, "", log) match {
+      case Some((tree, "")) =>
+        tree match {
+          case Node(_,_) => ()
+          case _ =>
+            log.warn("Top-level element is not a tree:<<%s>>\n".format(line))
+        }
+        Some(tree)
+      case Some((tree, leftover)) =>
+        log.err("Malformed tree:<<%s>>\tleftover text:<<%s>>\n".format(line, leftover))
+        None
+      case None =>
+        None
+    }
+  }
+
+  def apply(line: String): Option[TreeNode] = {
+    apply(line, noLog)
   }
 
   def main(args: Array[String]) {
@@ -64,8 +92,10 @@ object Parser {
         }).getLines()
 
       for (line: String <- input_file) {
-        Parser(line)
+        println(Parser(line, log))
       }
+
+      println("Warnings,Errors: %s".format(log.getStats()))
     }
     catch {
       case e: ArgotUsageException =>
