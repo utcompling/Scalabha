@@ -13,31 +13,61 @@ object Comparer {
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val left = parser.option[String](List("l", "left"), "FILE", "left tree file for comparison")
   val right = parser.option[String](List("r", "right"), "FILE", "right tree file for comparison")
-  val leftLog = new SimpleLogger("compare_LeftFile", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
-  val rightLog = new SimpleLogger("compare_RightFile", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
-  val log = new SimpleLogger("Comparer", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
+  val leftLog = new SimpleLogger("org.scalabha.tree.Comparer(LEFT FILE)", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
+  val rightLog = new SimpleLogger("org.scalabha.tree.Comparer(RIGHT FILE)", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
+  val log = new SimpleLogger("org.scalabha.tree.Comparer", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
 
-  def apply(left: TreeNode, right: TreeNode): Boolean = {
-    left.compareStructure(right)
+  abstract class ComparisonResult
+
+  case class Success() extends ComparisonResult{
+    override def toString(): String = {
+      "OK"
+    }
+    val bool = true
   }
 
-  def apply(left: String, right: String): Boolean = {
+  case class Fail[T](left: T, right: T) extends ComparisonResult {
+    override def toString(): String = {
+      "FAIL: <<%s>>!=<<%s>>".format(left, right)
+    }
+    val bool = false
+  }
+
+  def apply(left: TreeNode, right: TreeNode): ComparisonResult = {
+    if (left.compareStructure(right))
+      Success()
+    else
+      Fail[TreeNode](left, right)
+  }
+
+  def apply(left: String, right: String): ComparisonResult = {
     val (leftOption, rightOption) = (Parser(left, leftLog), Parser(right, rightLog))
-    if (leftOption.isDefined && rightOption.isDefined) {
-      val result = apply(leftOption.get, rightOption.get)
-      if (!result) {
-        log.err("Mismatched lines: left:<<%s>> right:<<%s>>\n".format(left, right))
-      }
-      result
-    } else if (leftOption.isDefined) {
-      log.err("Could not parse RIGHT line:<<%s>>".format(right))
-      false
-    } else if (rightOption.isDefined) {
-      log.err("Could not parse LEFT line:<<%s>>".format(right))
-      false
-    } else {
-      log.err("Unable to parse lines: left:<<%s>> right:<<%s>>\n".format(left, right))
-      false
+    if (
+      if (leftOption.isDefined && rightOption.isDefined) {
+        apply(leftOption.get, rightOption.get) match {
+          case Success() =>
+            true
+          case _ =>
+            false
+        }
+      } else if (leftOption.isDefined) {
+        log.err("Could not parse RIGHT line:<<%s>>".format(right))
+        false
+      } else if (rightOption.isDefined) {
+        log.err("Could not parse LEFT line:<<%s>>".format(right))
+        false
+      } else {
+        log.err("Unable to parse lines: left:<<%s>> right:<<%s>>\n".format(left, right))
+        false
+      })
+      Success()
+    else
+      Fail[String](left, right)
+  }
+
+  def burnRemainder(toRead: Iterator[String], log: SimpleLogger) {
+    for (line <- toRead) {
+      log.err("found an extra line:<<%s>>\n".format(line))
     }
   }
 
@@ -66,14 +96,17 @@ object Comparer {
       for ((leftLine, rightLine) <- (left_file zip right_file)) {
         println(Comparer(leftLine, rightLine))
       }
+      burnRemainder(left_file, leftLog)
+      burnRemainder(right_file, rightLog)
 
-      println("left parse (Warnings,Errors): %s".format(leftLog.getStats()))
-      println("right parse (Warnings,Errors): %s".format(rightLog.getStats()))
-      println("Total comparison (Warnings,Errors): %s".format(log.getStats()))
+      log.summary("left parse (Warnings,Errors): %s\n".format(leftLog.getStats()))
+      log.summary("right parse (Warnings,Errors): %s\n".format(rightLog.getStats()))
+      log.summary("Total comparison (Warnings,Errors): %s\n".format(log.getStats()))
     }
     catch {
       case e: ArgotUsageException =>
         println(e.message)
     }
   }
+
 }

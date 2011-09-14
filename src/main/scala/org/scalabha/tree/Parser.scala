@@ -13,8 +13,8 @@ object Parser {
   val parser = new ArgotParser("org.scalabha.lang.Tokenizer", preUsage = Some("Version 0.0"))
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val input = parser.option[String](List("i", "input"), "FILE", "input file to tokenize")
-  val log = new SimpleLogger("Parser", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
-  val noLog = new SimpleLogger("Parser", SimpleLogger.NONE, new BufferedWriter(new OutputStreamWriter(System.err)))
+  val log = new SimpleLogger("org.scalabha.tree.Parser", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
+  val noLog = new SimpleLogger("org.scalabha.tree.Parser", SimpleLogger.NONE, new BufferedWriter(new OutputStreamWriter(System.err)))
 
   def apply(line: String, prefix: String, log:SimpleLogger): Option[(TreeNode, String)] = {
     log.info("%sparsing:<<%s>>\n".format(prefix, line))
@@ -95,7 +95,7 @@ object Parser {
         println(Parser(line, log))
       }
 
-      println("Warnings,Errors: %s".format(log.getStats()))
+      log.summary("Warnings,Errors: %s\n".format(log.getStats()))
     }
     catch {
       case e: ArgotUsageException =>

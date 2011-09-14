@@ -32,6 +32,10 @@ class SimpleLogger(name: String, logLevel: Int, output: BufferedWriter) {
     errors += 1
   }
 
+  def summary(message: String) {
+    print("%s: [SUMMARY] %s".format(name,message))
+  }
+
   def getStats(): (Int, Int) = {
     (warnings, errors)
   }
