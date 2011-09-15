@@ -5,6 +5,7 @@ import org.scalatest.matchers.ShouldMatchers
 import org.scalabha.tree.TagChecker
 import org.scalabha.model.{Value, Node, TreeNode}
 import org.scalabha.tree.TagChecker.{Fail, Success, TagCheckResult}
+import collection.immutable.HashMap
 
 class TagCheckerTest extends FlatSpec with ShouldMatchers {
   val tests = List[(TreeNode, TreeNode, TagCheckResult)](
@@ -19,7 +20,7 @@ class TagCheckerTest extends FlatSpec with ShouldMatchers {
       Success()),
     (Node("a", List(Node("b", List(Value("c"))))),
       Node("a", List(Node("e", List(Value("f"))))),
-      Fail(Set("a", "b"), Set("a", "e")))
+      Fail(Map("a" -> 1, "b" -> 1), Map("a" -> 1, "e" -> 1)))
   )
 
   for ((left, right, result) <- tests) {
@@ -28,20 +29,9 @@ class TagCheckerTest extends FlatSpec with ShouldMatchers {
     }
   }
 
-  val tests2 = List[(TreeNode, Set[String])](
-    (Node("a", List(Value("b"))), Set("a")),
-    (Node("a", List(Value("b"), Value("c"))), Set("a")),
-    (Node("a", List(Value("b"), Value("c"), Value("d"))), Set("a")),
-    (Node("a", List(Node("b", List(Value("c"))))), Set("a", "b")),
-    (Node("a", List(Node("b", List(Value("c"), Value("d"))), Node("e", List(Value("f"), Value("g"))))),
-      Set("a", "b", "e")),
-    (Value("a"), Set()),
-    (Node("a", List()), Set("a"))
-  )
-
-  for ((tree, set) <- tests2) {
-    "%s.getMap().keySet".format(tree) should "yield %s".format(set) in {
-      assert(TagChecker(tree) === set)
-    }
+  "combineMaps" should "work" in {
+    val l = HashMap(("a",1),("b",2))
+    val r = HashMap(("a",3),("c",4))
+    assert(TagChecker.combineMaps(l,r,(a:Int,b:Int)=>(a+b)) === HashMap(("a",4), ("b",2), ("c",4)))
   }
 }

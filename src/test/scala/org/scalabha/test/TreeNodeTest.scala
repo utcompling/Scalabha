@@ -39,22 +39,22 @@ class TreeNodeTest extends FlatSpec with ShouldMatchers {
     assert(!n3.compareStructure(n1))
   }
 
-  val tests = List[(TreeNode, HashMap[String, Set[List[String]]])](
-    (Node("a", List(Value("b"))), HashMap(("a", Set(List("b"))))),
-    (Node("a", List(Value("b"), Value("c"))), HashMap(("a", Set(List("b", "c"))))),
-    (Node("a", List(Node("b", List(Value("c"))))), HashMap(("a", Set(List("b"))), ("b", Set(List("c"))))),
+  val tests = List[(TreeNode, HashMap[String, HashMap[List[String], Int]])](
+    (Node("a", List(Value("b"))), HashMap(("a", HashMap(List("b") -> 1)))),
+    (Node("a", List(Value("b"), Value("c"))), HashMap(("a", HashMap(List("b", "c") -> 1)))),
+    (Node("a", List(Node("b", List(Value("c"))))), HashMap(("a", HashMap(List("b") -> 1)), ("b", HashMap(List("c") -> 1)))),
     (Node("r", List(Node("a", List(Value("b"))), Node("a", List(Value("c"))), Node("a", List(Value("b"))))),
-      HashMap(("a", Set(List("b"), List("c"))), ("r", Set(List("a", "a", "a"))))),
-    (Node("a", List(Value("b"), Value("c"), Value("d"))), HashMap(("a", Set(List("b", "c", "d"))))),
+      HashMap(("a", HashMap(List("b") -> 2, List("c") -> 1)), ("r", HashMap(List("a", "a", "a") -> 1)))),
+    (Node("a", List(Value("b"), Value("c"), Value("d"))), HashMap(("a", HashMap(List("b", "c", "d") -> 1)))),
     (Node("a", List(Node("b", List(Value("c"), Value("d"))), Node("e", List(Value("f"), Value("g"))))),
-      HashMap(("a", Set(List("b", "e"))), ("b", Set(List("c", "d"))), ("e", Set(List("f", "g"))))),
+      HashMap(("a", HashMap(List("b", "e") -> 1)), ("b", HashMap(List("c", "d") -> 1)), ("e", HashMap(List("f", "g") -> 1)))),
     (Value("a"), HashMap()),
-    (Node("a", List()), HashMap(("a", Set(List()))))
+    (Node("a", List()), HashMap(("a", HashMap(List() -> 1))))
   )
 
   for ((tree, map) <- tests) {
-    "%s.getMap()".format(tree) should "yield %s".format(map) in {
-      assert(tree.getMap() === map)
+    "%s.getTagMap()".format(tree) should "yield %s".format(map) in {
+      assert(tree.getTagMap() === map)
     }
   }
 
@@ -69,8 +69,27 @@ class TreeNodeTest extends FlatSpec with ShouldMatchers {
     (Node("a", List()), Set("a"))
   )
   for ((tree, set) <- tests2) {
-    "%s.getMap().keySet".format(tree) should "yield %s".format(set) in {
-      assert(tree.getMap().keySet === set)
+    "%s.getTagMap().keySet".format(tree) should "yield %s".format(set) in {
+      assert(tree.getTagMap().keySet === set)
+    }
+  }
+
+  val tests3 = List[(TreeNode, HashMap[String, Int])](
+    (Node("a", List(Value("b"))), HashMap(("a", 1))),
+    (Node("a", List(Value("b"), Value("c"))), HashMap(("a", 1))),
+    (Node("a", List(Node("b", List(Value("c"))))), HashMap(("a", 1), ("b", 1))),
+    (Node("r", List(Node("a", List(Value("b"))), Node("a", List(Value("c"))), Node("a", List(Value("b"))))),
+      HashMap(("a", 3), ("r", 1))),
+    (Node("a", List(Value("b"), Value("c"), Value("d"))), HashMap(("a", 1))),
+    (Node("a", List(Node("b", List(Value("c"), Value("d"))), Node("e", List(Value("f"), Value("g"))))),
+      HashMap(("a", 1), ("b", 1), ("e", 1))),
+    (Value("a"), HashMap()),
+    (Node("a", List()), HashMap(("a", 1)))
+  )
+
+  for ((tree, map) <- tests3) {
+    "%s.getTagCounts()".format(tree) should "yield %s".format(map) in {
+      assert(tree.getTagCounts() === map)
     }
   }
 }

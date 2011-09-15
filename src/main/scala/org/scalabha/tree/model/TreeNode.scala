@@ -7,7 +7,20 @@ abstract class TreeNode {
 
   def compareStructure(other: TreeNode): Boolean
 
-  def getMap(): HashMap[String, Set[List[String]]]
+  def getTagMap(): HashMap[String, HashMap[List[String], Int]]
+
+  def getTagCounts(): HashMap[String, Int] = {
+    val result = HashMap[String, Int]()
+    for ((nodeName, innerMap) <- getTagMap()) {
+      for ((list, count) <- innerMap) {
+        if (result.contains(nodeName))
+          result(nodeName) += count
+        else
+          result(nodeName) = count
+      }
+    }
+    result
+  }
 }
 
 case class Value(name: String) extends TreeNode {
@@ -15,7 +28,7 @@ case class Value(name: String) extends TreeNode {
     other.isInstanceOf[Value]
   }
 
-  def getMap(): HashMap[String, Set[List[String]]] = HashMap[String, Set[List[String]]]()
+  def getTagMap(): HashMap[String, HashMap[List[String], Int]] = HashMap[String, HashMap[List[String], Int]]()
 }
 
 case class Node(name: String, children: List[TreeNode]) extends TreeNode {
@@ -32,26 +45,27 @@ case class Node(name: String, children: List[TreeNode]) extends TreeNode {
     result
   }
 
-  def getMap(): HashMap[String, Set[List[String]]] = {
-    val result: HashMap[String, Set[List[String]]] = HashMap[String, Set[List[String]]](
-      (name, Set((for (child <- children) yield child.name)))
+  def getTagMap(): HashMap[String, HashMap[List[String], Int]] = {
+    val result: HashMap[String, HashMap[List[String], Int]] = HashMap[String, HashMap[List[String], Int]](
+      (name, HashMap((for (child <- children) yield child.name) -> 1))
     )
 
     for (child <- children) {
-      val childMap = child.getMap()
-      if (result.contains(child.name)){
-        result(child.name) = result(child.name) ++ childMap(child.name)
-      } else if (childMap.contains(child.name)) {
-        result(child.name) = childMap(child.name)
+      val childMap = child.getTagMap()
+      for ((nodeName, innerMap) <- childMap) {
+        for ((list, count) <- innerMap) {
+          if (result.contains(nodeName)) {
+            if (result(nodeName).contains(list)) {
+              result(nodeName)(list) += count
+            } else {
+              result(nodeName)(list) = count
+            }
+          } else {
+            result(nodeName) = HashMap(list -> count)
+          }
+        }
       }
     }
     result
-
-//    ++
-//      (if (children.nonEmpty)
-//        (for (child <- children) yield child.getMap()).reduce((a, b) => (a ++ b))
-//      else
-//        HashMap()
-//        )
   }
 }

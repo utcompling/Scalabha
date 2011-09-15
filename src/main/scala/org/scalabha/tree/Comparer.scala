@@ -9,7 +9,7 @@ object Comparer {
 
   import ArgotConverters._
 
-  val parser = new ArgotParser("org.scalabha.lang.Tokenizer", preUsage = Some("Version 0.0"))
+  val parser = new ArgotParser("org.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val left = parser.option[String](List("l", "left"), "FILE", "left tree file for comparison")
   val right = parser.option[String](List("r", "right"), "FILE", "right tree file for comparison")

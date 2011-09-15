@@ -1,4 +1,4 @@
-package org.scalabha.lang
+package org.scalabha.preproc
 
 import org.clapper.argot._
 import org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4
@@ -11,8 +11,8 @@ object Tokenizer {
 
   val lang_opts = "(eng|fra|kin|mlg)"
 
-  val parser = new ArgotParser("org.scalabha.lang.Tokenizer", preUsage = Some("Version 0.0"))
-  val lang = parser.option[String](List("l", "lang"), lang_opts, "source text language")
+  val parser = new ArgotParser("org.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
+  val lang = parser.option[String](List("l", "preproc"), lang_opts, "source text language")
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val input = parser.option[String](List("i", "input"), "FILE", "input file to tokenize")
 
