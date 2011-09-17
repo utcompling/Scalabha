@@ -12,7 +12,7 @@ object Parser {
 
   val parser = new ArgotParser("org.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
   val help = parser.flag[Boolean](List("h", "help"), "print help")
-  val input = parser.option[String](List("i", "input"), "FILE", "input file to tokenize")
+  val input = parser.option[String](List("i", "input"), "FILE", "input inputFile to tokenize")
   val log = new SimpleLogger("org.scalabha.tree.Parser", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
   val noLog = new SimpleLogger("org.scalabha.tree.Parser", SimpleLogger.NONE, new BufferedWriter(new OutputStreamWriter(System.err)))
 

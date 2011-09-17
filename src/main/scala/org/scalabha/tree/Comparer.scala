@@ -11,8 +11,8 @@ object Comparer {
 
   val parser = new ArgotParser("org.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
   val help = parser.flag[Boolean](List("h", "help"), "print help")
-  val left = parser.option[String](List("l", "left"), "FILE", "left tree file for comparison")
-  val right = parser.option[String](List("r", "right"), "FILE", "right tree file for comparison")
+  val left = parser.option[String](List("l", "left"), "FILE", "left tree inputFile for comparison")
+  val right = parser.option[String](List("r", "right"), "FILE", "right tree inputFile for comparison")
   val leftLog = new SimpleLogger("org.scalabha.tree.Comparer(LEFT FILE)", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
   val rightLog = new SimpleLogger("org.scalabha.tree.Comparer(RIGHT FILE)", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
   val log = new SimpleLogger("org.scalabha.tree.Comparer", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))

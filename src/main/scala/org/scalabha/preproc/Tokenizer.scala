@@ -14,7 +14,7 @@ object Tokenizer {
   val parser = new ArgotParser("org.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
   val lang = parser.option[String](List("l", "preproc"), lang_opts, "source text language")
   val help = parser.flag[Boolean](List("h", "help"), "print help")
-  val input = parser.option[String](List("i", "input"), "FILE", "input file to tokenize")
+  val input = parser.option[String](List("i", "input"), "FILE", "input inputFile to tokenize")
 
 
   def apply(string: String): String = {

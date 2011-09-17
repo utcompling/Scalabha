@@ -15,8 +15,8 @@ object TagChecker {
 
   val parser = new ArgotParser("org.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
   val help = parser.flag[Boolean](List("h", "help"), "print help")
-  val input = parser.option[String](List("i", "input"), "FILE", "input file in which to check tags")
-  val other = parser.option[String](List("other"), "FILE", "(optional) other file to compare against the input file")
+  val input = parser.option[String](List("i", "input"), "FILE", "input inputFile in which to check tags")
+  val other = parser.option[String](List("other"), "FILE", "(optional) other inputFile to compare against the input inputFile")
   val log = new SimpleLogger("org.scalabha.tree.TagChecker", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
   val noLog = new SimpleLogger("org.scalabha.tree.TagChecker", SimpleLogger.NONE, new BufferedWriter(new OutputStreamWriter(System.err)))
 
@@ -80,10 +80,10 @@ object TagChecker {
       }
     }
     for (line <- left) {
-      log.err("Leftover line <<%s>> in input file\n".format(line))
+      log.err("Leftover line <<%s>> in input inputFile\n".format(line))
     }
     for (line <- right) {
-      log.err("Leftover line <<%s>> in other file\n".format(  line))
+      log.err("Leftover line <<%s>> in other inputFile\n".format(  line))
     }
     resultCounts
   }
