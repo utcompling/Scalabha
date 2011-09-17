@@ -38,30 +38,20 @@ object XmlToTxt {
 
         var flatTextNodes = false
         var textSentenceNodes = false
-        xmlTree \ "data" foreach {
-          (dataNode) =>
-            dataNode \ "unit" foreach {
-              (unit) =>
-                unit \ "text" foreach {
-                  (text) =>
-                    val lang = (text \ "@langid").text
-                    // Support both:
-                    // - <text>blah blah</text>
-                    val r = text.text
-                    val s = text \ "sentence"
-                    if (s.length == 0) {
-                      flatTextNodes = true
-                      langToFile(lang).write(text.text + "\n")
-                    } else {
-                      textSentenceNodes = true
-                    }
-                    // - <text><sentence>blah.</sentence><sentence>blah.</sentence></text>
-                    text \ "sentence" foreach {
-                      (sentence) =>
-                        langToFile(lang).write(sentence.text + "\n")
-                    }
+        xmlTree \\ "align" foreach {
+          (align) =>
+            align \ "text" foreach {
+              (text) =>
+                val lang = (text \ "@langid").text
+
+                // - <text><s>blah.</s><s>blah.</s></text>
+                text \ "s" foreach {
+                  (sentence) =>
+                    langToFile(lang).write("%s <EOS> ".format(sentence.text))
                 }
+                langToFile(lang).write("\n")
             }
+
         }
         if (flatTextNodes) {
           log.warn("Detected flat text nodes. The <text><sentence/></text> is recommended.\n")
@@ -79,7 +69,7 @@ object XmlToTxt {
           val defaultXFileName = input.value.get.replace(".xml", "") + ".unknownLanguage"
           for (lang <- languages) {
             val fileName = "%s.%s".format(input.value.get.replace(".xml", ""), lang)
-            (new File(fileName+".txt")) #> "normalize-text-standalone.pl" #| "tokenize-text.pl" #> (new File(fileName+".tok"))!
+            (new File(fileName + ".txt")) #> "normalize-text-standalone.pl" #| "tokenize-text.pl" #> (new File(fileName + ".tok")) !
           }
         }
       }

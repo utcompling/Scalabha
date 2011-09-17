@@ -1,4 +1,4 @@
-#!/bin/bash
+#/bin/bash
 
 JARS=`echo $SCALABHA_DIR/lib/*.jar $SCALABHA_DIR/target/*.jar $HADOOP_HOME/*.jar $HADOOP_HOME/lib/*.jar | tr ' ' ':'`
 
@@ -41,6 +41,10 @@ if [ $CMD = 'build' ]; then
 	. ~/.sbtconfig
     fi
     java -Dfile.encoding=UTF8 -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m ${SBT_OPTS} -jar $SCALABHA_DIR/bin/sbt-launch.jar "$@"
+
+elif [ $CMD = 'tokenize' ]; then
+
+     $SCALA_COMMAND org.scalabha.preproc.XmlToTxt -t $*
 
 else 
 

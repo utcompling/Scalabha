@@ -39,9 +39,9 @@ object TagChecker {
     val bool = false
   }
 
-  def spprintRepr(map: Object, join: String): String = {
+  def spprintRepr(map: Map[String,Int], join: String): String = {
     val regex = "[^(]+\\((.*)\\)".r
-    val regex(string) = map.toString
+    val regex(string) = map.toList.sorted.toString
     string.replace(", ", join)
   }
 
@@ -83,7 +83,7 @@ object TagChecker {
       log.err("Leftover line <<%s>> in input file\n".format(line))
     }
     for (line <- right) {
-      log.err("Leftover line <<%s>> in other file\n".format(line))
+      log.err("Leftover line <<%s>> in other file\n".format(  line))
     }
     resultCounts
   }
@@ -124,7 +124,7 @@ object TagChecker {
         case None =>
           log.summary("Tag stats:\n\t%s\n".format(
             spprintRepr(
-              apply(input_file), "\n\t")
+              apply(input_file).toMap, "\n\t")
           ))
         case Some(other_file_name) =>
           val other_file = scala.io.Source.fromFile(other.value.get, "UTF-8").getLines()
