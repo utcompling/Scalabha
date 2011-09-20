@@ -44,7 +44,7 @@ if [ $CMD = 'build' ]; then
 
 elif [ $CMD = 'tokenize' ]; then
 
-     $SCALA_COMMAND org.scalabha.preproc.XmlToTxt -t $*
+     $SCALA_COMMAND org.scalabha.preproc.XmlToTxt $*
 
 else 
 
