@@ -20,8 +20,6 @@ Requirements
 ============
 
 * Version 1.6 of the Java 2 SDK (http://java.sun.com)
-* Version 0.20.2 of Hadoop: http://hadoop.apache.org/common/releases.html
-
 
 Configuring your environment variables
 ======================================
@@ -66,10 +64,6 @@ Note: Spaces are allowed in JAVA_HOME but not in SCALABHA_DIR.  To set
 an environment variable with spaces in it, you need to put quotes around
 the value when on Unix, but you must *NOT* do this when under Windows.
 
-It is assumed that you have Hadoop 0.20.2 installed and in your path,
-and that you have set HADOOP_HOME to be the location of your Hadoop
-0.20.2 installation.
-
 
 Building the system from source
 ===============================
@@ -112,10 +106,10 @@ Now what?
 =============
 
 One purpose of this package is to allow people to easily build a jar
-of their own without needing anything other than the command line, a
-Hadoop installation, and Java. You should be able to adapt the SBT
-build to your own project and start creating your own packages based
-on these fairly straightforwardly. You'll want to:
+of their own without needing anything other than the command line and
+Java. You should be able to adapt the SBT build to your own project
+and start creating your own packages based on these fairly
+straightforwardly. You'll want to:
 
  * Change $SCALABHA_DIR/build.sbt properties and configurations to be
    appropriate for your project. If you need to specify new managed
