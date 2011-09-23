@@ -1,6 +1,6 @@
 #/bin/bash
 
-JARS=`echo $SCALABHA_DIR/lib/*.jar $SCALABHA_DIR/target/*.jar $HADOOP_HOME/*.jar $HADOOP_HOME/lib/*.jar | tr ' ' ':'`
+JARS=`echo $SCALABHA_DIR/lib/*.jar $SCALABHA_DIR/target/*.jar | tr ' ' ':'`
 
 JARS_MANAGED=
 if [ -e $SCALABHA_DIR/lib_managed ]
@@ -42,31 +42,17 @@ if [ $CMD = 'build' ]; then
     fi
     java -Dfile.encoding=UTF8 -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m ${SBT_OPTS} -jar $SCALABHA_DIR/bin/sbt-launch.jar "$@"
 
-elif [ $CMD = 'tokenize' ]; then
-
-     $JAVA_COMMAND org.scalabha.preproc.XmlToTxt $*
-
-elif [ $CMD = 'tokenize-all' ]; then
-
-     $JAVA_COMMAND org.scalabha.preproc.XmlToTxt -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/kin/tok $*
-     $JAVA_COMMAND org.scalabha.preproc.XmlToTxt -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/mlg/tok $*
-
-elif [ $CMD = 'tokenize-kin' ]; then
-
-     $JAVA_COMMAND org.scalabha.preproc.XmlToTxt -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/kin/tok $*
-
-elif [ $CMD = 'tokenize-mlg' ]; then
-
-     $JAVA_COMMAND org.scalabha.preproc.XmlToTxt -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/mlg/tok $*
-
 else 
 
     CLASS=
 
     case $CMD in
-	run) CLASS=$1; shift;;
-	help) help; exit 1;;
-	*) echo "Unrecognized command: $CMD"; help; exit 1;;
+        tokenize) CLASS=org.scalabha.preproc.XmlToTxt;;
+        tokenize-kin) CLASS="org.scalabha.preproc.XmlToTxt -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/kin/tok $*";;
+        tokenize-mlg) CLASS="org.scalabha.preproc.XmlToTxt -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/mlg/tok $*";;
+        run) CLASS=$1; shift;;
+        help) help; exit 1;;
+        *) echo "Unrecognized command: $CMD"; help; exit 1;;
     esac
 
     $JAVA_COMMAND $CLASS $*
