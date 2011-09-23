@@ -46,6 +46,19 @@ elif [ $CMD = 'tokenize' ]; then
 
      $JAVA_COMMAND org.scalabha.preproc.XmlToTxt $*
 
+elif [ $CMD = 'tokenize-all' ]; then
+
+     $JAVA_COMMAND org.scalabha.preproc.XmlToTxt -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/kin/tok $*
+     $JAVA_COMMAND org.scalabha.preproc.XmlToTxt -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/mlg/tok $*
+
+elif [ $CMD = 'tokenize-kin' ]; then
+
+     $JAVA_COMMAND org.scalabha.preproc.XmlToTxt -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/kin/tok $*
+
+elif [ $CMD = 'tokenize-mlg' ]; then
+
+     $JAVA_COMMAND org.scalabha.preproc.XmlToTxt -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/mlg/tok $*
+
 else 
 
     CLASS=
