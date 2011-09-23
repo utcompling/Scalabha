@@ -12,6 +12,12 @@ class SimpleLogger(name: String, logLevel: Int, output: BufferedWriter) {
       output.flush()
   }
 
+  def debug(message: String) {
+    if (logLevel >= SimpleLogger.DEBUG) {
+      print("%s: [DEBUG] %s".format(name,message))
+    }
+  }
+
   def info(message: String) {
     if (logLevel >= SimpleLogger.INFO) {
       print("%s: [INFO] %s".format(name,message))
@@ -46,4 +52,5 @@ object SimpleLogger {
   val ERR = NONE+1
   val WARN = ERR+1
   val INFO = WARN+1
+  val DEBUG = INFO+1
 }
