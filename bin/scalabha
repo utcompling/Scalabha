@@ -47,9 +47,13 @@ else
     CLASS=
 
     case $CMD in
-        tokenize) CLASS=org.scalabha.preproc.XmlToTxt;;
-        tokenize-kin) CLASS="org.scalabha.preproc.XmlToTxt -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/kin/tok $*";;
-        tokenize-mlg) CLASS="org.scalabha.preproc.XmlToTxt -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/mlg/tok $*";;
+        tokenize) CLASS=org.scalabha.preproc.XmlToTok;;
+        tokenize-kin) CLASS="org.scalabha.preproc.XmlToTok -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/kin/tok";;
+        tokenize-mlg) CLASS="org.scalabha.preproc.XmlToTok -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/mlg/tok";;
+        treeSeed) CLASS=org.scalabha.preproc.TokToTreeSeed;;
+        treeSeed-kin) CLASS="org.scalabha.preproc.TokToTreeSeed -R -i $LDMT_MURI_DIR/data/phase2/kin/tok -o $LDMT_MURI_DIR/data/phase2/kin/parsed";;
+        treeSeed-mlg) CLASS="org.scalabha.preproc.TokToTreeSeed -R -i $LDMT_MURI_DIR/data/phase2/mlg/tok -o $LDMT_MURI_DIR/data/phase2/mlg/parsed"
+        ;;
         run) CLASS=$1; shift;;
         help) help; exit 1;;
         *) echo "Unrecognized command: $CMD"; help; exit 1;;

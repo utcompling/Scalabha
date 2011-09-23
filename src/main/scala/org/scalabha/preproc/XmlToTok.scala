@@ -7,21 +7,16 @@ import org.clapper.argot.{ArgotUsageException, ArgotParser, ArgotConverters}
 import java.io._
 import scala.sys.process._
 import org.xml.sax.SAXParseException
+import org.scalabha.util.FileUtils
 
-object XmlToTxt {
+object XmlToTok {
 
   import ArgotConverters._
 
-  var FILE_SEPARATOR = System.getProperty("file.separator")
   var log: SimpleLogger = new SimpleLogger(
-    XmlToTxt.getClass.toString,
+    XmlToTok.getClass.toString,
     SimpleLogger.INFO,
     new BufferedWriter(new OutputStreamWriter(System.err)))
-
-  def getParent(path: String): String = {
-    val a :: as = path.split(FILE_SEPARATOR).toList.reverse
-    as.reverse.mkString(FILE_SEPARATOR)
-  }
 
   def transformFile(inputFile: File, textOutputFileNameStripped: String,
                     tokenOutputFileNameStripped: String, log: SimpleLogger) {
@@ -33,8 +28,8 @@ object XmlToTxt {
     //ensure the appropriate parent dirs exist
 
     log.debug("Making parent directories\n")
-    new File(getParent(textOutputFileNameStripped)).mkdirs()
-    new File(getParent(tokenOutputFileNameStripped)).mkdirs()
+    new File(FileUtils.getPathParent(textOutputFileNameStripped)).mkdirs()
+    new File(FileUtils.getPathParent(tokenOutputFileNameStripped)).mkdirs()
 
     log.info("%s -> %s.*.txt -> %s.*.tok\n".format(inputFile.getPath, textOutputFileNameStripped, tokenOutputFileNameStripped))
 
@@ -100,23 +95,13 @@ object XmlToTxt {
     log.debug("Exiting file transform\n")
   }
 
-  def withoutEndSlash(str: String): String = {
-    ((FILE_SEPARATOR + "*$").r).replaceFirstIn(str, "")
-  }
-
-  def trimSlashes(str: String): String =
-    (("^%s*|%s*$".format(FILE_SEPARATOR, FILE_SEPARATOR).r).replaceAllIn(str, ""))
-
-  def getStrippedOutputFileName(outputPath: String, newSubdirectories: String, inputBaseName: String): String =
-    List(withoutEndSlash(outputPath), trimSlashes(newSubdirectories), trimSlashes(inputBaseName)).filter((s) => s != "").mkString(FILE_SEPARATOR)
-
   def transformDirectory(inputDirectory: File, newSubdirectories: String,
                          textOutputOption: Option[String], tokenOutputOption: Option[String], log: SimpleLogger) {
     for (inputFile <- inputDirectory.listFiles if (inputFile.isFile && inputFile.getName.endsWith("xml"))) {
-      val textOutputFileNameStripped = getStrippedOutputFileName(
+      val textOutputFileNameStripped = FileUtils.getStrippedOutputFileName(
         (if (textOutputOption.isDefined) textOutputOption.get else inputFile.getParent),
         newSubdirectories, inputFile.getName.replaceFirst(".xml$", ""))
-      val tokenOutputFileNameStripped = getStrippedOutputFileName(
+      val tokenOutputFileNameStripped = FileUtils.getStrippedOutputFileName(
         (if (tokenOutputOption.isDefined) tokenOutputOption.get else inputFile.getParent),
         newSubdirectories, inputFile.getName.replaceFirst(".xml$", ""))
       transformFile(inputFile, textOutputFileNameStripped, tokenOutputFileNameStripped, log)
@@ -129,7 +114,7 @@ object XmlToTxt {
     transformDirectory(inputDirectory, newSubdirectories, textOutputOption, tokenOutputOption, log)
     // then do the same for all the child directories
     for (inputSubDirectory <- inputDirectory.listFiles() if (inputSubDirectory.isDirectory)) {
-      transformDirectoryRecursive(inputSubDirectory, newSubdirectories + FILE_SEPARATOR + inputSubDirectory.getName,
+      transformDirectoryRecursive(inputSubDirectory, newSubdirectories + FileUtils.FILE_SEPARATOR + inputSubDirectory.getName,
         textOutputOption, tokenOutputOption, log)
     }
   }
@@ -154,7 +139,7 @@ object XmlToTxt {
       }
       if (debug.value.isDefined)
         log = new SimpleLogger(
-          XmlToTxt.getClass.toString,
+          XmlToTok.getClass.toString,
           SimpleLogger.DEBUG,
           new BufferedWriter(new OutputStreamWriter(System.err)))
 
@@ -180,10 +165,10 @@ object XmlToTxt {
 
           // then just transform inputFile
           // treat the output files as files and write them out.
-          val textOutputFileNameStripped = getStrippedOutputFileName(
+          val textOutputFileNameStripped = FileUtils.getStrippedOutputFileName(
             (if (textOutput.value.isDefined) textOutput.value.get else inputFile.getParent), "",
             inputFile.getName.replaceFirst(".xml$", ""))
-          val tokenOutputFileNameStripped = getStrippedOutputFileName(
+          val tokenOutputFileNameStripped = FileUtils.getStrippedOutputFileName(
             (if (output.value.isDefined) output.value.get else inputFile.getParent), "",
             inputFile.getName.replaceFirst(".xml$", ""))
           transformFile(inputFile, textOutputFileNameStripped, tokenOutputFileNameStripped, log)
