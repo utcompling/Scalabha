@@ -45,7 +45,7 @@ object TokToTreeSeed {
           }).mkString(" "))
       }).mkString(" "))
     }).mkString("\n") + "\n")
-
+    outputWriter.close()
     log.debug("Exiting file transform\n")
   }
 
