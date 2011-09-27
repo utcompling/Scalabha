@@ -35,6 +35,8 @@ Include --help with any option for more information
 EOF
 }
 
+CLEANUP=0
+
 if [ $CMD = 'build' ]; then
 
     if test -f ~/.sbtconfig; then
@@ -53,6 +55,7 @@ else
         treeSeed) CLASS=org.scalabha.preproc.TokToTreeSeed;;
         treeSeed-kin) CLASS="org.scalabha.preproc.TokToTreeSeed -R -i $LDMT_MURI_DIR/data/phase2/kin/tok -o $LDMT_MURI_DIR/data/phase2/kin/parsed";;
         treeSeed-mlg) CLASS="org.scalabha.preproc.TokToTreeSeed -R -i $LDMT_MURI_DIR/data/phase2/mlg/tok -o $LDMT_MURI_DIR/data/phase2/mlg/parsed"
+        CLEANUP=1
         ;;
         run) CLASS=$1; shift;;
         help) help; exit 1;;
@@ -63,4 +66,6 @@ else
 
 fi
 
-
+if [[ $CLEANUP -eq 1 ]]; then
+    rm -r $LDMT_MURI_DIR/data/phase2/mlg/parsed/mlg_bible
+fi

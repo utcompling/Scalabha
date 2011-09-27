@@ -8,6 +8,7 @@ import java.io._
 import scala.sys.process._
 import org.xml.sax.SAXParseException
 import org.scalabha.util.FileUtils
+import java.util.regex.Pattern
 
 object XmlToTok {
 
@@ -17,6 +18,13 @@ object XmlToTok {
     XmlToTok.getClass.toString,
     SimpleLogger.INFO,
     new BufferedWriter(new OutputStreamWriter(System.err)))
+
+  def prelimTokenize(str: String): String = {
+    var res = str.replaceAll("'", " '")
+    res = str.replaceAll("\\(", "LRB")
+    res = str.replaceAll("\\)", "RRB")
+    res
+  }
 
   def transformFile(inputFile: File, textOutputFileNameStripped: String,
                     tokenOutputFileNameStripped: String, log: SimpleLogger) {
@@ -58,7 +66,7 @@ object XmlToTok {
               // - <text><s>blah.</s><s>blah.</s></text>
               text \ "s" foreach {
                 (sentence) =>
-                  langToFile(lang).write("%s <EOS> ".format(sentence.text))
+                  langToFile(lang).write("%s <EOS> ".format(prelimTokenize(sentence.text)))
               }
               langToFile(lang).write("\n")
           }
