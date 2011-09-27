@@ -57,6 +57,8 @@ else
         treeSeed-mlg) CLASS="org.scalabha.preproc.TokToTreeSeed -R -i $LDMT_MURI_DIR/data/phase2/mlg/tok -o $LDMT_MURI_DIR/data/phase2/mlg/parsed"
         CLEANUP=1
         ;;
+        check-tree) CLASS="org.scalabha.tree.TagChecker"
+        ;;
         run) CLASS=$1; shift;;
         help) help; exit 1;;
         *) echo "Unrecognized command: $CMD"; help; exit 1;;
