@@ -31,9 +31,9 @@ object TokToTreeSeed {
 
     log.info("%s -> %s.treeseed\n".format(inputFile.getPath, treeSeedOutputFileNameStripped))
 
-    val lines = scala.io.Source.fromFile(inputFile, "ISO-8859-1").getLines()
+    val lines = scala.io.Source.fromFile(inputFile, "UTF-8").getLines()
     val outputWriter = new OutputStreamWriter(new FileOutputStream(
-      new File(treeSeedOutputFileNameStripped + ".treeseed")), "ISO-8859-1")
+      new File(treeSeedOutputFileNameStripped + ".treeseed")), "UTF-8")
     outputWriter.write((for (line: String <- lines) yield {
       val sentences = line.split("<EOS>")
       "(TOP %s)".format(

@@ -61,6 +61,8 @@ while(<>) {
       $line =~ s/\b(n\xC2\xB0)(\d)/$1 $2/gi;         # n+degree ("number sign")
       $line =~ s/([a-z0-9])(:) /$1 \@$2 /gi; # colon
       $line =~ s/('|\!|\?)(\.+) /$1 $2 /g;
+      $line =~ s/\(/ -LRB- /g; #JTR left paren
+      $line =~ s/\)/ -RRB- /g; #JTR right paren
 
       # English '
       $line =~ s/([a-z])('s)\b/$1 $2/gi;

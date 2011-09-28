@@ -36,15 +36,15 @@ object XmlToTok {
 
     try {
       log.debug("Loading XML\n")
-      val xmlTree = XML.load(new InputStreamReader(new FileInputStream(inputFile), "ISO-8859-1")) \ "file"
+      val xmlTree = XML.load(new InputStreamReader(new FileInputStream(inputFile), "UTF-8")) \ "file"
       val languages = (xmlTree \ "@languages").text.split(",").toList
       log.debug("Opening output streams\n")
       val defaultTextOutputWriter = new OutputStreamWriter(new FileOutputStream(
-        new File(textOutputFileNameStripped + ".unknownLanguage.txt")), "ISO-8859-1")
+        new File(textOutputFileNameStripped + ".unknownLanguage.txt")), "UTF-8")
       val langToFile: Map[String, OutputStreamWriter] =
         (for (lang <- languages) yield (lang,
           new OutputStreamWriter(new FileOutputStream(
-            new File("%s.%s.txt".format(textOutputFileNameStripped, lang))), "ISO-8859-1")
+            new File("%s.%s.txt".format(textOutputFileNameStripped, lang))), "UTF-8")
           )).toMap.withDefault(x => defaultTextOutputWriter)
 
       log.debug("Parsing XML\n")
@@ -80,8 +80,10 @@ object XmlToTok {
 
       log.debug("Piping text to tokenizer\n")
       for (lang <- languages) {
+        val opt = (if (Set("eng", "mlg", "kin", "fra").contains(lang)) " -" + lang else "")
         (new File("%s.%s.txt".format(textOutputFileNameStripped, lang))) #>
-          "normalize-text-standalone.pl" #| "tokenize-text.pl" #>
+          ("normalize-text-standalone.pl" + opt) #|
+          ("tokenize-text.pl" + opt) #>
           (new File("%s.%s.tok".format(tokenOutputFileNameStripped, lang))) !
       }
     } catch {
@@ -131,6 +133,7 @@ object XmlToTok {
     val recursive = parser.flag[Boolean](List("R", "recursive"), "If the input parameter is a directory, recursively tokenize" +
       " all xml files in or below that directory.")
     val debug = parser.flag[Boolean](List("d", "debug"), "Assert this flag if you want to see ridicuous quantities of output.")
+    val skipRegex = parser.option[String](List("skip"), "REGEX", "Skip files whose absolute path matches this regex.")
 
     try {
       parser.parse(args)
@@ -143,6 +146,9 @@ object XmlToTok {
           XmlToTok.getClass.toString,
           SimpleLogger.DEBUG,
           new BufferedWriter(new OutputStreamWriter(System.err)))
+
+      val skipFiles =
+        if (skipRegex.value.isDefined) skipRegex.value.get.r else "".r
 
       if (input.value.isDefined) {
         val fileName = input.value.get
