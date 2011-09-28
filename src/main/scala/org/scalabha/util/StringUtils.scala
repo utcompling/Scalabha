@@ -30,6 +30,7 @@ object StringUtils {
       res = res
         .replaceAll("(?i)([a-z]+s)(') ", "$1 $2 ")
     }
+    res = res
       .replaceAll("(?i)\\b(are|could|dare|did|do|does|had|has|have|is|must|need|should|was|were|would)(n)'(t)\\b", "$1 $2&nbt;'$3") // protect nt from furhter tokenization
       .replaceAll("(?i)\\b(can)(not)\\b", "$1 $2")
       .replaceAll("(?i)\\b(ca)(n)'(t)\\b", "$1$2 $2&nbt;'$3")
@@ -195,6 +196,7 @@ object StringUtils {
       .replaceAll("(?i)([a-z])([-\\/:])((?:www\\.|http:).\\S*) ", "$1 \\@$2\\@ $3 ")
       .replaceAll("&nbsp;", " ")
       .replaceAll("&nbt;", "")
+    res
   }
 
   def tokenizeEng(str: String): String = {
