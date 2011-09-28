@@ -19,13 +19,6 @@ object XmlToTok {
     SimpleLogger.INFO,
     new BufferedWriter(new OutputStreamWriter(System.err)))
 
-  def prelimTokenize(str: String): String = {
-    var res = str.replaceAll("'", " '")
-    res = str.replaceAll("\\(", "LRB")
-    res = str.replaceAll("\\)", "RRB")
-    res
-  }
-
   def transformFile(inputFile: File, textOutputFileNameStripped: String,
                     tokenOutputFileNameStripped: String, log: SimpleLogger) {
     log.debug("Started file transform\n")
@@ -66,7 +59,7 @@ object XmlToTok {
               // - <text><s>blah.</s><s>blah.</s></text>
               text \ "s" foreach {
                 (sentence) =>
-                  langToFile(lang).write("%s <EOS> ".format(prelimTokenize(sentence.text)))
+                  langToFile(lang).write("%s <EOS> ".format(sentence.text))
               }
               langToFile(lang).write("\n")
           }
