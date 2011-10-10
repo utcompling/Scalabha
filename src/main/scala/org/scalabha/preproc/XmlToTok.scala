@@ -9,6 +9,7 @@ import scala.sys.process._
 import org.xml.sax.SAXParseException
 import org.scalabha.util.FileUtils
 import java.util.regex.Pattern
+import util.matching.Regex
 
 object XmlToTok {
 
@@ -20,86 +21,90 @@ object XmlToTok {
     new BufferedWriter(new OutputStreamWriter(System.err)))
 
   def transformFile(inputFile: File, textOutputFileNameStripped: String,
-                    tokenOutputFileNameStripped: String, log: SimpleLogger) {
-    log.debug("Started file transform\n")
-    assert(inputFile.isFile, "input file is not a file.")
-    // the output files should be ready to have ".LANG.txt" or ".LANG.tok" appended
-    assert(!tokenOutputFileNameStripped.endsWith(".xml") && !textOutputFileNameStripped.endsWith(".xml"))
+                    tokenOutputFileNameStripped: String, skipFiles: String, log: SimpleLogger) {
+    if (inputFile.getName.matches(skipFiles)) {
+      log.info("File name %s matches skip regex: %s. Skipping...\n".format(inputFile.getName, skipFiles))
+    } else {
+      log.debug("Started file transform\n")
+      assert(inputFile.isFile, "input file is not a file.")
+      // the output files should be ready to have ".LANG.txt" or ".LANG.tok" appended
+      assert(!tokenOutputFileNameStripped.endsWith(".xml") && !textOutputFileNameStripped.endsWith(".xml"))
 
-    //ensure the appropriate parent dirs exist
+      //ensure the appropriate parent dirs exist
 
-    log.debug("Making parent directories\n")
-    new File(FileUtils.getPathParent(textOutputFileNameStripped)).mkdirs()
-    new File(FileUtils.getPathParent(tokenOutputFileNameStripped)).mkdirs()
+      log.debug("Making parent directories\n")
+      new File(FileUtils.getPathParent(textOutputFileNameStripped)).mkdirs()
+      new File(FileUtils.getPathParent(tokenOutputFileNameStripped)).mkdirs()
 
-    log.info("%s -> %s.*.txt -> %s.*.tok\n".format(inputFile.getPath, textOutputFileNameStripped, tokenOutputFileNameStripped))
+      log.info("%s -> %s.*.txt -> %s.*.tok\n".format(inputFile.getPath, textOutputFileNameStripped, tokenOutputFileNameStripped))
 
-    try {
-      log.debug("Loading XML\n")
-      val xmlTree = XML.load(new InputStreamReader(new FileInputStream(inputFile), "UTF-8")) \ "file"
-      val languages = (xmlTree \ "@languages").text.split(",").toList
-      log.debug("Opening output streams\n")
-      val defaultTextOutputWriter = new OutputStreamWriter(new FileOutputStream(
-        new File(textOutputFileNameStripped + ".unknownLanguage.txt")), "UTF-8")
-      val langToFile: Map[String, OutputStreamWriter] =
-        (for (lang <- languages) yield (lang,
-          new OutputStreamWriter(new FileOutputStream(
-            new File("%s.%s.txt".format(textOutputFileNameStripped, lang))), "UTF-8")
-          )).toMap.withDefault(x => defaultTextOutputWriter)
+      try {
+        log.debug("Loading XML\n")
+        val xmlTree = XML.load(new InputStreamReader(new FileInputStream(inputFile), "UTF-8")) \ "file"
+        val languages = (xmlTree \ "@languages").text.split(",").toList
+        log.debug("Opening output streams\n")
+        val defaultTextOutputWriter = new OutputStreamWriter(new FileOutputStream(
+          new File(textOutputFileNameStripped + ".unknownLanguage.txt")), "UTF-8")
+        val langToFile: Map[String, OutputStreamWriter] =
+          (for (lang <- languages) yield (lang,
+            new OutputStreamWriter(new FileOutputStream(
+              new File("%s.%s.txt".format(textOutputFileNameStripped, lang))), "UTF-8")
+            )).toMap.withDefault(x => defaultTextOutputWriter)
 
-      log.debug("Parsing XML\n")
-      var flatTextNodes = false
-      var textSentenceNodes = false
-      xmlTree \\ "align" foreach {
-        (align) =>
-          align \ "text" foreach {
-            (text) =>
-              val lang = (text \ "@langid").text
+        log.debug("Parsing XML\n")
+        var flatTextNodes = false
+        var textSentenceNodes = false
+        xmlTree \\ "align" foreach {
+          (align) =>
+            align \ "text" foreach {
+              (text) =>
+                val lang = (text \ "@langid").text
 
-              // - <text><s>blah.</s><s>blah.</s></text>
-              text \ "s" foreach {
-                (sentence) =>
-                  langToFile(lang).write("%s <EOS> ".format(sentence.text))
-              }
-              langToFile(lang).write("\n")
-          }
+                // - <text><s>blah.</s><s>blah.</s></text>
+                text \ "s" foreach {
+                  (sentence) =>
+                    langToFile(lang).write("%s <EOS> ".format(sentence.text))
+                }
+                langToFile(lang).write("\n")
+            }
 
+        }
+        if (flatTextNodes) {
+          log.warn("Detected flat text nodes. The <text><sentence/></text> is recommended.\n")
+        }
+        if (flatTextNodes && textSentenceNodes) {
+          log.warn("Detected both flat text nodes and <text><sentence/></text> hierarchy. Mixing these styles is _not_ recommended.\n")
+        }
+
+        log.debug("Closing streams\n")
+        for ((name, ostream) <- langToFile) {
+          ostream.close()
+        }
+        defaultTextOutputWriter.close()
+
+        log.debug("Piping text to tokenizer\n")
+        for (lang <- languages) {
+          val opt = (if (Set("eng", "mlg", "kin", "fra").contains(lang)) " -" + lang else "")
+          (new File("%s.%s.txt".format(textOutputFileNameStripped, lang))) #>
+            ("normalize-text-standalone.pl" + opt) #|
+            ("tokenize-text.pl" + opt) #>
+            (new File("%s.%s.tok".format(tokenOutputFileNameStripped, lang))) !
+        }
+      } catch {
+        case e: SAXParseException =>
+          log.err("Malformed XML in input file: %s, column: %s, line: %s, message: %s\n".format(inputFile.getAbsolutePath,
+            e.getColumnNumber, e.getLineNumber, e.getMessage))
+          return
+        case e: Exception =>
+          log.err("Caught an error: %s".format(e.getMessage))
+          return
       }
-      if (flatTextNodes) {
-        log.warn("Detected flat text nodes. The <text><sentence/></text> is recommended.\n")
-      }
-      if (flatTextNodes && textSentenceNodes) {
-        log.warn("Detected both flat text nodes and <text><sentence/></text> hierarchy. Mixing these styles is _not_ recommended.\n")
-      }
-
-      log.debug("Closing streams\n")
-      for ((name, ostream) <- langToFile) {
-        ostream.close()
-      }
-      defaultTextOutputWriter.close()
-
-      log.debug("Piping text to tokenizer\n")
-      for (lang <- languages) {
-        val opt = (if (Set("eng", "mlg", "kin", "fra").contains(lang)) " -" + lang else "")
-        (new File("%s.%s.txt".format(textOutputFileNameStripped, lang))) #>
-          ("normalize-text-standalone.pl" + opt) #|
-          ("tokenize-text.pl" + opt) #>
-          (new File("%s.%s.tok".format(tokenOutputFileNameStripped, lang))) !
-      }
-    } catch {
-      case e: SAXParseException =>
-        log.err("Malformed XML in input file: %s, column: %s, line: %s, message: %s\n".format(inputFile.getAbsolutePath,
-          e.getColumnNumber, e.getLineNumber, e.getMessage))
-        return
-      case e: Exception =>
-        log.err("Caught an error: %s".format(e.getMessage))
-        return
+      log.debug("Exiting file transform\n")
     }
-    log.debug("Exiting file transform\n")
   }
 
   def transformDirectory(inputDirectory: File, newSubdirectories: String,
-                         textOutputOption: Option[String], tokenOutputOption: Option[String], log: SimpleLogger) {
+                         textOutputOption: Option[String], tokenOutputOption: Option[String], skipFiles: String, log: SimpleLogger) {
     for (inputFile <- inputDirectory.listFiles if (inputFile.isFile && inputFile.getName.endsWith("xml"))) {
       val textOutputFileNameStripped = FileUtils.getStrippedOutputFileName(
         (if (textOutputOption.isDefined) textOutputOption.get else inputFile.getParent),
@@ -107,18 +112,18 @@ object XmlToTok {
       val tokenOutputFileNameStripped = FileUtils.getStrippedOutputFileName(
         (if (tokenOutputOption.isDefined) tokenOutputOption.get else inputFile.getParent),
         newSubdirectories, inputFile.getName.replaceFirst(".xml$", ""))
-      transformFile(inputFile, textOutputFileNameStripped, tokenOutputFileNameStripped, log)
+      transformFile(inputFile, textOutputFileNameStripped, tokenOutputFileNameStripped, skipFiles, log)
     }
   }
 
   def transformDirectoryRecursive(inputDirectory: File, newSubdirectories: String,
-                                  textOutputOption: Option[String], tokenOutputOption: Option[String], log: SimpleLogger) {
+                                  textOutputOption: Option[String], tokenOutputOption: Option[String], skipFiles: String, log: SimpleLogger) {
     // first, transform all the xml files at the current level
-    transformDirectory(inputDirectory, newSubdirectories, textOutputOption, tokenOutputOption, log)
+    transformDirectory(inputDirectory, newSubdirectories, textOutputOption, tokenOutputOption, skipFiles, log)
     // then do the same for all the child directories
     for (inputSubDirectory <- inputDirectory.listFiles() if (inputSubDirectory.isDirectory)) {
       transformDirectoryRecursive(inputSubDirectory, newSubdirectories + FileUtils.FILE_SEPARATOR + inputSubDirectory.getName,
-        textOutputOption, tokenOutputOption, log)
+        textOutputOption, tokenOutputOption, skipFiles, log)
     }
   }
 
@@ -148,7 +153,7 @@ object XmlToTok {
           new BufferedWriter(new OutputStreamWriter(System.err)))
 
       val skipFiles =
-        if (skipRegex.value.isDefined) skipRegex.value.get.r else "".r
+        if (skipRegex.value.isDefined) skipRegex.value.get else ""
 
       if (input.value.isDefined) {
         val fileName = input.value.get
@@ -161,12 +166,12 @@ object XmlToTok {
           log.debug("Main: doing recursive option\n")
           // then recursively descend and transform all files
           // treat the output files as directories and reconstruct the descent tree as a tree rooted there.
-          transformDirectoryRecursive(inputFile, "", textOutput.value, output.value, log)
+          transformDirectoryRecursive(inputFile, "", textOutput.value, output.value, skipFiles, log)
         } else if (inputFile.isDirectory) {
           log.debug("Main: doing directory option\n")
           // then just loop over all the files in inputFile
           // treat the output files as directories and create all the output files there.
-          transformDirectory(inputFile, "", textOutput.value, output.value, log)
+          transformDirectory(inputFile, "", textOutput.value, output.value, skipFiles, log)
         } else {
           log.debug("Main: doing single file option\n")
 
@@ -178,7 +183,7 @@ object XmlToTok {
           val tokenOutputFileNameStripped = FileUtils.getStrippedOutputFileName(
             (if (output.value.isDefined) output.value.get else inputFile.getParent), "",
             inputFile.getName.replaceFirst(".xml$", ""))
-          transformFile(inputFile, textOutputFileNameStripped, tokenOutputFileNameStripped, log)
+          transformFile(inputFile, textOutputFileNameStripped, tokenOutputFileNameStripped, skipFiles, log)
         }
 
       }

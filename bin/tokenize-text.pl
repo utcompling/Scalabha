@@ -255,5 +255,15 @@ while(<>) {
    $line =~ s/\s+/ /g;
    $line =~ s/^\s+//;
    $line =~ s/\s+$//;
+
+  # JTR - fixing up issues for the muri project
+  $line =~ s/\(/-LRB-/g; #JTR - need to strip parens because we use them in the trees
+  $line =~ s/\)/-RRB-/g;
+  $line =~ s/(\.\.+)([^\@\s\.])/$1\@ $2/g; # JTR addressing the issue noted by Ulf re. ellipses not being split
+  $line =~ s/([^\@\s\.])(\.\.+)/$1 \@$2/g; # JTR addressing the issue noted by Ulf re. ellipses not being split
+  $line =~ s/([^\@\s.?!])([.?!]+)/$1 $2/g; # JTR weirdly, there is sometimes word?...otherword
+  $line =~ s/([.?!]+)([^\@\s.?!])/$1 $2/g; # JTR weirdly, there is sometimes word?otherword
+
+
    print "$line\n";
 }
