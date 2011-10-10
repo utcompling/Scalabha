@@ -61,7 +61,7 @@ object Tokenizer {
 
       val input_file =
         (if (input.value.isDefined) {
-          scala.io.Source.fromFile(input.value.get, "ISO-8859-1")
+          scala.io.Source.fromFile(input.value.get, "UTF-8")
         } else {
           scala.io.Source.stdin
         }).getLines()

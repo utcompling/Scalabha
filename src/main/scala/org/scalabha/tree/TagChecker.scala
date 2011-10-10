@@ -158,7 +158,7 @@ object TagChecker {
 
       val input_file =
         (if (input.value.isDefined) {
-          scala.io.Source.fromFile(input.value.get, "ISO-8859-1")
+          scala.io.Source.fromFile(input.value.get, "UTF-8")
         } else {
           scala.io.Source.stdin
         }).getLines()
@@ -167,7 +167,7 @@ object TagChecker {
         log.info("comparing tokens from %s to those in the trees in %s\n")
         val inputList = input_file.toList
         println(
-          checkTokens(inputList, scala.io.Source.fromFile(tokens.value.get, "ISO-8859-1").getLines().toList).mkString("\n")
+          checkTokens(inputList, scala.io.Source.fromFile(tokens.value.get, "UTF-8").getLines().toList).mkString("\n")
         )
         log.summary("Tag stats:\n\t%s\n".format(spprintRepr(apply(inputList.iterator).toMap, "\n\t"))
         )
@@ -180,7 +180,7 @@ object TagChecker {
                 apply(input_file).toMap, "\n\t")
             ))
           case Some(other_file_name) =>
-            val other_file = scala.io.Source.fromFile(other.value.get, "ISO-8859-1").getLines()
+            val other_file = scala.io.Source.fromFile(other.value.get, "UTF-8").getLines()
             log.summary("Tag stats:\n\t%s\n".format(
               spprintRepr(
                 apply(input_file, other_file), "\n\t")
