@@ -1,8 +1,41 @@
 #!/usr/bin/perl -w
 
-# Author: Ulf Hermjakob
-# Usage: tokenize-text.pl [-{eng|fra|kin|mlg}] [-ssp] < IN > OUT
-# Last updated: Sept. 9, 2011
+use File::Basename;
+
+sub print_version {
+   print STDERR<<END_VERSION;
+Script $script_name
+   Version 1.1 (October 5, 2011)
+   Author: Ulf Hermjakob - USC Information Sciences Institute
+
+   Version 1.1: Improved colon-splitting, e.g. for M.R.:
+   Version 1.1: Added help/usage/version options
+END_VERSION
+;
+}
+
+sub print_usage {
+   print STDERR<<END_USAGE;
+
+Usage: $script_name [--{$language_code_s}] {other options} < IN > OUT
+
+Input: text to be tokenized (via STDIN)
+   Encoding: UTF-8
+   Recommended: normalize punctuation, whitespaces etc. in input text before applying $script_name,
+	        for example with script normalize-text.pl/normalize-text-standalone.pl
+   Options: --{$language_code_s}     # language code
+            --{h|help|usage}
+	    --{v|version}
+	    --ssp                   # sentence split prep
+	    --sso                   # sentence split only
+Output: tokenized text (via STDOUT)
+   Recommended: check output, e.g. with script wildebeest.pl
+
+Example: echo "Hello world." | tokenize-text.pl --eng
+END_USAGE
+;
+}
+
 
 $title_abbr_mc = "Adm|Amb|Brig|Capt|Col|Cpt|Dj|Dr|Eng|Fr|Gen|Gov|Hon|Ing|Ir|Jen|Jr|Lt|Maj|Messrs|Mr|Mrs|Ms|Mt|Pres|Pr|Prof|Rep|Rev|R\xC3\xA9v|Sen|Sgt|Spt|Sr|St|Sup|Supt";
 $title_abbr_uc = uc $title_abbr_mc;
@@ -14,13 +47,21 @@ $token_only_field = "";
 $langcode3 = "";
 $snt_split_prep_p = 0;
 $snt_split_only_p = 0;
+$help_p = 0;
+$version_p = 0;
+$language_code_s = "eng|fra|kin|mlg";
+$script_name = basename($0);
 
 while (@ARGV) {
    $arg = shift @ARGV;
-   if ($arg =~ /^-*(eng|fra|kin|mlg)$/i) {
+   if ($arg =~ /^-*($language_code_s)$/i) {
       $langcode3 = lc $arg;
       $langcode3 =~ s/^-*//;
       # print STDERR "Language code: $langcode3\n";
+   } elsif ($arg =~ /^-*(h|help|usage)$/) {
+      $help_p = 1;
+   } elsif ($arg =~ /^-*(v|version)$/) {
+      $version_p = 1;
    } elsif ($arg =~ /^-*ssp$/o) {
       $snt_split_prep_p = 1;
    } elsif ($arg =~ /^-*sso$/o) {
@@ -31,8 +72,13 @@ while (@ARGV) {
       # print STDERR "token_only_field: $token_only_field\n";
    } else {
       print STDERR "Ignoring unrecognized argument $arg\n";
+      $help_p = 1;
    } 
 }
+
+&print_version if $version_p;
+&print_usage if $help_p;
+exit 1 if $version_p || $help_p;
 
 while(<>) {
    $line = $_;
@@ -59,10 +105,8 @@ while(<>) {
       # watch out for %20 etc. in URLs
       $line =~ s/(\d)(%|\xE2\x80\xB0|\xC2[\xB0\xBA][CF])([^0-9a-fA-F])/$1 $2$3/g; # percent, per mille, degree C, degree F
       $line =~ s/\b(n\xC2\xB0)(\d)/$1 $2/gi;         # n+degree ("number sign")
-      $line =~ s/([a-z0-9])(:) /$1 \@$2 /gi; # colon
+      $line =~ s/((?:[0-9a-z]|\xC3[\xA0-\xBF]|\xE1\xBB\xB3)[.]?)(:) /$1 \@$2 /gi; # colon    UPDATED for version 1.1. on 10/4/2011
       $line =~ s/('|\!|\?)(\.+) /$1 $2 /g;
-      $line =~ s/\(/ -LRB- /g; #JTR left paren
-      $line =~ s/\)/ -RRB- /g; #JTR right paren
 
       # English '
       $line =~ s/([a-z])('s)\b/$1 $2/gi;
