@@ -134,7 +134,7 @@ object TagChecker {
             case "" => "%d: pass".format(index)
             case x => "%d: %s".format(index, x)
           }
-        case _ => "%d: Fail"
+        case _ => "%d: Fail - couldn't parse tree. See parser log messages.".format(index)
       }
     }
 
