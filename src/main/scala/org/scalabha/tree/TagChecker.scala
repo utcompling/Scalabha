@@ -107,7 +107,7 @@ object TagChecker {
 
   def checkTokensInLine(aList: List[String], bList: List[String]): String = {
     if (aList.length != bList.length) {
-      log.err("Lists should be the same length: %s %s\n".format(aList, bList))
+      //log.err("Lists should be the same length: %s %s\n".format(aList, bList))
       "Fail: %s is not the same length as %s".format(aList, bList)
     } else if (aList.length == 0) {
       ""
@@ -115,7 +115,7 @@ object TagChecker {
       val a :: as = aList
       val b :: bs = bList
       if (a != b) {
-        log.err("%s does not match %s\n".format(a, b))
+        //log.err("%s does not match %s\n".format(a, b))
         "Fail: \"%s\" does not match \"%s\"".format(a, b)
       } else {
         "" + checkTokensInLine(as, bs)
@@ -124,17 +124,17 @@ object TagChecker {
   }
 
   def checkTokens(infile: List[String], tokfile: List[String]): List[String] = {
-    for ((inTreeLine, tokLine) <- (infile zip tokfile).toList) yield {
+    for (((inTreeLine, tokLine),index) <- (infile zip tokfile).toList.zipWithIndex) yield {
       val inTree = Parser(inTreeLine, Parser.log)
       inTree match {
         case Some(root) =>
           val inTreeTokens: List[String] = root.getTokens
           val tokTokens = tokLine.replace("<EOS>", "").split("\\s+").toList
           checkTokensInLine(inTreeTokens, tokTokens) match {
-            case "" => "pass"
-            case x => x
+            case "" => "%d: pass".format(index)
+            case x => "%d: %s".format(index, x)
           }
-        case _ => "Fail"
+        case _ => "%d: Fail"
       }
     }
 
