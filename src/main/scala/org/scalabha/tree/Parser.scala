@@ -42,6 +42,9 @@ object Parser {
             }
           }
           val cutoff = rest2.indexOf(')')
+          if (children.length == 0 || (children.length > 0 && children.map( _.isInstanceOf[Value] ).reduce(_ || _) && children.length != 1)){
+            log.err("A leaf node may only contain a tag and a token. I.e., (TAG token). Tree node %s fails this test.\n".format(Node(name, children).getCanonicalString))
+          }
           log.info("%sresult: %s,\"%s\"\n".format(prefix, Node(name, children), rest2.substring(cutoff + 1)))
           return Some((Node(name, children), rest2.substring(cutoff + 1)))
         } else {
