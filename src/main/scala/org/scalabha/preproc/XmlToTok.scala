@@ -85,10 +85,7 @@ object XmlToTok {
         log.debug("Piping text to tokenizer\n")
         for (lang <- languages) {
           val opt = (if (Set("eng", "mlg", "kin", "fra").contains(lang)) " -" + lang else "")
-          (new File("%s.%s.txt".format(textOutputFileNameStripped, lang))) #>
-            ("normalize-text-standalone.pl" + opt) #|
-            ("tokenize-text.pl" + opt) #>
-            (new File("%s.%s.tok".format(tokenOutputFileNameStripped, lang))) !
+          (new File("%s.%s.txt".format(textOutputFileNameStripped, lang))) #> ("normalize-text-standalone.pl" + opt) #| ("tokenize-text.pl" + opt) #> (new File("%s.%s.tok".format(tokenOutputFileNameStripped, lang))) !
         }
       } catch {
         case e: SAXParseException =>

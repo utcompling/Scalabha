@@ -115,8 +115,14 @@ object TagChecker {
       val a :: as = aList
       val b :: bs = bList
       if (a != b) {
-        //log.err("%s does not match %s\n".format(a, b))
-        "Fail: \"%s\" does not match \"%s\"".format(a, b)
+        if ((a == "-LRB-" && b == "(")||(b == "-LRB-" && a == "(")) {
+          "" + checkTokensInLine(as, bs)
+        } else if ((a == "-RRB-" && b == ")") || (b == "-RRB-" && a == ")")) {
+          "" + checkTokensInLine(as, bs)
+        } else {
+          //log.err("%s does not match %s\n".format(a, b))
+          "Fail: \"%s\" does not match \"%s\"".format(a, b)
+        }
       } else {
         "" + checkTokensInLine(as, bs)
       }
@@ -124,7 +130,7 @@ object TagChecker {
   }
 
   def checkTokens(infile: List[String], tokfile: List[String]): List[String] = {
-    for (((inTreeLine, tokLine),index) <- (infile zip tokfile).toList.zipWithIndex) yield {
+    for (((inTreeLine, tokLine), index) <- (infile zip tokfile).toList.zipWithIndex) yield {
       val inTree = Parser(inTreeLine, Parser.log)
       inTree match {
         case Some(root) =>

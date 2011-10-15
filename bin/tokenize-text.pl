@@ -5,9 +5,10 @@ use File::Basename;
 sub print_version {
    print STDERR<<END_VERSION;
 Script $script_name
-   Version 1.1 (October 5, 2011)
+   Version 1.2 (October 13, 2011)
    Author: Ulf Hermjakob - USC Information Sciences Institute
 
+   Version 1.2: Recognize special <EOS> token as end of sentence.
    Version 1.1: Improved colon-splitting, e.g. for M.R.:
    Version 1.1: Added help/usage/version options
 END_VERSION
@@ -214,6 +215,7 @@ while(<>) {
       $line =~ s/(\xC3[\xA0\xA8\xAC\xB2\xB4]|\xE1\xBB\xB3)\. /$1 . /gi; # Malagasy vowels
       $line =~ s/([aeio][bdfghjklmnprstvz][aeio]?[aeioy])\. /$1 . /g; # Malagasy
       $line =~ s/ (\d+|(?:[a-z]|\xC3[\xA0-\xBF]|\xE1\xBB\xB3)+)\. *((?:(?:"|\@"|\xC2\xBB|\xE2\x80[\x99\x9D]) )?(?:|(?:&nbt;)?::.*))$/ $1 . $2/i;
+      $line =~ s/ (\d+|(?:[a-z]|\xC3[\xA0-\xBF]|\xE1\xBB\xB3)+)\. *((?:(?:"|\@"|\xC2\xBB|\xE2\x80[\x99\x9D]) )?(?:<EOS>|(?:&nbt;)?::))/ $1 . $2/i;
       $line =~ s/ ((?:19|20)\d\d)\. ((?:(?:"|\@"|\xC2\xAB|\xC2\xBB|\xE2\x80[\x98\x99\x9C\x9D]) )?[A-Z])/ $1 . $2/g;
       $line =~ s/(\S) (-?\d+|\d+[-\/:]\d+|\d{1,3}\.\d{1,3}|\d{1,3}(?:\.\d{3,3})+|\d{1,3},\d{1,3}|\d{1,3}(?:,\d{3,3})+|(?:\d\d?-)?\d\d?\/\d\d?(?:\/\d\d\d\d)?|[a-zA-Z]\d+)\. ((?:(?:"|\@"|\xC2\xAB|\xC2\xBB|\xE2\x80[\x98\x99\x9C\x9D]) )?(?:[A-Z]|::|&nbt;::))/$1 $2 . $3/g;
       $line =~ s/(\S) (\S+[aeiou]|[a-z]\S+[a-z]|[A-Z]{2,}|frw|Frw|[A-Z]\S*[a-z][A-Za-z\x80-\xFF])\. ((?:(?:"|\(|\)|\@"|\xC2\xAB|\xC2\xBB|\xE2\x80[\x98\x99\x9C\x9D]) )?(?:|[A-Z]|::|&nbt;::))/$1 $2 . $3/g;
@@ -255,11 +257,5 @@ while(<>) {
    $line =~ s/\s+/ /g;
    $line =~ s/^\s+//;
    $line =~ s/\s+$//;
-
-  # JTR - fixing up issues for the muri project
-  $line =~ s/\(/-LRB-/g; #JTR - need to strip parens because we use them in the trees
-  $line =~ s/\)/-RRB-/g;
-
-
    print "$line\n";
 }
