@@ -26,43 +26,43 @@ object Comparer {
     val bool = true
   }
 
-  case class Fail[T](left: T, right: T) extends ComparisonResult {
+  case class Fail[T](index: Int, left: T, right: T) extends ComparisonResult {
     override def toString(): String = {
-      "FAIL: <<%s>>!=<<%s>>".format(left, right)
+      "FAIL: Line %d <<%s>>!=<<%s>>".format(index, left, right)
     }
     val bool = false
   }
 
-  def apply(left: TreeNode, right: TreeNode): ComparisonResult = {
+  def apply(index: Int, left: TreeNode, right: TreeNode): ComparisonResult = {
     if (left.compareStructure(right))
       Success()
     else
-      Fail[TreeNode](left, right)
+      Fail[TreeNode](index, left, right)
   }
 
-  def apply(left: String, right: String): ComparisonResult = {
-    val (leftOption, rightOption) = (Parser(left, leftLog), Parser(right, rightLog))
+  def apply(index: Int, left: String, right: String): ComparisonResult = {
+    val (leftOption, rightOption) = (Parser(index, left, leftLog), Parser(index, right, rightLog))
     if (
       if (leftOption.isDefined && rightOption.isDefined) {
-        apply(leftOption.get, rightOption.get) match {
+        apply(index, leftOption.get, rightOption.get) match {
           case Success() =>
             true
           case _ =>
             false
         }
       } else if (leftOption.isDefined) {
-        log.err("Could not parse RIGHT line:<<%s>>".format(right))
+        log.err("Line %d: Could not parse RIGHT line:<<%s>>".format(index, right))
         false
       } else if (rightOption.isDefined) {
-        log.err("Could not parse LEFT line:<<%s>>".format(right))
+        log.err("Line %d: Could not parse LEFT line:<<%s>>".format(index, right))
         false
       } else {
-        log.err("Unable to parse lines: left:<<%s>> right:<<%s>>\n".format(left, right))
+        log.err("Line %d: Unable to parse lines: left:<<%s>> right:<<%s>>\n".format(index, left, right))
         false
       })
       Success()
     else
-      Fail[String](left, right)
+      Fail[String](index, left, right)
   }
 
   def burnRemainder(toRead: Iterator[String], log: SimpleLogger) {
@@ -93,8 +93,8 @@ object Comparer {
           parser.usage()
         })
 
-      for ((leftLine, rightLine) <- (left_file zip right_file)) {
-        println(Comparer(leftLine, rightLine))
+      for (((leftLine, rightLine), index) <- (left_file zip right_file).zipWithIndex) {
+        println(Comparer(index, leftLine, rightLine))
       }
       burnRemainder(left_file, leftLog)
       burnRemainder(right_file, rightLog)

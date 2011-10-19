@@ -65,15 +65,15 @@ object TagChecker {
 
   def apply(left: Iterator[String], right: Iterator[String]): Map[String, Int] = {
     var resultCounts = Map[String, Int]()
-    for ((leftLine, rightLine) <- (left zip right)) {
-      Parser(leftLine, Parser.log) match {
+    for (((leftLine, rightLine), index) <- (left zip right).zipWithIndex) {
+      Parser(index, leftLine, Parser.log) match {
         case Some(leftTree: TreeNode) =>
-          Parser(rightLine, Parser.log) match {
+          Parser(index, rightLine, Parser.log) match {
             case Some(rightTree: TreeNode) =>
               if (leftTree.compareStructure(rightTree))
                 resultCounts = combineMaps[String, Int](resultCounts.toMap, leftTree.getTagCounts().toMap, (a: Int, b: Int) => (a + b))
               else
-                log.err("the structure of <<%s>> does not the match strucure of <<%s>>\n".format(leftLine, rightLine))
+                log.err("Line %d: the structure of <<%s>> does not the match strucure of <<%s>>\n".format(index, leftLine, rightLine))
             case None => ()
           }
         case None => ()
@@ -91,8 +91,8 @@ object TagChecker {
   def apply(list: Iterator[String]): HashMap[String, Int] = {
     val tagCounts = HashMap[String, Int]()
 
-    for (line: String <- list) {
-      val tree = Parser(line, Parser.log)
+    for ((line, index) <- list.zipWithIndex) {
+      val tree = Parser(index, line, Parser.log)
       if (tree.isDefined) {
         for ((key, value) <- tree.get.getTagCounts()) {
           if (tagCounts.contains(key))
@@ -108,7 +108,7 @@ object TagChecker {
   def checkTokensInLine(aList: List[String], bList: List[String]): String = {
     if (aList.length != bList.length) {
       //log.err("Lists should be the same length: %s %s\n".format(aList, bList))
-      "Fail: %s is not the same length as %s".format(aList, bList)
+      "Fail: \n\ttree: %s is not the same length as \n\ttok:  %s".format(aList, bList)
     } else if (aList.length == 0) {
       ""
     } else {
@@ -131,7 +131,7 @@ object TagChecker {
 
   def checkTokens(infile: List[String], tokfile: List[String]): List[String] = {
     for (((inTreeLine, tokLine), index) <- (infile zip tokfile).toList.zipWithIndex) yield {
-      val inTree = Parser(inTreeLine, Parser.log)
+      val inTree = Parser(index, inTreeLine, Parser.log)
       inTree match {
         case Some(root) =>
           val inTreeTokens: List[String] = root.getTokens
