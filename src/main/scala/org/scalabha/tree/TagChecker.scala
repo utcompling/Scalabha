@@ -39,7 +39,7 @@ object TagChecker {
     val bool = false
   }
 
-  def spprintRepr(map: Map[String,Int], join: String): String = {
+  def spprintRepr(map: Map[String, Int], join: String): String = {
     val regex = "[^(]+\\((.*)\\)".r
     val regex(string) = map.toList.sorted.toString
     string.replace(", ", join)
@@ -83,7 +83,7 @@ object TagChecker {
       log.err("Leftover line <<%s>> in input inputFile\n".format(line))
     }
     for (line <- right) {
-      log.err("Leftover line <<%s>> in other inputFile\n".format(  line))
+      log.err("Leftover line <<%s>> in other inputFile\n".format(line))
     }
     resultCounts
   }
@@ -105,7 +105,56 @@ object TagChecker {
     tagCounts
   }
 
+  def checkTokensInLine(aList: List[String], bList: List[String]): String = {
+    if (aList.length != bList.length) {
+      //log.err("Lists should be the same length: %s %s\n".format(aList, bList))
+      "Fail: %s is not the same length as %s".format(aList, bList)
+    } else if (aList.length == 0) {
+      ""
+    } else {
+      val a :: as = aList
+      val b :: bs = bList
+      if (a != b) {
+        if ((a == "-LRB-" && b == "(")||(b == "-LRB-" && a == "(")) {
+          "" + checkTokensInLine(as, bs)
+        } else if ((a == "-RRB-" && b == ")") || (b == "-RRB-" && a == ")")) {
+          "" + checkTokensInLine(as, bs)
+        } else {
+          //log.err("%s does not match %s\n".format(a, b))
+          "Fail: \"%s\" does not match \"%s\"".format(a, b)
+        }
+      } else {
+        "" + checkTokensInLine(as, bs)
+      }
+    }
+  }
+
+  def checkTokens(infile: List[String], tokfile: List[String]): List[String] = {
+    for (((inTreeLine, tokLine), index) <- (infile zip tokfile).toList.zipWithIndex) yield {
+      val inTree = Parser(inTreeLine, Parser.log)
+      inTree match {
+        case Some(root) =>
+          val inTreeTokens: List[String] = root.getTokens
+          val tokTokens = tokLine.replace("<EOS>", "").split("\\s+").toList
+          checkTokensInLine(inTreeTokens, tokTokens) match {
+            case "" => "%d: pass".format(index)
+            case x => "%d: %s".format(index, x)
+          }
+        case _ => "%d: Fail - couldn't parse tree. See parser log messages.".format(index)
+      }
+    }
+
+
+  }
+
   def main(args: Array[String]) {
+    val parser = new ArgotParser("org.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
+    val help = parser.flag[Boolean](List("h", "help"), "print help")
+    val input = parser.option[String](List("i", "input"), "FILE", "input inputFile in which to check tags")
+    val tokens = parser.option[String](List("tok"), "FILE", "tags to check")
+    val other = parser.option[String](List("other"), "FILE", "(optional) other inputFile to compare against the input inputFile")
+
+
     try {
       parser.parse(args)
 
@@ -120,19 +169,32 @@ object TagChecker {
           scala.io.Source.stdin
         }).getLines()
 
-      other.value match {
-        case None =>
-          log.summary("Tag stats:\n\t%s\n".format(
-            spprintRepr(
-              apply(input_file).toMap, "\n\t")
-          ))
-        case Some(other_file_name) =>
-          val other_file = scala.io.Source.fromFile(other.value.get, "UTF-8").getLines()
-          log.summary("Tag stats:\n\t%s\n".format(
-            spprintRepr(
-              apply(input_file, other_file), "\n\t")
-          ))
+      if (tokens.value.isDefined) {
+        log.info("comparing tokens from %s to those in the trees in %s\n")
+        val inputList = input_file.toList
+        println(
+          checkTokens(inputList, scala.io.Source.fromFile(tokens.value.get, "UTF-8").getLines().toList).mkString("\n")
+        )
+        log.summary("Tag stats:\n\t%s\n".format(spprintRepr(apply(inputList.iterator).toMap, "\n\t"))
+        )
+      } else {
+
+        other.value match {
+          case None =>
+            log.summary("Tag stats:\n\t%s\n".format(
+              spprintRepr(
+                apply(input_file).toMap, "\n\t")
+            ))
+          case Some(other_file_name) =>
+            val other_file = scala.io.Source.fromFile(other.value.get, "UTF-8").getLines()
+            log.summary("Tag stats:\n\t%s\n".format(
+              spprintRepr(
+                apply(input_file, other_file), "\n\t")
+            ))
+        }
       }
+      log.summary("Warnings,Errors: %s\n".format(log.getStats()))
+      Parser.log.summary("Warnings,Errors: %s\n".format(Parser.log.getStats()))
 
 
     } catch {

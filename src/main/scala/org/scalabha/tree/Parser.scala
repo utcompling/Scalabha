@@ -16,10 +16,10 @@ object Parser {
   val log = new SimpleLogger("org.scalabha.tree.Parser", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
   val noLog = new SimpleLogger("org.scalabha.tree.Parser", SimpleLogger.NONE, new BufferedWriter(new OutputStreamWriter(System.err)))
 
-  def apply(line: String, prefix: String, log:SimpleLogger): Option[(TreeNode, String)] = {
+  def apply(line: String, prefix: String, log: SimpleLogger): Option[(TreeNode, String)] = {
     log.info("%sparsing:<<%s>>\n".format(prefix, line))
-    val regex = """\s*(\(?)\s*([^\s)]+)(.*)""".r
-
+    val regex = """\s*(\(?)\s*([^\s)(]+)\s*(.*)""".r
+//    if (line.matches("""\s*(\(?)\s*([^\s)(]+)\s*(.*)"""))
     line match {
       case regex(open, sym, rest) =>
         if (open != "") {
@@ -42,6 +42,9 @@ object Parser {
             }
           }
           val cutoff = rest2.indexOf(')')
+          if (children.length == 0 || (children.length > 0 && children.map( _.isInstanceOf[Value] ).reduce(_ || _) && children.length != 1)){
+            log.err("A leaf node may only contain a tag and a token. I.e., (TAG token). Tree node %s fails this test.\n".format(Node(name, children).getCanonicalString))
+          }
           log.info("%sresult: %s,\"%s\"\n".format(prefix, Node(name, children), rest2.substring(cutoff + 1)))
           return Some((Node(name, children), rest2.substring(cutoff + 1)))
         } else {
@@ -55,18 +58,23 @@ object Parser {
     }
   }
 
-  def apply(line: String, log:SimpleLogger): Option[TreeNode] = {
+  def apply(line: String, log: SimpleLogger): Option[TreeNode] = {
     apply(line, "", log) match {
       case Some((tree, "")) =>
         tree match {
-          case Node(_,_) => ()
+          case Node(_, _) => ()
           case _ =>
             log.warn("Top-level element is not a tree:<<%s>>\n".format(line))
         }
         Some(tree)
       case Some((tree, leftover)) =>
-        log.err("Malformed tree:<<%s>>\tleftover text:<<%s>>\n".format(line, leftover))
-        None
+        if (leftover.matches("\\s+")) {
+          log.warn("Please delete the extra whitespace found at the end of this line: <<%s>>\n".format(line))
+          Some(tree)
+        } else {
+          log.err("Malformed tree:<<%s>>\tleftover text:<<%s>>\n".format(line, leftover))
+          None
+        }
       case None =>
         None
     }

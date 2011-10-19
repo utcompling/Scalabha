@@ -35,6 +35,8 @@ Include --help with any option for more information
 EOF
 }
 
+CLEANUP=0
+
 if [ $CMD = 'build' ]; then
 
     if test -f ~/.sbtconfig; then
@@ -42,19 +44,41 @@ if [ $CMD = 'build' ]; then
     fi
     java -Dfile.encoding=UTF8 -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m ${SBT_OPTS} -jar $SCALABHA_DIR/bin/sbt-launch-*.jar "$@"
 
+elif [ $CMD = 'viz' ]; then
+
+    head -n $(( $2 + 1 )) $1 | tail -n 1 | perl -p -e 's/\(/[/g' | perl -p -e 's/\)/]/g'
+
+elif [ $CMD = 'analyze-tokens' ]; then
+
+    wildebeest.pl < $1
+
 else 
 
     CLASS=
 
     case $CMD in
-        tokenize) CLASS=org.scalabha.preproc.XmlToTxt;;
-	run) CLASS=$1; shift;;
-	help) help; exit 1;;
-	*) echo "Unrecognized command: $CMD"; help; exit 1;;
+        tokenize) CLASS=org.scalabha.preproc.XmlToTok;;
+        tokenize-kin) CLASS="org.scalabha.preproc.XmlToTok -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/kin/tok";;
+        tokenize-mlg) CLASS="org.scalabha.preproc.XmlToTok -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/mlg/tok";;
+        geninfo) CLASS=org.scalabha.preproc.XmlToInfo;;
+        geninfo-kin) CLASS="org.scalabha.preproc.XmlToInfo -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -o $LDMT_MURI_DIR/data/phase2/kin/info";;
+        geninfo-mlg) CLASS="org.scalabha.preproc.XmlToInfo -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -o $LDMT_MURI_DIR/data/phase2/mlg/info";;
+        treeSeed) CLASS=org.scalabha.preproc.TokToTreeSeed;;
+        treeSeed-kin) CLASS="org.scalabha.preproc.TokToTreeSeed -R -i $LDMT_MURI_DIR/data/phase2/kin/tok -o $LDMT_MURI_DIR/data/phase2/kin/parsed";;
+        treeSeed-mlg) CLASS="org.scalabha.preproc.TokToTreeSeed -R -i $LDMT_MURI_DIR/data/phase2/mlg/tok -o $LDMT_MURI_DIR/data/phase2/mlg/parsed"
+        CLEANUP=1
+        ;;
+        check-tree) CLASS="org.scalabha.tree.TagChecker"
+        ;;
+        run) CLASS=$1; shift;;
+        help) help; exit 1;;
+        *) echo "Unrecognized command: $CMD"; help; exit 1;;
     esac
 
     $JAVA_COMMAND $CLASS $*
 
 fi
 
-
+if [[ $CLEANUP -eq 1 ]]; then
+    rm -r $LDMT_MURI_DIR/data/phase2/mlg/parsed/mlg_bible
+fi

@@ -9,6 +9,10 @@ abstract class TreeNode {
 
   def getTagMap(): HashMap[String, HashMap[List[String], Int]]
 
+  def getTokens(): List[String]
+
+  def getCanonicalString(): String
+
   def getTagCounts(): HashMap[String, Int] = {
     val result = HashMap[String, Int]()
     for ((nodeName, innerMap) <- getTagMap()) {
@@ -29,6 +33,11 @@ case class Value(name: String) extends TreeNode {
   }
 
   def getTagMap(): HashMap[String, HashMap[List[String], Int]] = HashMap[String, HashMap[List[String], Int]]()
+
+  def getTokens(): List[String] = List(name)
+
+  def getCanonicalString(): String = name
+
 }
 
 case class Node(name: String, children: List[TreeNode]) extends TreeNode {
@@ -43,6 +52,12 @@ case class Node(name: String, children: List[TreeNode]) extends TreeNode {
         }
     }
     result
+  }
+
+  def getTokens(): List[String] = {
+    (for (child <- children) yield {
+      child.getTokens()
+    }).toList.flatten
   }
 
   def getTagMap(): HashMap[String, HashMap[List[String], Int]] = {
@@ -68,4 +83,6 @@ case class Node(name: String, children: List[TreeNode]) extends TreeNode {
     }
     result
   }
+
+  def getCanonicalString(): String = "(%s %s)".format(name, (for (child <- children) yield child.getCanonicalString()).mkString(" "))
 }
