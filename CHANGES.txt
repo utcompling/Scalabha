@@ -1,0 +1,11 @@
+v 0.1.1
+-------
+ - Upgraded to SBT 0.11.0. (J. Baldridge)
+
+
+v 0.1.0
+-------
+ - Initial build system. (J. Baldridge)
+
+ - Code for working with Kinyarwanda and Malagasy data, including
+   tokenization and tree checking. (J. Roesler)

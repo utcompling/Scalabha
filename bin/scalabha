@@ -8,7 +8,7 @@ then
     JARS_MANAGED=`find $SCALABHA_DIR/lib_managed -name '*.jar' -print | tr '\n' ':'`
 fi
 
-SCALA_LIB="$SCALABHA_DIR/project/boot/scala-2.9.0/lib/scala-library.jar"
+SCALA_LIB="$HOME/boot/scala-2.9.1/lib/scala-library.jar"
 
 CP=$SCALABHA_DIR/target/classes:$JARS:$JARS_MANAGED:$SCALA_LIB:$CLASSPATH
 
@@ -40,7 +40,7 @@ if [ $CMD = 'build' ]; then
     if test -f ~/.sbtconfig; then
 	. ~/.sbtconfig
     fi
-    java -Dfile.encoding=UTF8 -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m ${SBT_OPTS} -jar $SCALABHA_DIR/bin/sbt-launch.jar "$@"
+    java -Dfile.encoding=UTF8 -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m ${SBT_OPTS} -jar $SCALABHA_DIR/bin/sbt-launch-*.jar "$@"
 
 else 
 
