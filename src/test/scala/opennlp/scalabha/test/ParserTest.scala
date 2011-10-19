@@ -21,7 +21,7 @@ class ParserTest extends FlatSpec with ShouldMatchers {
 
   for ((string, result) <- tests) {
     "\"" + string + "\"" should "parse to " + result.toString in {
-      assert(Parser(string) === result)
+      assert(Parser(0, string) === result)
     }
   }
 
