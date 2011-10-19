@@ -1,7 +1,7 @@
-package org.scalabha.test
+package opennlp.scalabha.test
 
-import org.scalabha.model._
-import org.scalabha.tree.Parser
+import opennlp.scalabha.model._
+import opennlp.scalabha.tree.Parser
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 

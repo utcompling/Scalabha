@@ -1,4 +1,4 @@
-package org.scalabha.model
+package opennlp.scalabha.model
 
 import collection.mutable.HashMap
 

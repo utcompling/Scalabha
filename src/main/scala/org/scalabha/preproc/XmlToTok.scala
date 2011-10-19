@@ -1,13 +1,13 @@
-package org.scalabha.preproc
+package opennlp.scalabha.preproc
 
 import scala.xml._
 import org.clapper.argot.ArgotParser._
-import org.scalabha.log.SimpleLogger
+import opennlp.scalabha.log.SimpleLogger
 import org.clapper.argot.{ArgotUsageException, ArgotParser, ArgotConverters}
 import java.io._
 import scala.sys.process._
 import org.xml.sax.SAXParseException
-import org.scalabha.util.FileUtils
+import opennlp.scalabha.util.FileUtils
 import java.util.regex.Pattern
 import util.matching.Regex
 
@@ -125,7 +125,7 @@ object XmlToTok {
   }
 
   def main(args: Array[String]) {
-    val parser = new ArgotParser("org.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
+    val parser = new ArgotParser("opennlp.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
     val help = parser.flag[Boolean](List("h", "help"), "print help")
     val input = parser.option[String](List("i", "input"), "FILE_OR_DIR", "Input inputFile or directory to tokenize")
     val textOutput = parser.option[String](List("m", "textOutput"), "FILE_OR_DIR", "Output location for intermediate text files. " +

@@ -1,4 +1,4 @@
-package org.scalabha.util
+package opennlp.scalabha.util
 
 object FileUtils {
   var FILE_SEPARATOR = System.getProperty("file.separator")

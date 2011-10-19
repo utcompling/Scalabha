@@ -1,20 +1,20 @@
-package org.scalabha.tree
+package opennlp.scalabha.tree
 
 import org.clapper.argot._
 import collection.mutable.MutableList
-import org.scalabha.model._
-import org.scalabha.log.SimpleLogger
+import opennlp.scalabha.model._
+import opennlp.scalabha.log.SimpleLogger
 import java.io.{OutputStreamWriter, BufferedWriter}
 
 object Parser {
 
   import ArgotConverters._
 
-  val parser = new ArgotParser("org.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
+  val parser = new ArgotParser("opennlp.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val input = parser.option[String](List("i", "input"), "FILE", "input inputFile to tokenize")
-  val log = new SimpleLogger("org.scalabha.tree.Parser", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
-  val noLog = new SimpleLogger("org.scalabha.tree.Parser", SimpleLogger.NONE, new BufferedWriter(new OutputStreamWriter(System.err)))
+  val log = new SimpleLogger("opennlp.scalabha.tree.Parser", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
+  val noLog = new SimpleLogger("opennlp.scalabha.tree.Parser", SimpleLogger.NONE, new BufferedWriter(new OutputStreamWriter(System.err)))
 
   def apply(line: String, prefix: String, log: SimpleLogger): Option[(TreeNode, String)] = {
     log.info("%sparsing:<<%s>>\n".format(prefix, line))

@@ -1,4 +1,4 @@
-package org.scalabha.log
+package opennlp.scalabha.log
 
 import java.io.BufferedWriter
 

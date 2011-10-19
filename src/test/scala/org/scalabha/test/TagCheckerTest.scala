@@ -1,10 +1,10 @@
-package org.scalabha.test
+package opennlp.scalabha.test
 
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
-import org.scalabha.tree.TagChecker
-import org.scalabha.model.{Value, Node, TreeNode}
-import org.scalabha.tree.TagChecker.{Fail, Success, TagCheckResult}
+import opennlp.scalabha.tree.TagChecker
+import opennlp.scalabha.model.{Value, Node, TreeNode}
+import opennlp.scalabha.tree.TagChecker.{Fail, Success, TagCheckResult}
 import collection.immutable.HashMap
 
 class TagCheckerTest extends FlatSpec with ShouldMatchers {

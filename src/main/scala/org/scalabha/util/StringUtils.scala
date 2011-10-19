@@ -1,4 +1,4 @@
-package org.scalabha.util
+package opennlp.scalabha.util
 
 import org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4
 

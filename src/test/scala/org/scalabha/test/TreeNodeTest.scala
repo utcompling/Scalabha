@@ -1,7 +1,7 @@
-package org.scalabha.test
+package opennlp.scalabha.test
 
 import collection.immutable.HashMap
-import org.scalabha.model.{TreeNode, Node, Value}
+import opennlp.scalabha.model.{TreeNode, Node, Value}
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 

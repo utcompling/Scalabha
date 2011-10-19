@@ -1,8 +1,8 @@
-package org.scalabha.test
+package opennlp.scalabha.test
 
-import org.scalabha.model._
-import org.scalabha.tree.Comparer
-import org.scalabha.tree.Comparer.{Fail, ComparisonResult, Success}
+import opennlp.scalabha.model._
+import opennlp.scalabha.tree.Comparer
+import opennlp.scalabha.tree.Comparer.{Fail, ComparisonResult, Success}
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 

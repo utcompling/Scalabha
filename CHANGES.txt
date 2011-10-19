@@ -1,6 +1,7 @@
 v 0.1.1
 -------
  - Upgraded to SBT 0.11.0. (J. Baldridge)
+ - Changed org.scalabha to opennlp.scalabha.
 
 
 v 0.1.0
