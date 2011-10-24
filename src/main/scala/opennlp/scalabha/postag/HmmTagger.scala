@@ -70,10 +70,10 @@ class HmmTagger (
  */
 object HmmTrainer {
 
-  def apply (wordTagPairs: List[(String, String)], lambda: Double) = {
+  def apply (wordTagSequence: List[(String, String)], lambda: Double) = {
 
     // Construct the transition probabilities (log values)
-    val (wordSequence, rawTagSequence) = wordTagPairs.unzip
+    val (wordSequence, rawTagSequence) = wordTagSequence.unzip
 
     // Create a Seq containing that ensures that the special EOS tag
     // ### has the index zero.
