@@ -90,7 +90,7 @@ Documentation for SBT is here:
 
 https://github.com/harrah/xsbt/wiki
 
-Note: if you have SBT 0.10.1 already installed on your system, you can
+Note: if you have SBT 0.11.0 already installed on your system, you can
 also just call it directly with "sbt" in SCALABHA_DIR.
 
 
