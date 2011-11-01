@@ -46,7 +46,7 @@ if [ $CMD = 'build' ]; then
 
 elif [ $CMD = 'viz' ]; then
 
-    head -n $(( $2 + 1 )) $1 | tail -n 1 | perl -p -e 's/\(/[/g' | perl -p -e 's/\)/]/g'
+    head -n $2 $1 | tail -n 1 | tr \(\) \[\]
 
 elif [ $CMD = 'analyze-tokens' ]; then
 
