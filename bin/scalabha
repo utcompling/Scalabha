@@ -57,18 +57,18 @@ else
     CLASS=
 
     case $CMD in
-        tokenize) CLASS=org.scalabha.preproc.XmlToTok;;
-        tokenize-kin) CLASS="org.scalabha.preproc.XmlToTok -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/kin/tok";;
-        tokenize-mlg) CLASS="org.scalabha.preproc.XmlToTok -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/mlg/tok";;
-        geninfo) CLASS=org.scalabha.preproc.XmlToInfo;;
-        geninfo-kin) CLASS="org.scalabha.preproc.XmlToInfo -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -o $LDMT_MURI_DIR/data/phase2/kin/info";;
-        geninfo-mlg) CLASS="org.scalabha.preproc.XmlToInfo -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -o $LDMT_MURI_DIR/data/phase2/mlg/info";;
-        treeSeed) CLASS=org.scalabha.preproc.TokToTreeSeed;;
-        treeSeed-kin) CLASS="org.scalabha.preproc.TokToTreeSeed -R -i $LDMT_MURI_DIR/data/phase2/kin/tok -o $LDMT_MURI_DIR/data/phase2/kin/parsed";;
-        treeSeed-mlg) CLASS="org.scalabha.preproc.TokToTreeSeed -R -i $LDMT_MURI_DIR/data/phase2/mlg/tok -o $LDMT_MURI_DIR/data/phase2/mlg/parsed"
+        tokenize) CLASS=opennlp.scalabha.preproc.XmlToTok;;
+        tokenize-kin) CLASS="opennlp.scalabha.preproc.XmlToTok -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/kin/tok";;
+        tokenize-mlg) CLASS="opennlp.scalabha.preproc.XmlToTok -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/mlg/tok";;
+        geninfo) CLASS=opennlp.scalabha.preproc.XmlToInfo;;
+        geninfo-kin) CLASS="opennlp.scalabha.preproc.XmlToInfo -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -o $LDMT_MURI_DIR/data/phase2/kin/info";;
+        geninfo-mlg) CLASS="opennlp.scalabha.preproc.XmlToInfo -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -o $LDMT_MURI_DIR/data/phase2/mlg/info";;
+        treeSeed) CLASS=opennlp.scalabha.preproc.TokToTreeSeed;;
+        treeSeed-kin) CLASS="opennlp.scalabha.preproc.TokToTreeSeed -R -i $LDMT_MURI_DIR/data/phase2/kin/tok -o $LDMT_MURI_DIR/data/phase2/kin/parsed";;
+        treeSeed-mlg) CLASS="opennlp.scalabha.preproc.TokToTreeSeed -R -i $LDMT_MURI_DIR/data/phase2/mlg/tok -o $LDMT_MURI_DIR/data/phase2/mlg/parsed"
         CLEANUP=1
         ;;
-        check-tree) CLASS="org.scalabha.tree.TagChecker"
+        check-tree) CLASS="opennlp.scalabha.tree.TagChecker"
         ;;
         run) CLASS=$1; shift;;
         help) help; exit 1;;
