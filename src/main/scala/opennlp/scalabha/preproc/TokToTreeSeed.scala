@@ -15,7 +15,7 @@ object TokToTreeSeed {
 
   var log: SimpleLogger = new SimpleLogger(
     CLASS_NAME,
-    SimpleLogger.INFO,
+    SimpleLogger.TRACE,
     new BufferedWriter(new OutputStreamWriter(System.err)))
 
   def transformFile(inputFile: File, treeSeedOutputFileNameStripped: String) {
@@ -29,7 +29,7 @@ object TokToTreeSeed {
     log.debug("Making parent directories\n")
     new File(FileUtils.getPathParent(treeSeedOutputFileNameStripped)).mkdirs()
 
-    log.info("%s -> %s.treeseed\n".format(inputFile.getPath, treeSeedOutputFileNameStripped))
+    log.trace("%s -> %s.treeseed\n".format(inputFile.getPath, treeSeedOutputFileNameStripped))
 
     val lines = scala.io.Source.fromFile(inputFile, "UTF-8").getLines()
     val outputWriter = new OutputStreamWriter(new FileOutputStream(

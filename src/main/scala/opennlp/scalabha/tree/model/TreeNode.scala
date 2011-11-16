@@ -84,5 +84,9 @@ case class Node(name: String, children: List[TreeNode]) extends TreeNode {
     result
   }
 
-  def getCanonicalString(): String = " (%s %s) ".format(name, (for (child <- children) yield child.getCanonicalString()).mkString(" "))
+  def getCanonicalString(): String = "(%s %s)".format(
+    name,
+    (for (child <- children) yield child.getCanonicalString()).mkString(" ")
+      + (if (children.last.isInstanceOf[Node]) " " else "")
+  )
 }

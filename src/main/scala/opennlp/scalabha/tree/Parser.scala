@@ -10,14 +10,14 @@ object Parser {
 
   import ArgotConverters._
 
-  val parser = new ArgotParser("opennlp.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
+  val parser = new ArgotParser(this.getClass().getName, preUsage = Some("Version 0.0"))
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val input = parser.option[String](List("i", "input"), "FILE", "input inputFile to tokenize")
-  val log = new SimpleLogger("opennlp.scalabha.tree.Parser", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
-  val noLog = new SimpleLogger("opennlp.scalabha.tree.Parser", SimpleLogger.NONE, new BufferedWriter(new OutputStreamWriter(System.err)))
+  val log = new SimpleLogger(this.getClass().getName, SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
+  val noLog = new SimpleLogger(this.getClass().getName, SimpleLogger.NONE, new BufferedWriter(new OutputStreamWriter(System.err)))
 
   def apply(index: Int, line: String, prefix: String, log: SimpleLogger): Option[(TreeNode, String)] = {
-    log.info("%sparsing:<<%s>>\n".format(prefix, line))
+    log.trace("%sparsing:<<%s>>\n".format(prefix, line))
     val regex = """\s*(\(?)\s*([^\s)(]+)\s*(.*)""".r
 //    if (line.matches("""\s*(\(?)\s*([^\s)(]+)\s*(.*)"""))
     line match {
@@ -45,11 +45,11 @@ object Parser {
           if (children.length == 0 || (children.length > 0 && children.map( _.isInstanceOf[Value] ).reduce(_ || _) && children.length != 1)){
             log.err("Line %d: A leaf node may only contain a tag and a token. I.e., (TAG token). Tree node %s fails this test.\n".format(index, Node(name, children).getCanonicalString))
           }
-          log.info("%sresult: %s,\"%s\"\n".format(prefix, Node(name, children), rest2.substring(cutoff + 1)))
+          log.trace("%sresult: %s,\"%s\"\n".format(prefix, Node(name, children), rest2.substring(cutoff + 1)))
           return Some((Node(name, children), rest2.substring(cutoff + 1)))
         } else {
           // then we are only looking at a value
-          log.info("%sresult: %s,\"%s\"\n".format(prefix, Value(sym), rest))
+          log.trace("%sresult: %s,\"%s\"\n".format(prefix, Value(sym), rest))
           return Some((Value(sym), rest))
         }
       case "\\s*" =>

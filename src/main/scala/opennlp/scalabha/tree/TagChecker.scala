@@ -170,7 +170,7 @@ object TagChecker {
         }).getLines()
 
       if (tokens.value.isDefined) {
-        log.info("comparing tokens from %s to those in the trees in %s\n")
+        log.trace("comparing tokens from %s to those in the trees in %s\n")
         val inputList = input_file.toList
         println(
           checkTokens(inputList, scala.io.Source.fromFile(tokens.value.get, "UTF-8").getLines().toList).mkString("\n")

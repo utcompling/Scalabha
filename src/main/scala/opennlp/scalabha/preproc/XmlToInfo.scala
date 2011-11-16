@@ -16,7 +16,7 @@ object XmlToInfo {
 
   var log: SimpleLogger = new SimpleLogger(
     this.getClass.toString,
-    SimpleLogger.INFO,
+    SimpleLogger.TRACE,
     new BufferedWriter(new OutputStreamWriter(System.err)))
 
   def transformFile(inputFile: File, infoFileNameStripped: String, log: SimpleLogger) {
@@ -30,7 +30,7 @@ object XmlToInfo {
     log.debug("Making parent directories\n")
     new File(FileUtils.getPathParent(infoFileNameStripped)).mkdirs()
 
-    log.info("%s -> %s.info\n".format(inputFile.getPath, infoFileNameStripped))
+    log.trace("%s -> %s.trace\n".format(inputFile.getPath, infoFileNameStripped))
 
     try {
       log.debug("Loading XML\n")
@@ -50,7 +50,7 @@ object XmlToInfo {
       log.debug(metadataAttrs.toString)
       val languages = (xmlTree \ "@languages").text.split(",").toList
       log.debug("Opening output streams\n")
-      val infoFile = new File(infoFileNameStripped + ".info")
+      val infoFile = new File(infoFileNameStripped + ".trace")
       val infoFileWriter = new OutputStreamWriter(new FileOutputStream(
         infoFile), "UTF-8")
 
@@ -120,7 +120,7 @@ object XmlToInfo {
     val parser = new ArgotParser("opennlp.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
     val help = parser.flag[Boolean](List("h", "help"), "print help")
     val input = parser.option[String](List("i", "input"), "FILE_OR_DIR", "Input inputFile or directory to tokenize")
-    val infoFileNameOption = parser.option[String](List("o", "output"), "FILE_OR_DIR", "Output location for info files. If none is" +
+    val infoFileNameOption = parser.option[String](List("o", "output"), "FILE_OR_DIR", "Output location for trace files. If none is" +
       " specified, the input inputFile's directory will be used.")
     val recursive = parser.flag[Boolean](List("R", "recursive"), "If the input parameter is a directory, recursively tokenize" +
       " all xml files in or below that directory.")

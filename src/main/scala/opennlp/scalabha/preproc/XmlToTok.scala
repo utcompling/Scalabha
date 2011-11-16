@@ -17,13 +17,13 @@ object XmlToTok {
 
   var log: SimpleLogger = new SimpleLogger(
     XmlToTok.getClass.toString,
-    SimpleLogger.INFO,
+    SimpleLogger.TRACE,
     new BufferedWriter(new OutputStreamWriter(System.err)))
 
   def transformFile(inputFile: File, textOutputFileNameStripped: String,
                     tokenOutputFileNameStripped: String, skipFiles: String, log: SimpleLogger) {
     if (inputFile.getName.matches(skipFiles)) {
-      log.info("File name %s matches skip regex: %s. Skipping...\n".format(inputFile.getName, skipFiles))
+      log.trace("File name %s matches skip regex: %s. Skipping...\n".format(inputFile.getName, skipFiles))
     } else {
       log.debug("Started file transform\n")
       assert(inputFile.isFile, "input file is not a file.")
@@ -36,7 +36,7 @@ object XmlToTok {
       new File(FileUtils.getPathParent(textOutputFileNameStripped)).mkdirs()
       new File(FileUtils.getPathParent(tokenOutputFileNameStripped)).mkdirs()
 
-      log.info("%s -> %s.*.txt -> %s.*.tok\n".format(inputFile.getPath, textOutputFileNameStripped, tokenOutputFileNameStripped))
+      log.trace("%s -> %s.*.txt -> %s.*.tok\n".format(inputFile.getPath, textOutputFileNameStripped, tokenOutputFileNameStripped))
 
       try {
         log.debug("Loading XML\n")
