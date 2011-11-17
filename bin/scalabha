@@ -1,5 +1,6 @@
 #/bin/bash
 
+EXIT_CODE=0
 JARS=`echo $SCALABHA_DIR/lib/*.jar $SCALABHA_DIR/target/*.jar | tr ' ' ':'`
 
 JARS_MANAGED=
@@ -76,9 +77,12 @@ else
     esac
 
     $JAVA_COMMAND $CLASS $*
+    (( EXIT_CODE += $? ))
 
 fi
 
 if [[ $CLEANUP -eq 1 ]]; then
     rm -r $LDMT_MURI_DIR/data/phase2/mlg/parsed/mlg_bible
 fi
+
+exit $EXIT_CODE

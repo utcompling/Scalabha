@@ -22,14 +22,14 @@ object X2TXT {
     " specified, the input inputFile's directory will be used.")
   val recursive = parser.flag[Boolean](List("R", "recursive"), "If the input parameter is a directory, recursively tokenize" +
     " all xml files in or below that directory.")
-  val debug = parser.flag[Boolean](List("d", "debug"), "Assert this flag if you want to see ridicuous quantities of output.")
   val skipRegex = parser.option[String](List("skip"), "REGEX", "Skip files whose absolute path matches this regex.")
 */
+  val debug = parser.flag[Boolean](List("d", "debug"), "Assert this flag if you want to see ridicuous quantities of output.")
 
 
   var log: SimpleLogger = new SimpleLogger(
     this.getClass.getName,
-    SimpleLogger.TRACE,
+    SimpleLogger.WARN,
     new BufferedWriter(new OutputStreamWriter(System.err)))
 
   def apply(inputFile: File, textFile: File) {
@@ -62,18 +62,28 @@ object X2TXT {
       var textSentenceNodes = false
       xmlTree \\ "align" foreach {
         (align) =>
-          align \ "text" foreach {
-            (text) =>
-              val lang = (text \ "@langid").text
-
-              // - <text><s>blah.</s><s>blah.</s></text>
-              text \ "s" foreach {
-                (sentence) =>
-                  langToFile(lang).write("%s <EOS> ".format(sentence.text))
-              }
-              langToFile(lang).write("\n")
+          val textNodes = (align \ "text")
+          val langToTextNodeStringList = textNodes.map(textNode => (
+            (textNode \ "@langid").text,
+            (textNode \ "s").map(sentenceNode => "%s <EOS>".format(sentenceNode.text)).mkString(" ")
+            )).toList
+          val langToTextNodeString = langToTextNodeStringList.toMap
+          var missingLangs = List[String]()
+          for ((lang, file) <- langToFile) {
+            if (langToTextNodeString.contains(lang)) {
+              file.write(langToTextNodeString(lang) + "\n")
+            } else {
+              missingLangs = lang :: missingLangs
+              file.write("\n")
+            }
           }
-
+          if (missingLangs.length > 0) {
+            log.err("In file %s, missing language%s \"%s\" in the following align node. All align nodes must contain a single text node for each language:\n%s\n\n\n".format(inputFile.getName, if (missingLangs.length > 1) "s" else "", missingLangs.mkString(","), align.toString()))
+          }
+          if (langToTextNodeString.size != langToTextNodeStringList.length) {
+            // then there was a key that appeared twice.
+            log.err("In file %s, there is more than one text node for a language. All align nodes must contain a single text node for each language:\n%s\n\n\n".format(inputFile.getName, align.toString()))
+          }
       }
       if (flatTextNodes) {
         log.warn("Detected flat text nodes. The <text><sentence/></text> is recommended.\n")
@@ -87,7 +97,7 @@ object X2TXT {
         ostream.close()
       }
       defaultTextOutputWriter.close()
-      if (defaultFile.length() == 0){
+      if (defaultFile.length() == 0) {
         defaultFile.delete()
       }
     } catch {
@@ -107,20 +117,24 @@ object X2TXT {
     for (child <- inputDir.listFiles().sorted) {
       if (child.isDirectory) {
         val pathDescentStep = child.getName
-        applyDir(child, new File(textDir,pathDescentStep))
+        applyDir(child, new File(textDir, pathDescentStep))
       } else if (child.isFile && child.getName.endsWith(".xml")) {
-        apply(child,new File(textDir,child.getName.substring(0,child.getName.length()-4)))
+        apply(child, new File(textDir, child.getName.substring(0, child.getName.length() - 4)))
       }
     }
   }
 
   def main(args: Array[String]) {
-
+    var warnings = 0
+    var errors = 0
     try {
       parser.parse(args)
 
       if (help.value.isDefined) {
         parser.usage()
+      }
+      if (debug.value.isDefined) {
+        log.logLevel = SimpleLogger.DEBUG
       }
       val inputFile = input.value match {
         case Some(filename) => new File(filename).getAbsoluteFile
@@ -137,38 +151,16 @@ object X2TXT {
       } else {
         parser.usage("input file must be a regular file")
       }
-      /*
-      if (inputFile.isDirectory && recursive.value.isDefined) {
-        log.debug("Main: doing recursive option\n")
-        // then recursively descend and transform all files
-        // treat the output files as directories and reconstruct the descent tree as a tree rooted there.
-        transformDirectoryRecursive(inputFile, "", textFileName)
-      } else if (inputFile.isDirectory) {
-        log.debug("Main: doing directory option\n")
-        // then just loop over all the files in inputFile
-        // treat the output files as directories and create all the output files there.
-        transformDirectory(inputFile, "", textFileName)
-      } else {
-        log.debug("Main: doing single file option\n")
-
-        // then just transform inputFile
-        // treat the output files as files and write them out.
-        val textOutputFileNameStripped = FileUtils.getStrippedOutputFileName(
-          (if (textOutput.value.isDefined) textOutput.value.get else inputFile.getParent), "",
-          inputFile.getName.replaceFirst(".xml$", ""))
-        val tokenOutputFileNameStripped = FileUtils.getStrippedOutputFileName(
-          (if (output.value.isDefined) output.value.get else inputFile.getParent), "",
-          inputFile.getName.replaceFirst(".xml$", ""))
-        transformFile(inputFile, textOutputFileNameStripped, tokenOutputFileNameStripped, skipFiles, log)
-
-      }*/
-
-      log.summary("Warnings,Errors: %s\n".format(log.getStats()))
+      val (transformWarnings,transformErrors) = log.getStats()
+      warnings = transformWarnings
+      errors = transformErrors
+      log.summary("Warnings,Errors: %s\n".format((warnings,errors)))
     }
     catch {
       case e: ArgotUsageException =>
         println(e.message)
     }
+    System.exit(errors)
   }
 
 }
