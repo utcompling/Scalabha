@@ -41,7 +41,7 @@ class SimpleLogger(name: String, creationLogLevel: Int, output: BufferedWriter) 
 
   def info(message: String) {
     if (logLevel >= SimpleLogger.INFO) {
-      print("%s: [ERR] %s".format(name, message))
+      print("%s: [INFO] %s".format(name, message))
     }
   }
 

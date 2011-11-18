@@ -13,11 +13,11 @@ import util.matching.Regex
 import ArgotConverters._
 
 object X2TXT {
-  val parser = new ArgotParser("opennlp.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
+  val parser = new ArgotParser(this.getClass.getName, preUsage = Some("Version 0.0"))
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val input = parser.option[String](List("x", "xml-input"), "FILE_OR_DIR", "Input inputFile or directory to tokenize")
   val textOutput = parser.option[String](List("t", "text-output"), "FILE_OR_DIR", "Output location for intermediate text files. " +
-    "If none is specified, the input inputFile's directory will be used, and the intermediate inputFile will be deleted during cleanup.")
+    "If none is specified, the input inputFile's directory will be used.")
   /*val output = parser.option[String](List("o", "output"), "FILE_OR_DIR", "Output location for token files. If none is" +
     " specified, the input inputFile's directory will be used.")
   val recursive = parser.flag[Boolean](List("R", "recursive"), "If the input parameter is a directory, recursively tokenize" +

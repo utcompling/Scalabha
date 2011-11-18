@@ -13,6 +13,8 @@ abstract class TreeNode {
 
   def getCanonicalString(): String
 
+  def getHeight(): Int
+
   def getTagCounts(): HashMap[String, Int] = {
     val result = HashMap[String, Int]()
     for ((nodeName, innerMap) <- getTagMap()) {
@@ -38,6 +40,7 @@ case class Value(name: String) extends TreeNode {
 
   def getCanonicalString(): String = name
 
+  def getHeight(): Int = 0
 }
 
 case class Node(name: String, children: List[TreeNode]) extends TreeNode {
@@ -87,6 +90,19 @@ case class Node(name: String, children: List[TreeNode]) extends TreeNode {
   def getCanonicalString(): String = "(%s %s)".format(
     name,
     (for (child <- children) yield child.getCanonicalString()).mkString(" ")
-      + (if (children.last.isInstanceOf[Node]) " " else "")
+      + (if (children != Nil && children.last.isInstanceOf[Node]) " " else "")
   )
+
+  def maxChildHeight(children: List[TreeNode]): Int = {
+    if (children.length == 0) {
+      0
+    } else {
+      val c :: cs = children
+      math.max(c.getHeight(), maxChildHeight(cs))
+    }
+  }
+
+  def getHeight(): Int = {
+    1 + maxChildHeight(children)
+  }
 }

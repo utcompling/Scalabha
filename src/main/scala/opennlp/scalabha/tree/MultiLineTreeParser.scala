@@ -75,7 +75,7 @@ object MultiLineTreeParser {
     var numTreesParsed = 0
     while (restToParse != "") {
       val index = numTreesParsed + 1
-      log.info("Parsing (file:%s,tree#:%d)\n".format(forestName, index))
+      log.debug("Parsing (file:%s,tree#:%d)\n".format(forestName, index))
       apply(forestName, index, restToParse, "") match {
         case Some((tree, leftover)) =>
           // Is the tree valid?
@@ -103,7 +103,7 @@ object MultiLineTreeParser {
   }
 
   def apply(filename: String): List[TreeNode] = {
-    log.info("Parsing trees from file: %s\n".format(filename))
+    log.debug("Parsing trees from file: %s\n".format(filename))
     apply(filename, scala.io.Source.fromFile(filename, "UTF-8"))
   }
 
