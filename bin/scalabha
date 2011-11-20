@@ -20,6 +20,7 @@ fi
 JAVA_COMMAND="java $JAVA_MEM_FLAG -classpath $CP"
 SCALA_COMMAND="scala -classpath $CP"
 
+
 CMD=$1
 shift
 
