@@ -65,7 +65,7 @@ object X2TXT {
           val textNodes = (align \ "text")
           val langToTextNodeStringList = textNodes.map(textNode => (
             (textNode \ "@langid").text,
-            (textNode \ "s").map(sentenceNode => "%s <EOS>".format(sentenceNode.text)).mkString(" ")
+            (textNode \ "s").map(sentenceNode => "%s <EOS>".format(sentenceNode.text.replaceAll("\\n"," "))).mkString(" ")
             )).toList
           val langToTextNodeString = langToTextNodeStringList.toMap
           var missingLangs = List[String]()

@@ -19,7 +19,13 @@ object TOK2TREE {
     "Each tree gets its own file, and they are named from the input file.")
 
   val debug = parser.flag[Boolean](List("d", "debug"), "Assert this flag if you want to see ridicuous quantities of output.")
-
+  // I was going to add this option, but I think I'll eshew it for now. You can also speed things up by "rm -rf"ing the destination.
+  /*val forceOverwriteOption = parser.flag[Boolean](List("forceOverwrite"), "WARNING: This could result in loss of work." +
+    " Currently, we check all destination files before overwriting to make sure they are ok to clobber. This means either" +
+    " that the file does not exist, or that all the trees currently there are boilerplate trees. It takes time to parse" +
+    " the destination trees to perform this check, so you could speed up the process with this option, however, you risk" +
+    " losing work this way.")
+*/
 
   var log: SimpleLogger = new SimpleLogger(
     this.getClass.getName,
@@ -64,7 +70,7 @@ object TOK2TREE {
     val baseName = inputFile.getName.substring(0, inputFile.getName.length() - 4)
     log.debug("Making parent directories and text file\n")
     treeDir.mkdirs()
-    log.info("%s -> %s.{tree#...}.tree\n".format(inputFile.getAbsolutePath, treeDir.getAbsolutePath))
+    log.info("%s -> %s/%s.{tree#...}.tree\n".format(inputFile.getAbsolutePath, treeDir.getAbsolutePath, baseName))
 
     // I'm reading the whole input file on purpose, since we're dong a lot of small write jobs,
     // I don't want to waste time reading in sub-file chunks.

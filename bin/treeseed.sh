@@ -14,12 +14,16 @@ case $1 in
         treeseed.sh kin; treeseed.sh mlg
         ;;
     *\.tok)
-        echo "treeseeding $1"
-        fullpath=`readlink -f $1`
-        filename=`basename $fullpath .tok`
-        collection=$(basename $(dirname $fullpath))
-        langroot=$(dirname $(dirname $(dirname $fullpath)))
-        scalabha run opennlp.scalabha.preproc.TOK2TREE -i $1 -o $langroot/tree/src/$collection/$filename
+        if [[ -e $1 ]]; then
+            echo "treeseeding $1"
+            fullpath=`readlink -f $1`
+            filename=`basename $fullpath .tok`
+            collection=$(basename $(dirname $fullpath))
+            langroot=$(dirname $(dirname $(dirname $fullpath)))
+            scalabha run opennlp.scalabha.preproc.TOK2TREE -i $1 -o $langroot/tree/src/$collection/$filename
+        else
+            echo "could not find $1"
+        fi
         ;;
     *)
         echo "Usage: tokenize.sh all | kin | mlg | path/to/tokfile.tok"
