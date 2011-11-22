@@ -21,6 +21,7 @@ fi
 JAVA_COMMAND="java $JAVA_MEM_FLAG -classpath $CP"
 SCALA_COMMAND="scala -classpath $CP"
 
+
 CMD=$1
 shift
 
@@ -63,6 +64,7 @@ else
     CLASS=
 
     case $CMD in
+        ccg) CLASS=opennlp.scalabha.ccg.CcgParser;;
         tokenize) CLASS=opennlp.scalabha.preproc.XmlToTok;;
         tokenize-kin) CLASS="opennlp.scalabha.preproc.XmlToTok -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/kin/tok";;
         tokenize-mlg) CLASS="opennlp.scalabha.preproc.XmlToTok -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -m /tmp -o $LDMT_MURI_DIR/data/phase2/mlg/tok";;
