@@ -1,9 +1,16 @@
 package opennlp.scalabha.ccg
 
+
+/** A slash in a CCG category. */
 sealed trait Slash
+
+/** A left slash in a CCG category. */
 case object Left  extends Slash { override def toString = "\\" }
+
+/** A right slash in a CCG category. */
 case object Right extends Slash { override def toString = "/" }
 
+/** A trait for CCG categories. */
 sealed trait Cat {
 
   def equals (that: Cat): Boolean
@@ -22,6 +29,7 @@ sealed trait Cat {
   val arity: Int
 }
 
+/** A companion object for the Cat trait. Contains a number of helper methods. */
 object Cat {
 
   def toStringHandleParens (cat: Cat): String = cat match {
@@ -53,6 +61,10 @@ object Cat {
 
 }
 
+/**
+ * An atomic category, like np, s and n. May contain features,
+ * e.g. np[case=nom] and s[mood=ind].
+ */
 case class AtomCat (
   val name: String, 
   val features: AttrValMap = EmptyAttrValMap
@@ -83,7 +95,9 @@ case class AtomCat (
   override def toString = name+ features
 }
 
+/** A complex category, like s\np and (n\n)/(s/np) */
 case class ComplexCat (val res: Cat, val slash: Slash, val arg: Cat) extends Cat {
+
   val arity = res.arity + 1
 
   def equals (that: Cat) = that match {
@@ -121,82 +135,5 @@ case class ComplexCat (val res: Cat, val slash: Slash, val arg: Cat) extends Cat
 }
 
 
-
-object UnifyTest {
-
-  def main (args: Array[String]) {
-    val npNom = AtomCat("np", AttrValMap(Map("case" -> Constant("nom"))))
-    val npAcc = AtomCat("np", AttrValMap(Map("case" -> Constant("acc"))))
-    val npX = AtomCat("np", AttrValMap(Map("case" -> Variable("X"),"num" -> Variable("Z"))))
-
-    val sInd = AtomCat("s", AttrValMap(Map("mood" -> Constant("ind"))))
-    val sY = AtomCat("s", AttrValMap(Map("mood" -> Variable("Y"), "case" -> Variable("X"))))
-
-    val intrans1 = ComplexCat(sInd, Left, npX)
-    val intrans2 = ComplexCat(sY, Left, npNom)
-    val intrans3 = ComplexCat(sY, Left, npX)
-
-    println(npNom.unifies(npAcc))
-    println(npNom.unifies(npX))
-
-    val sub = intrans1.unifies(intrans2).get
-    println(intrans1.applySubstitution(sub))
-
-    println(intrans3)
-    println(npX.makeVarsUnique(0, EmptySubstitution))
-    println(intrans3.makeVarsUnique(0, EmptySubstitution))
-
-    val cats = List(intrans1, intrans3)
-    println("** " + cats)
-    println("-- " + Cat.makeAllVarsUnique(cats))
-
-    val List(uniq1, uniq2) = Cat.makeAllVarsUnique(cats)
-    
-    println(intrans1.unifies(intrans3))
-    println(uniq1.unifies(uniq2))
-
-  }
-
-}
-
-object CatTest {
-
-  def main (args: Array[String]) {
-    val s = AtomCat("s")
-    val npSg = AtomCat("np", FeatConst("num", "sg"))
-    val npPl = AtomCat("np", FeatConst("num", "pl"))
-    val sX = AtomCat("s", FeatVar("num", "X"))
-    val npX = AtomCat("np", FeatVar("num", "X"))
-    val np = AtomCat("np")
-    val n = AtomCat("n")
-    val adj = ComplexCat(n, Right, n)
-    val det = ComplexCat(np, Right, n)
-    val intrans = ComplexCat(s, Left, np)
-    val intransSg = ComplexCat(s, Left, npSg)
-    val intransX = ComplexCat(sX, Left, npX)
-    val transSg = ComplexCat(intransSg, Right, np)
-    val trnpSg = ComplexCat(s, Right, intransSg)
-    
-    val lexicon: Map[String,Set[Cat]] = Map(
-      "John" -> Set(npSg,trnpSg),
-      "Mary" -> Set(npSg,trnpSg),
-      "sees" -> Set(transSg),
-      "walks" -> Set(intransX),
-      "the" -> Set(det),
-      "nice" -> Set(adj),
-      "dog" -> Set(n)
-    )
-
-    //println(intrans + " " + np)
-    //println(BackwardApplication(npSg, intransSg).get)
-    
-    val parser = CkyParser(lexicon)
-    println(parser("John sees Mary"))
-    println(parser("John walks"))
-    //println(parser("John saw the nice dog"))
-    //println(parser("John saw"))
-  }
-
-}
 
 
