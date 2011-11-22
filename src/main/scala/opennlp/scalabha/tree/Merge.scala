@@ -92,6 +92,7 @@ object Merge {
         log.summary("Suspending output since there were errors.\n")
 
       outputBuffer.close()
+      System.exit(errors)
     }
     catch {
       case e: ArgotUsageException =>

@@ -19,8 +19,12 @@ case $1 in
         for collection in $treesrc/* ; do
             echo $collection
             for tree in $collection/* ; do
-                treemerge.sh $tree
-                (( exit_code += $? ))
+                if [[ $exit_code -ne 0 ]]; then
+                    exit $exit_code
+                else
+                    treemerge.sh $tree
+                    (( exit_code += $? ))
+                fi
             done
         done
         ;;
@@ -28,8 +32,12 @@ case $1 in
         echo "merging all"
         treemerge.sh kin
         (( exit_code += $? ))
-        treemerge.sh mlg
-        (( exit_code += $? ))
+        if [[ $exit_code -ne 0 ]]; then
+            exit $exit_code
+        else
+            treemerge.sh mlg
+            (( exit_code += $? ))
+        fi
         ;;
     *)
         fullpath=`readlink -f $1`
@@ -51,6 +59,9 @@ case $1 in
                 fi
                 ;;
             *)
+                echo
+                echo "Dont' know what to do with $fullpath"
+                echo
                 usage
                 ;;
         esac

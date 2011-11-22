@@ -71,9 +71,15 @@ object MultiLineTreeParser {
     then we can report the position in the source file of errors*/
 
     var restToParse = forestString
+    var lastValueToParse = ""
     var resultantTrees: List[TreeNode] = Nil
     var numTreesParsed = 0
-    while (restToParse != "") {
+    while (restToParse != "" && restToParse != lastValueToParse) {
+      // If we get into a state wherein the parser cannot make progress, we will need to break out of the loop.
+      // This is ok to do because we've already logged any errors we have encountered.
+      lastValueToParse = restToParse
+
+
       val index = numTreesParsed + 1
       log.debug("Parsing (file:%s,tree#:%d)\n".format(forestName, index))
       apply(forestName, index, restToParse, "") match {
@@ -83,7 +89,7 @@ object MultiLineTreeParser {
             case Node(_, _) =>
               resultantTrees = tree :: resultantTrees
             case Value(name) =>
-              // TODO: Do we keep executing on critical errors or let them fly? Maybe we just don't write the ouput file.
+              // TODO: Do we keep executing on critical errors or let them fly? Maybe we just don't write the output file.
               log.err("(file:%s,tree#:%d): Top-level element is not a tree:<<%s>>\n".format(forestName, index, name))
           }
           restToParse = leftover.trim()
@@ -128,6 +134,7 @@ object MultiLineTreeParser {
         log.summary("Suspending output since there were errors.\n")
 
       log.summary("Warnings,Errors: %s\n".format(log.getStats()))
+      System.exit(errors)
     }
     catch {
       case e: ArgotUsageException =>
