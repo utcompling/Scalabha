@@ -10,6 +10,16 @@ class CkyParser (lexicon: Map[String,Set[Cat]], rules: List[Rule]) {
   def apply (tokens: IndexedSeq[String]): Set[Cat] = {
     val numItems = tokens.length
 
+    tokens.foreach {
+      token => {
+	lexicon.get(token) match {
+	  case None => 
+	    throw new MissingLexicalEntryException("\n\nError: word '" + token + "' not in lexicon!\n")
+	  case _ =>
+	} 
+      }
+    }
+
     val chart: Array[Array[Set[Cat]]] = 
       Array.fill(numItems, numItems)(new collection.immutable.HashSet[Cat]())
     
