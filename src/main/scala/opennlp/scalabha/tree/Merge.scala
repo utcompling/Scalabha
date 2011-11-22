@@ -6,7 +6,7 @@ import opennlp.scalabha.log.SimpleLogger
 import io.BufferedSource
 import java.io._
 
-object Compiler {
+object Merge {
 
   import ArgotConverters._
 
@@ -68,6 +68,7 @@ object Compiler {
       val outputBuffer = output.value match {
         case Some(filename) =>
           if (filename.endsWith(".tree")) {
+            (new File(filename)).getParentFile.mkdirs()
             new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(filename))))
           } else {
             parser.usage("Output file must end with a '.tree' suffix")

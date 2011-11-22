@@ -51,13 +51,20 @@ The output of this command is written to the {lang}/tok/ directory.
 =State 2: Token Files=
 During Transition A, each XML file is split into K token files, where K is the number of languages in the XML file (usually 2 or 3), named accordingly. The token files contain 1 line for each of the align blocks, and the sentences within the align blocks are delimited by <EOS> tags. These tags need to be removed before data releases, but they are neccessary for this process, so leave them for now.
 
+In this state, you'll want to do some extra validation of the token files. Ulf has provided a Perl script for this purpose: wildebeest.
+
+Commands:
+wildebeest.pl < path/to/filename.lang.tok
+
+Wildebeest will print a set of statistics about the token file you provide. You should pay special attention to the "unsplit punctuation" sections. These are not neccessarily problems, but they are meant to bring potential tokenization problems to the fore so that you can decide, for example, that "..." is ok while "said..." is not. The way to fix these problems is typically to correct typos in the source file and re-run tokenization. In the example, you would open the XML file, find "said...", and change it to "said ...".
+
 As noted above, the only valid way to create or modify token files is first to create or modify the XML files and then run Transition A.This ensures that our token files always have the same set of known properties, which is important for machine translation.
 
 =Transition B: TreeSeed=
 This transformation turns a token file into a set of L tree files, where L is the number of lines in the token file. I.e., there is one tree per tree file. Note that the treeseed command checks the output files to make sure there are no midifications to them before overwriting, so if you have make changes but still want to create a new file, rename or delete the original before running treeseed.
 
 Commands:
-scalabha treeseed /path/to/filename.tok     # turn this token file into a set of tree files.
+scalabha treeseed /path/to/filename.tok     # turn this token file into a set of tree files (the path can be relative)
 
 The output of this command is written to the {lang}/parsed/src/ directory.
 
@@ -78,6 +85,12 @@ Note that every tree's top level node is TOP, even if there is only one sentence
 
 =Transition C: TreeMerge=
 This transition turns a collection of working tree files into a single output tree file. This means that whitespace in the input tree files will be collapsed, and each input tree will become a line in the output tree file. Note that input tree files are sorted alphabetically by name to determine the order of trees in the output file. Just as with Transition A, treemerge will overwrite the output files, so you should not make changes directly to the output tree files, only the ones in the src/ directory.
+
+Commands:
+scalabha treemerge /path/to/document/dir    # the document dir is something like "kin/tree/src/kgmc/kgmc_0026.eng". All the immediate children of this directory should be *.tree files.
+scalabha treemerge kin                      # Since this command is defined to be destructive (i.e., you should not be modifying
+scalabha treemerge mlg                      #  the output tree files directly), and this operation is fairly fast, it might be
+scalabha treemerge all                      #  easier to just process all the src trees at once.
 
 =State 4: Verification=
 In this state, the process is complete, and all of the requisite files (XML, tok, and tree) exist. Here, you can use verification tools like tree-checker.pl to make sure that the output is well formed. You will also want to make sure of a few properties:
