@@ -12,7 +12,8 @@ object Lexicon {
   lazy val catParser = new CatParser
 
   def apply (entries: List[String]) = {
-    val lentries = entries.map(entry => catParser.parseLexEntry(entry))
+    val validLines = entries.filter(line => line != "" && !line.startsWith("#"))
+    val lentries = validLines.map(entry => catParser.parseLexEntry(entry))
     lentries.groupBy(_.word).mapValues {
       entries => entries.map(_.cat).toSet
     } 
@@ -20,3 +21,6 @@ object Lexicon {
 
 }
 
+class MissingLexicalEntryException (msg: String) extends Throwable(msg) {
+  override def fillInStackTrace = this
+}

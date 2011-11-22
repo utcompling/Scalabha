@@ -1,12 +1,9 @@
 package opennlp.scalabha.ccg
 
 object Rule {
-  //lazy val allRules = List(ForwardApplication, BackwardApplication)
-
   lazy val abRules = List(ForwardApplication, BackwardApplication)
   lazy val harmonicRules = abRules ::: List(ForwardHarmonicComposition, BackwardHarmonicComposition)
   lazy val allRules = harmonicRules ::: List(ForwardCrossedComposition, BackwardCrossedComposition)
-  lazy val englishRules = harmonicRules ::: List(BackwardCrossedComposition)
 }
 
 trait Rule {
@@ -40,8 +37,12 @@ abstract class Composition(fslash: Slash, sslash: Slash) extends Rule {
   def getResult (fres: Cat, farg: Cat, sres: Cat, sarg: Cat): Option[Cat]
 
   def apply (first: Cat, second: Cat) = (first, second) match {
-    case (ComplexCat(fres, fslash, farg), ComplexCat(sres, sslash, sarg)) => 
-      getResult(fres, farg, sres, sarg)
+    case (ComplexCat(fres, firstCatSlash, farg), ComplexCat(sres, secondCatSlash, sarg)) => 
+      if (fslash.equals(firstCatSlash) && sslash.equals(secondCatSlash))
+	getResult(fres, farg, sres, sarg)
+      else
+	None
+
     case _ => None
   }
 
@@ -53,7 +54,7 @@ class ForwardComposition(fslash: Slash, sslash: Slash) extends Composition(fslas
       case Some(sub) => 
         val subbedFres = fres.applySubstitution(sub) 
         val subbedSarg = sarg.applySubstitution(sub) 
-        Some(ComplexCat(subbedFres, Right, subbedSarg))
+        Some(ComplexCat(subbedFres, sslash, subbedSarg))
 
       case None => None
     }
@@ -65,7 +66,7 @@ class BackwardComposition(fslash: Slash, sslash: Slash) extends Composition(fsla
       case Some(sub) => 
         val subbedSres = sres.applySubstitution(sub) 
         val subbedFarg = farg.applySubstitution(sub) 
-        Some(ComplexCat(subbedSres, Left, subbedFarg))
+        Some(ComplexCat(subbedSres, fslash, subbedFarg))
 
       case None => None
     }

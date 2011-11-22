@@ -1,3 +1,14 @@
+v 0.2.0
+-------
+
+ - Added opennlp.scalabha.ccg package, supporting CCG parsing
+   capabilities. (J. Baldridge)
+
+ - Added Jabberwockish example for parsing. (J. Baldridge)
+
+ - Many improvements to the tokenization workflow. (J. Roesler)
+
+
 v 0.1.1
 -------
  - Upgraded to SBT 0.11.0. (J. Baldridge)

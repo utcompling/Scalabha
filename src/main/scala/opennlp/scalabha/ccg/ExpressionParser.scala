@@ -25,9 +25,8 @@ class CatParser extends JavaTokenParsers {
   def parseLexEntry (entryString: String): LexicalEntry = parseAll(lexEntry, entryString) match {
     case Success(x, remainder) => x
     case Failure(msg, remainder) => {
-      System.err.println("\nCouldn't process the following entry:\n\n" + entryString 
-			 + "\n\nError: "  + msg + "\n")
-      throw new RuntimeException()
+      throw new CatParserException("\n\nCouldn't process the following entry:\n\n" + entryString 
+				   + "\n\nError: "  + msg + "\n")
     }
   }
 
@@ -65,9 +64,12 @@ class CatParser extends JavaTokenParsers {
   )
 
   def acString: Parser[String] = """[a-z][a-z0-9_]*""".r
-  def constant: Parser[String] = """[a-z][A-Za-z0-9_]*""".r
+  def constant: Parser[String] = """[a-z0-9][A-Za-z0-9_]*""".r
   def varString: Parser[String] = """[A-Z][A-Z0-9_]*""".r
   def word: Parser[String] = """[^\s]+""".r
 
 }
 
+class CatParserException (msg: String) extends Throwable(msg) {
+  override def fillInStackTrace = this
+}
