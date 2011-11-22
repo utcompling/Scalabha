@@ -2,9 +2,11 @@ package opennlp.scalabha.ccg
 
 object Rule {
   lazy val allRules = List(ForwardApplication, BackwardApplication)
-//lazy val allRules = List(ForwardApplication, BackwardApplication, 
-//      		   ForwardHarmonicComposition, BackwardHarmonicComposition,
-//      		   ForwardCrossedComposition, BackwardCrossedComposition)
+
+  lazy val abRules = List(ForwardApplication, BackwardApplication)
+  //lazy val harmonicRules = abRules ::: List(ForwardHarmonicComposition, BackwardHarmonicComposition)
+  ////lazy val allRules = harmonicRules ::: List(ForwardCrossedComposition, BackwardCrossedComposition)
+  //lazy val englishRules = harmonicRules ::: List(BackwardCrossedComposition)
 }
 
 trait Rule {
