@@ -8,6 +8,8 @@ v 0.2.0
 
  - Many improvements to the tokenization workflow. (J. Roesler)
 
+ - Upgraded to SBT 0.11.1. (J. Baldridge)
+
 
 v 0.1.1
 -------
