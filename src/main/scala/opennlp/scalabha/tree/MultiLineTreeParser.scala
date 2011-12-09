@@ -28,29 +28,29 @@ object MultiLineTreeParser {
           val name = sym
           var children = List[TreeNode]()
           var next: TreeNode = null
-          var rest2 = rest
-          while (!rest2.matches("\\s*\\).*")) {
-            if (rest2 == "") {
+          var childRest = rest
+          while (!childRest.matches("\\s*\\).*")) {
+            if (childRest == "") {
               log.err("(file:%s,tree#:%d): Missing closing paren in:<<%s>>\n".format(groupName, index, line))
               return None
             }
-            apply(groupName, index, rest2, "|\t%s".format(prefix)) match {
+            apply(groupName, index, childRest, "|\t%s".format(prefix)) match {
               case Some((a, b)) =>
                 next = a
-                rest2 = b
+                childRest = b
                 children = children ::: List(next)
               case None => return None
             }
           }
-          val cutoff = rest2.indexOf(')')
+          val cutoff = childRest.indexOf(')')
           // a Node can't be empty
           // a Node that contains a Value child must contain only one child
           if (children.length == 0
             || (children.filter(_.isInstanceOf[Value]).length > 0 && children.length != 1)) {
             log.err("(file:%s,tree#:%d): A leaf node may only contain a tag and a token. I.e., (TAG token). Tree node %s fails this test.\n".format(groupName, index, Node(name, children).getCanonicalString))
           }
-          log.trace("%sresult: %s,\"%s\"\n".format(prefix, Node(name, children), rest2.substring(cutoff + 1)))
-          return Some((Node(name, children), rest2.substring(cutoff + 1)))
+          log.trace("%sresult: %s,\"%s\"\n".format(prefix, Node(name, children), childRest.substring(cutoff + 1)))
+          return Some((Node(name, children), childRest.substring(cutoff + 1)))
         } else {
           // then we are only looking at a value
           log.trace("%sresult: %s,\"%s\"\n".format(prefix, Value(sym), rest))
