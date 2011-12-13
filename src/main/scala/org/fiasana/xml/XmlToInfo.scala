@@ -1,4 +1,4 @@
-package opennlp.scalabha.preproc
+package org.fiasana.xml
 
 import scala.xml._
 import org.clapper.argot.ArgotParser._
@@ -117,7 +117,7 @@ object XmlToInfo {
   }
 
   def main(args: Array[String]) {
-    val parser = new ArgotParser("opennlp.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
+    val parser = new ArgotParser(this.getClass.getName, preUsage = Some("Version 0.0"))
     val help = parser.flag[Boolean](List("h", "help"), "print help")
     val input = parser.option[String](List("i", "input"), "FILE_OR_DIR", "Input inputFile or directory to tokenize")
     val infoFileNameOption = parser.option[String](List("o", "output"), "FILE_OR_DIR", "Output location for trace files. If none is" +
@@ -135,7 +135,7 @@ object XmlToInfo {
       }
       if (debug.value.isDefined)
         log = new SimpleLogger(
-          XmlToTok.getClass.toString,
+          this.getClass.toString,
           SimpleLogger.DEBUG,
           new BufferedWriter(new OutputStreamWriter(System.err)))
 

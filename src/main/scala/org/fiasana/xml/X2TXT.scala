@@ -1,4 +1,4 @@
-package opennlp.scalabha.preproc
+package org.fiasana.xml
 
 import scala.xml._
 import org.clapper.argot.ArgotParser._
@@ -18,12 +18,7 @@ object X2TXT {
   val input = parser.option[String](List("x", "xml-input"), "FILE_OR_DIR", "Input inputFile or directory to tokenize")
   val textOutput = parser.option[String](List("t", "text-output"), "FILE_OR_DIR", "Output location for intermediate text files. " +
     "If none is specified, the input inputFile's directory will be used.")
-  /*val output = parser.option[String](List("o", "output"), "FILE_OR_DIR", "Output location for token files. If none is" +
-    " specified, the input inputFile's directory will be used.")
-  val recursive = parser.flag[Boolean](List("R", "recursive"), "If the input parameter is a directory, recursively tokenize" +
-    " all xml files in or below that directory.")
-  val skipRegex = parser.option[String](List("skip"), "REGEX", "Skip files whose absolute path matches this regex.")
-*/
+
   val debug = parser.flag[Boolean](List("d", "debug"), "Assert this flag if you want to see ridicuous quantities of output.")
 
 
@@ -32,6 +27,13 @@ object X2TXT {
     SimpleLogger.WARN,
     new BufferedWriter(new OutputStreamWriter(System.err)))
 
+  /**
+   * @param xmlTree This is a parsed XML tree to be transformed to text
+   * @param fileName This is the name of the file the XML came from. It's used for logging errors
+   * @return A map from language name to list of text strings. Each string in the
+   * list represents all the text for that language in an align node.
+   * The text strings are in the same order they appeared in in the XML.
+   */
   def apply(xmlTree: Elem, fileName: String): Map[String, List[String]] = {
     val languages = (xmlTree \ "file" \ "@languages").text.split(",").toList.map(s=>s.trim)
     var resultMap = languages.map(s=>(s,List[String]())).toMap
@@ -78,7 +80,15 @@ object X2TXT {
       case(lang,list) => (lang, list.reverse)
     }
   }
-  
+
+  /**
+   * @param inputFile This is the XML file to transform to text
+   * @param textFile This is the prefix file to use for generating output files.
+   * The way it works is that textFile's path gets appended with ".lang.txt", where
+   * ".lang" is substituted for each of the languages specified in the XML file.
+   *
+   * @return Nothing. The output is written to the files generated from textFile.
+   */
   def apply(inputFile: File, textFile: File) {
     log.debug("Started file transform\n")
     assert(inputFile.isFile, "input file is not a file.")
@@ -114,6 +124,15 @@ object X2TXT {
     log.debug("Exiting file transform\n")
   }
 
+  /**
+   * Recursively descend a directory structure, transforming XML to text files.
+   * @param inputDir This is the root to start descending from
+   * @param textDir  This is the root to start creating text files at.
+   * The directory structure in inputDir will be recreated in textDir, so
+   * <em>in/A.xml</em> is transformed to <em>in/A.lang1.txt</em> and
+   * <em>in/another/path/B.xml</em> is
+   * transformed to <em>in/another/path/B.lang1.txt</em>.
+   */
   def applyDir(inputDir: File, textDir: File) {
     assert(inputDir.isDirectory)
     for (child <- inputDir.listFiles().sorted) {
