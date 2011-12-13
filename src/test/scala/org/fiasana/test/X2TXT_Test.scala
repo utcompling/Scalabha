@@ -2,7 +2,7 @@ package org.fiasana.test
 
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
-import org.fiasana.xml.X2TXT
+import org.fiasana.X2TXT
 import opennlp.scalabha.log.SimpleLogger
 import java.io.{StringWriter, BufferedWriter}
 

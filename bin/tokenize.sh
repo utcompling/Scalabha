@@ -11,8 +11,8 @@ case $1 in
         orig=$root/$1/orig
         txt=/tmp/$1/txt
         tok=$root/$1/tok
-        echo "running: scalabha run opennlp.scalabha.preproc.X2TXT -x $orig -t $txt"
-        scalabha run opennlp.scalabha.preproc.X2TXT -x $orig -t $txt
+        echo "running: scalabha run org.fiasana.X2TXT -x $orig -t $txt"
+        scalabha run org.fiasana.X2TXT -x $orig -t $txt
         (( exit_code += $? ))
         echo -ne "running normalize-text-standalone.pl and tokenize-text.pl"
         for collection in $txt/*; do

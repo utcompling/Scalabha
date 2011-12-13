@@ -1,4 +1,4 @@
-package org.fiasana.xml
+package org.fiasana
 
 import scala.xml._
 import org.clapper.argot.ArgotParser._
