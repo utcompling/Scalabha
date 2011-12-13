@@ -13,12 +13,12 @@ object TagChecker {
 
   import ArgotConverters._
 
-  val parser = new ArgotParser("opennlp.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
+  val parser = new ArgotParser(this.getClass.getName, preUsage = Some("Version 0.0"))
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val input = parser.option[String](List("i", "input"), "FILE", "input inputFile in which to check tags")
   val other = parser.option[String](List("other"), "FILE", "(optional) other inputFile to compare against the input inputFile")
-  val log = new SimpleLogger("opennlp.scalabha.tree.TagChecker", SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
-  val noLog = new SimpleLogger("opennlp.scalabha.tree.TagChecker", SimpleLogger.NONE, new BufferedWriter(new OutputStreamWriter(System.err)))
+  val log = new SimpleLogger(this.getClass.getName, SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
+  val noLog = new SimpleLogger(this.getClass.getName, SimpleLogger.NONE, new BufferedWriter(new OutputStreamWriter(System.err)))
 
 
   abstract class TagCheckResult
@@ -148,7 +148,7 @@ object TagChecker {
   }
 
   def main(args: Array[String]) {
-    val parser = new ArgotParser("opennlp.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
+    val parser = new ArgotParser(this.getClass.getName, preUsage = Some("Version 0.0"))
     val help = parser.flag[Boolean](List("h", "help"), "print help")
     val input = parser.option[String](List("i", "input"), "FILE", "input inputFile in which to check tags")
     val tokens = parser.option[String](List("tok"), "FILE", "tags to check")

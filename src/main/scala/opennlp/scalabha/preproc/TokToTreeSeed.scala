@@ -93,7 +93,7 @@ object TokToTreeSeed {
       }
       if (debug.value.isDefined)
         log = new SimpleLogger(
-          XmlToTok.getClass.toString,
+          TokToTreeSeed.getClass.toString,
           SimpleLogger.DEBUG,
           new BufferedWriter(new OutputStreamWriter(System.err)))
 

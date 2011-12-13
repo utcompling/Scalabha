@@ -12,7 +12,7 @@ import com.sun.org.apache.xpath.internal.operations.Mult
 import opennlp.scalabha.tree.MultiLineTreeParser
 
 object TOK2TREE {
-  val parser = new ArgotParser("opennlp.scalabha.preproc.Tokenizer", preUsage = Some("Version 0.0"))
+  val parser = new ArgotParser(this.getClass.getName, preUsage = Some("Version 0.0"))
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val inputOpt = parser.option[String](List("i", "inputTokens"), "FILE_OR_DIR", "Input inputFile or directory to tokenize")
   val outputOpt = parser.option[String](List("o", "outputTrees"), "DIR", "Output location for the tree files. " +
