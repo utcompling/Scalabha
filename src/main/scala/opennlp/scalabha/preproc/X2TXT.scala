@@ -32,6 +32,53 @@ object X2TXT {
     SimpleLogger.WARN,
     new BufferedWriter(new OutputStreamWriter(System.err)))
 
+  def apply(xmlTree: Elem, fileName: String): Map[String, List[String]] = {
+    val languages = (xmlTree \ "file" \ "@languages").text.split(",").toList.map(s=>s.trim)
+    var resultMap = languages.map(s=>(s,List[String]())).toMap
+    log.debug("Parsing XML\n")
+    xmlTree \\ "align" foreach {
+      align =>
+        val textNodes = (align \ "text")
+        val langToText= textNodes.map( textNode => (
+          (textNode \ "@langid").text,
+          (textNode \ "s").map(
+            sentenceNode =>
+              "%s <EOS>".format(sentenceNode.text.replaceAll("\\n"," "))).mkString(" ")
+          ))
+        val langToTextMap = langToText.toMap.withDefaultValue("<EOS>")
+        resultMap = resultMap.map{ // TODO is there a fancier functional way to do this?
+          case(lang,list) => (lang,langToTextMap(lang)::list)
+        }
+
+        val missingLangs = resultMap.keySet.diff(langToTextMap.keySet)
+        if (missingLangs.size > 0) {
+          log.err(("In file %s, missing language%s \"%s\" " +
+            "in the following align node. All align nodes must" +
+            " contain a single text node for each language:\n%s\n\n\n")
+            .format(fileName, if (missingLangs.size > 1) "s" else "",
+            missingLangs.toList.sorted.mkString(","), align.toString()))
+        }
+        if (langToText.length != langToTextMap.size) {
+          log.err(("In file %s, there is more than one text node " +
+            "for a language. All align nodes must contain a single " +
+            "text node for each language:\n%s\n\n\n")
+            .format(fileName, align.toString()))
+        }
+        val unknownLanguages = langToTextMap.keySet.diff(resultMap.keySet)
+        if (unknownLanguages.size > 0) {
+          log.err("In file %s, found unknown language%s \"%s\" in align node:\n%s\n\n\n".format(
+            fileName,
+            if (unknownLanguages.size > 1) "s" else "",
+            unknownLanguages.toList.sorted.mkString(","),
+            align
+          ))
+        }
+    }
+    resultMap.map{
+      case(lang,list) => (lang, list.reverse)
+    }
+  }
+  
   def apply(inputFile: File, textFile: File) {
     log.debug("Started file transform\n")
     assert(inputFile.isFile, "input file is not a file.")
@@ -42,63 +89,18 @@ object X2TXT {
     log.debug("Making parent directories and text file\n")
     new File(textFile.getParent).mkdirs()
     log.debug("%s -> %s.{langs...}.txt\n".format(inputFile.getPath, textFile.getPath))
-
     try {
-      log.debug("Loading XML\n")
-      val xmlTree = XML.load(new InputStreamReader(new FileInputStream(inputFile), "UTF-8")) \ "file"
-      val languages = (xmlTree \ "@languages").text.split(",").toList
+      log.debug("Extracting text from XML\n")
+      val textLines = apply(XML.load(new InputStreamReader(new FileInputStream(inputFile), "UTF-8")),
+        inputFile.getName)
       log.debug("Opening output streams\n")
-      var defaultFile = new File(textFile.getPath + ".unknownLanguage.txt")
-      val defaultTextOutputWriter = new OutputStreamWriter(new FileOutputStream(
-        defaultFile), "UTF-8")
-      val langToFile: Map[String, OutputStreamWriter] =
-        (for (lang <- languages) yield (lang,
-          new OutputStreamWriter(new FileOutputStream(
+      textLines.foreach{
+        case(lang,lines) => {
+          val writer = new OutputStreamWriter(new FileOutputStream(
             new File("%s.%s.txt".format(textFile.getPath, lang))), "UTF-8")
-          )).toMap.withDefault(x => defaultTextOutputWriter)
-
-      log.debug("Parsing XML\n")
-      var flatTextNodes = false
-      var textSentenceNodes = false
-      xmlTree \\ "align" foreach {
-        (align) =>
-          val textNodes = (align \ "text")
-          val langToTextNodeStringList = textNodes.map(textNode => (
-            (textNode \ "@langid").text,
-            (textNode \ "s").map(sentenceNode => "%s <EOS>".format(sentenceNode.text.replaceAll("\\n"," "))).mkString(" ")
-            )).toList
-          val langToTextNodeString = langToTextNodeStringList.toMap
-          var missingLangs = List[String]()
-          for ((lang, file) <- langToFile) {
-            if (langToTextNodeString.contains(lang)) {
-              file.write(langToTextNodeString(lang) + "\n")
-            } else {
-              missingLangs = lang :: missingLangs
-              file.write("\n")
-            }
-          }
-          if (missingLangs.length > 0) {
-            log.err("In file %s, missing language%s \"%s\" in the following align node. All align nodes must contain a single text node for each language:\n%s\n\n\n".format(inputFile.getName, if (missingLangs.length > 1) "s" else "", missingLangs.mkString(","), align.toString()))
-          }
-          if (langToTextNodeString.size != langToTextNodeStringList.length) {
-            // then there was a key that appeared twice.
-            log.err("In file %s, there is more than one text node for a language. All align nodes must contain a single text node for each language:\n%s\n\n\n".format(inputFile.getName, align.toString()))
-          }
-      }
-      if (flatTextNodes) {
-        log.warn("Detected flat text nodes. The <text><sentence/></text> is recommended.\n")
-      }
-      if (flatTextNodes && textSentenceNodes) {
-        log.warn("Detected both flat text nodes and <text><sentence/></text> hierarchy. Mixing these styles is _not_ recommended.\n")
-      }
-
-      log.debug("Closing streams\n")
-      for ((name, ostream) <- langToFile) {
-        ostream.close()
-      }
-      defaultTextOutputWriter.close()
-      if (defaultFile.length() == 0) {
-        defaultFile.delete()
+          lines.foreach(s=>writer.write(s+"\n"))
+          writer.close()
+        }
       }
     } catch {
       case e: SAXParseException =>
