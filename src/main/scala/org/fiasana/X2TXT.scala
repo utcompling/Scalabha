@@ -127,8 +127,8 @@ object X2TXT {
   /**
    * Recursively descend a directory structure, transforming XML to text files.
    * @param inputDir This is the root to start descending from
-   * @param textDir  This is the root to start creating text files at.
-   * The directory structure in inputDir will be recreated in textDir, so
+   * @param treeDir  This is the root to start creating text files at.
+   * The directory structure in inputDir will be recreated in treeDir, so
    * <em>in/A.xml</em> is transformed to <em>in/A.lang1.txt</em> and
    * <em>in/another/path/B.xml</em> is
    * transformed to <em>in/another/path/B.lang1.txt</em>.

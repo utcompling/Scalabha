@@ -37,8 +37,6 @@ Include --help with any option for more information
 EOF
 }
 
-CLEANUP=0
-
 if [ $CMD = 'build' ]; then
 
     if test -f ~/.sbtconfig; then
@@ -73,11 +71,6 @@ else
         geninfo) CLASS=opennlp.scalabha.preproc.XmlToInfo;;
         geninfo-kin) CLASS="opennlp.scalabha.preproc.XmlToInfo -R -i $LDMT_MURI_DIR/data/phase2/kin/orig -o $LDMT_MURI_DIR/data/phase2/kin/info";;
         geninfo-mlg) CLASS="opennlp.scalabha.preproc.XmlToInfo -R -i $LDMT_MURI_DIR/data/phase2/mlg/orig -o $LDMT_MURI_DIR/data/phase2/mlg/info";;
-        treeSeed) CLASS=opennlp.scalabha.preproc.TokToTreeSeed;;
-        treeSeed-kin) CLASS="opennlp.scalabha.preproc.TokToTreeSeed -R -i $LDMT_MURI_DIR/data/phase2/kin/tok -o $LDMT_MURI_DIR/data/phase2/kin/parsed";;
-        treeSeed-mlg) CLASS="opennlp.scalabha.preproc.TokToTreeSeed -R -i $LDMT_MURI_DIR/data/phase2/mlg/tok -o $LDMT_MURI_DIR/data/phase2/mlg/parsed"
-        CLEANUP=1
-        ;;
         check-tree) CLASS="opennlp.scalabha.tree.TagChecker"
         ;;
         run) CLASS=$1; shift;;
@@ -90,8 +83,5 @@ else
 
 fi
 
-if [[ $CLEANUP -eq 1 ]]; then
-    rm -r $LDMT_MURI_DIR/data/phase2/mlg/parsed/mlg_bible
-fi
 
 exit $EXIT_CODE
