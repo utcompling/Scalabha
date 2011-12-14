@@ -8,7 +8,7 @@ case $1 in
         echo "treeseeding $1"
         tok=$root/$1/tok
         treesrc=$root/$1/tree/src
-        scalabha run opennlp.scalabha.preproc.TOK2TREE -i $tok -o $treesrc
+        scalabha run opennlp.scalabha.tree.Tok2Trees -i $tok -o $treesrc
         (( exit_code += $? ))
         ;;
     all)
@@ -25,8 +25,8 @@ case $1 in
             filename=`basename $fullpath .tok`
             collection=$(basename $(dirname $fullpath))
             langroot=$(dirname $(dirname $(dirname $fullpath)))
-            echo "running: scalabha run opennlp.scalabha.preproc.TOK2TREE -i $1 -o $langroot/tree/src/$collection/$filename"
-            scalabha run opennlp.scalabha.preproc.TOK2TREE -i $1 -o $langroot/tree/src/$collection/$filename
+            echo "running: scalabha run opennlp.scalabha.tree.Tok2Trees -i $1 -o $langroot/tree/src/$collection/$filename"
+            scalabha run opennlp.scalabha.tree.Tok2Trees -i $1 -o $langroot/tree/src/$collection/$filename
             (( exit_code += $? ))
         else
             echo "could not find $1"

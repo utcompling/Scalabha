@@ -1,4 +1,4 @@
-package opennlp.scalabha.preproc
+package opennlp.scalabha.tree
 
 import scala.xml._
 import org.clapper.argot.ArgotParser._
@@ -11,7 +11,7 @@ import opennlp.scalabha.model.{Value, Node}
 import com.sun.org.apache.xpath.internal.operations.Mult
 import opennlp.scalabha.tree.MultiLineTreeParser
 
-object TOK2TREE {
+object Tok2Trees {
   val parser = new ArgotParser(this.getClass.getName, preUsage = Some("Version 0.0"))
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val inputOpt = parser.option[String](List("i", "inputTokens"), "FILE_OR_DIR", "Input inputFile or directory to tokenize")
