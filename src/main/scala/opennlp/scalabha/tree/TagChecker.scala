@@ -66,9 +66,9 @@ object TagChecker {
   def apply(left: Iterator[String], right: Iterator[String]): Map[String, Int] = {
     var resultCounts = Map[String, Int]()
     for (((leftLine, rightLine), index) <- (left zip right).zipWithIndex) {
-      Parser(index, leftLine, Parser.log) match {
+      MultiLineTreeParser("left",index,leftLine) match {
         case Some(leftTree: TreeNode) =>
-          Parser(index, rightLine, Parser.log) match {
+          MultiLineTreeParser("right",index,rightLine) match {
             case Some(rightTree: TreeNode) =>
               if (leftTree.compareStructure(rightTree))
                 resultCounts = combineMaps[String, Int](resultCounts.toMap, leftTree.getTagCounts().toMap, (a: Int, b: Int) => (a + b))
@@ -92,7 +92,8 @@ object TagChecker {
     val tagCounts = HashMap[String, Int]()
 
     for ((line, index) <- list.zipWithIndex) {
-      val tree = Parser(index, line, Parser.log)
+      val tree = MultiLineTreeParser("trees",index,line)
+      
       if (tree.isDefined) {
         for ((key, value) <- tree.get.getTagCounts()) {
           if (tagCounts.contains(key))
@@ -131,7 +132,7 @@ object TagChecker {
 
   def checkTokens(infile: List[String], tokfile: List[String]): List[String] = {
     for (((inTreeLine, tokLine), index) <- (infile zip tokfile).toList.zipWithIndex) yield {
-      val inTree = Parser(index, inTreeLine, Parser.log)
+      val inTree = MultiLineTreeParser("trees",index,inTreeLine)
       inTree match {
         case Some(root) =>
           val inTreeTokens: List[String] = root.getTokens
@@ -194,7 +195,7 @@ object TagChecker {
         }
       }
       log.summary("Warnings,Errors: %s\n".format(log.getStats()))
-      Parser.log.summary("Warnings,Errors: %s\n".format(Parser.log.getStats()))
+      MultiLineTreeParser.log.summary("Warnings,Errors: %s\n".format(MultiLineTreeParser.log.getStats()))
 
 
     } catch {

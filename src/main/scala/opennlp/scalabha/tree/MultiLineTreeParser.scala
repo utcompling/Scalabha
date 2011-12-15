@@ -18,7 +18,21 @@ object MultiLineTreeParser {
 
   val openSymRestRegex = """\s*(\(?)\s*([^\s)(]+)\s*(.*)""".r
 
-  def apply(groupName: String, index: Int, line: String, prefix: String): Option[(TreeNode, String)] = {
+  /**
+   * Parse a string representation of a syntax tree into a TreeNode tree.
+   * @param groupName This is used for logging errors. It's the name of the group that
+   * the current tree belongs to. The common use case is that there is a directory's worth
+   * of individual tree files that correspond to lines in a single token file. In that case,
+   * the groupName is the directory of trees.
+   * @param index Also used for logging. This is the index of the current tree in the group.
+   * @param line This must be the string representation of a tree on a single line.
+   * @param prefix Again, this is just for logging purposes. Since this function is recursive,
+   * prefix helps to print the current processing stage indented appropriately.
+   *
+   * @return An Option: either None, if there was no valid parse, or Some(tree,leftover), where tree
+   * is the result of the parse, and leftover is any text to the right of tree in the line parameter.
+   */
+  def parseLine(log: SimpleLogger, groupName: String, index: Int, prefix: String)(line: String): Option[(TreeNode, String)] = {
     log.trace("%sparsing:<<%s>>\n".format(prefix, line))
 
     line match {
@@ -34,7 +48,7 @@ object MultiLineTreeParser {
               log.err("(file:%s,tree#:%d): Missing closing paren in:<<%s>>\n".format(groupName, index, line))
               return None
             }
-            apply(groupName, index, childRest, "|\t%s".format(prefix)) match {
+            parseLine(log, groupName, index, "|\t%s".format(prefix))(childRest) match {
               case Some((a, b)) =>
                 next = a
                 childRest = b
@@ -64,6 +78,13 @@ object MultiLineTreeParser {
         return None
     }
   }
+  
+  def apply(groupName:String, index:Int, line:String): Option[TreeNode] = {
+    parseLine(log,groupName,index,"")(line) match {
+      case Some((tree,"")) => Some(tree)
+      case _ => None
+    }
+  }
 
   def apply(forestName: String, forestString: String): List[TreeNode] = {
     /*TODO; Interesting thought: if we hang onto the raw lines from the original file
@@ -82,7 +103,7 @@ object MultiLineTreeParser {
 
       val index = numTreesParsed + 1
       log.debug("Parsing (file:%s,tree#:%d)\n".format(forestName, index))
-      apply(forestName, index, restToParse, "") match {
+      parseLine(log,forestName, index, "")(restToParse) match {
         case Some((tree, leftover)) =>
           // Is the tree valid?
           tree match {

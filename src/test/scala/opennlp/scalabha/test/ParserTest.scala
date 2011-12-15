@@ -1,28 +1,61 @@
 package opennlp.scalabha.test
 
 import opennlp.scalabha.model._
-import opennlp.scalabha.tree.Parser
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
+import opennlp.scalabha.tree.MultiLineTreeParser
+import opennlp.scalabha.log.SimpleLogger
+import java.io.{BufferedWriter, StringWriter}
 
 class ParserTest extends FlatSpec with ShouldMatchers {
-  val tests = List[(String, Option[TreeNode])](
-    ("(a b)", Some(Node("a", List(Value("b"))))),
-    ("(a b c)", Some(Node("a", List(Value("b"), Value("c"))))),
-    ("(a b c d)", Some(Node("a", List(Value("b"), Value("c"), Value("d"))))),
-    ("(a (b c))", Some(Node("a", List(Node("b", List(Value("c"))))))),
-    ("(a (b c d) (e f g))", Some(Node("a", List(Node("b", List(Value("c"), Value("d"))), Node("e", List(Value("f"), Value("g"))))))),
-    ("(a b))", None),
-    ("(a b", None),
-    ("", None),
-    ("a", Some(Value("a"))),
-    ("(a)", Some(Node("a",List())))
-  )
 
-  for ((string, result) <- tests) {
-    "\"" + string + "\"" should "parse to " + result.toString in {
-      assert(Parser(0, string) === result)
-    }
+  "parseLine" should "succeed" in {
+    val logString = new StringWriter()
+    val log = new SimpleLogger("", SimpleLogger.WARN, new BufferedWriter(logString))
+    assert(MultiLineTreeParser.parseLine(log, "", 0, "")("(a b)") 
+      === Some((Node("a", List(Value("b"))), "")))
+    assert(log.getStats() === (0, 0))
   }
 
+  "parseLine" should "succeed and complain" in {
+    val logString = new StringWriter()
+    val log = new SimpleLogger("", SimpleLogger.WARN, new BufferedWriter(logString))
+    assert(MultiLineTreeParser.parseLine(log, "", 0, "")("(a b c)")
+      === Some((Node("a", List(Value("b"), Value("c"))), "")))
+    assert(log.getStats() === (0, 1))
+    assert(logString.toString
+      === ": [ERR] (file:,tree#:0): A leaf node may only contain a tag and a token. " +
+      "I.e., (TAG token). Tree node (a b c) fails this test.\n")
+  }
+
+  "parseLine1" should "succeed and complain" in {
+    val logString = new StringWriter()
+    val log = new SimpleLogger("", SimpleLogger.WARN, new BufferedWriter(logString))
+    assert(MultiLineTreeParser.parseLine(log, "", 0, "")("(a)")
+      === Some((Node("a", List()), "")))
+    assert(log.getStats() === (0, 1))
+    assert(logString.toString
+      === ": [ERR] (file:,tree#:0): A leaf node may only contain a tag and a token. " +
+      "I.e., (TAG token). Tree node (a ) fails this test.\n")
+  }
+
+  "parseLine" should "succeed and return extra string" in {
+    val logString = new StringWriter()
+    val log = new SimpleLogger("", SimpleLogger.WARN, new BufferedWriter(logString))
+    assert(MultiLineTreeParser.parseLine(log, "", 0, "")("(a b))")
+      === Some((Node("a", List(Value("b"))), ")")))
+    assert(log.getStats() === (0, 0))
+    assert(logString.toString
+      === "")
+  }
+
+  "parseLine" should "handle line breaks" in {
+    val logString = new StringWriter()
+    val log = new SimpleLogger("", SimpleLogger.WARN, new BufferedWriter(logString))
+    assert(MultiLineTreeParser.parseLine(log, "", 0, "")("(a \nb)")
+      === Some((Node("a", List(Value("b"))), "")))
+    assert(log.getStats() === (0, 0))
+    assert(logString.toString
+      === "")
+  }
 }

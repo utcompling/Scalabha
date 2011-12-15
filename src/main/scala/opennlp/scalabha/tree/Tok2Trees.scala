@@ -9,7 +9,6 @@ import org.xml.sax.SAXParseException
 import ArgotConverters._
 import opennlp.scalabha.model.{Value, Node}
 import com.sun.org.apache.xpath.internal.operations.Mult
-import opennlp.scalabha.tree.MultiLineTreeParser
 
 object Tok2Trees {
   val parser = new ArgotParser(this.getClass.getName, preUsage = Some("Version 0.0"))
