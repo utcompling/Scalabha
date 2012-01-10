@@ -4,6 +4,8 @@ import collection.mutable.HashMap
 
 abstract class TreeNode {
   val name: String
+  
+  def isHead(): Boolean
 
   def compareStructure(other: TreeNode): Boolean
 
@@ -33,6 +35,11 @@ case class Value(name: String) extends TreeNode {
   def compareStructure(other: TreeNode): Boolean = {
     other.isInstanceOf[Value]
   }
+  
+  // Values are heads by definition.
+  // This isn't really meaningful, but since leaf Nodes are 
+  // defined to have exactly one child, it makes validity checks easy
+  def isHead(): Boolean = true
 
   def getTagMap(): HashMap[String, HashMap[List[String], Int]] = HashMap[String, HashMap[List[String], Int]]()
 
@@ -56,6 +63,10 @@ case class Node(name: String, children: List[TreeNode]) extends TreeNode {
     }
     result
   }
+
+  // if we decide to strip the head marking from the name, we can change this later to be set on
+  // object creation.
+  def isHead(): Boolean = name.endsWith("-H")
 
   def getTokens(): List[String] = {
     (for (child <- children) yield {

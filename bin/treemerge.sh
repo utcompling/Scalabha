@@ -4,7 +4,7 @@ root=$LDMT_MURI_DIR/data/phase2
 exit_code=0
 
 usage() {
-    echo "Usage: treemerge.sh all | kin | mlg | path/to/tokfile.tok"
+    echo "Usage: treemerge.sh all | kin | mlg | path/to/tree/src/something.kin or something.mlg"
     echo "   Runs the source tree merger for all files, just kin, just mlg, or a specific collection of tree files."
     echo "   Be sure that \$LDMT_MURI_DIR is set. (Current value:'$LDMT_MURI_DIR')."
     exit 1

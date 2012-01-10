@@ -63,6 +63,9 @@ object MultiLineTreeParser {
             || (children.filter(_.isInstanceOf[Value]).length > 0 && children.length != 1)) {
             log.err("(file:%s,tree#:%d): A leaf node may only contain a tag and a token. I.e., (TAG token). Tree node %s fails this test.\n".format(groupName, index, Node(name, children).getCanonicalString))
           }
+          if (children.filter(_.isHead()).length != 1) {
+            log.err("(file:%s,tree#:%d): A node must have exactly one head. Tree node %s fails this test.\n".format(groupName, index, Node(name, children).getCanonicalString))
+          }
           log.trace("%sresult: %s,\"%s\"\n".format(prefix, Node(name, children), childRest.substring(cutoff + 1)))
           return Some((Node(name, children), childRest.substring(cutoff + 1)))
         } else {
