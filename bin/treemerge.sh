@@ -42,7 +42,8 @@ case $1 in
         #fullpath=`readlink -f $1`
         fullpath=$1
         case $fullpath in
-            */tree/src/*\.eng|*/tree/src/*\.fra|*/tree/src/*\.kin|*/tree/src/*\.mlg)
+            */tree/src/*\.eng/|*/tree/src/*\.eng|*/tree/src/*\.fra/|*/tree/src/*\.fra|*/tree/src/*\.kin/|*/tree/src/*\.kin|*/tree/src/*\.mlg/|*/tree/src/*\.mlg)
+                # wow, how ugly was that? Don't answer that. Bash case statements don't really do regexes, just path expansion.
                 if [[ -e $fullpath ]]; then
                     base=$( basename $fullpath )
                     collection=$( basename $( dirname $fullpath ) )
