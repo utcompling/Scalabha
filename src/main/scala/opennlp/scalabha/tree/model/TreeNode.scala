@@ -15,6 +15,10 @@ abstract class TreeNode {
 
   def getCanonicalString(): String
 
+  val _indent = "  "
+  def _prettyPrintStringPrefixed(prefix:String): String
+  def prettyPrintString(): String
+
   def getHeight(): Int
 
   def getTagCounts(): HashMap[String, Int] = {
@@ -46,6 +50,9 @@ case class Value(name: String) extends TreeNode {
   def getTokens(): List[String] = List(name)
 
   def getCanonicalString(): String = name
+
+  def prettyPrintString(): String = name
+  def _prettyPrintStringPrefixed(prefix:String): String = name
 
   def getHeight(): Int = 0
 }
@@ -103,6 +110,15 @@ case class Node(name: String, children: List[TreeNode]) extends TreeNode {
     (for (child <- children) yield child.getCanonicalString()).mkString(" ")
       + (if (children != Nil && children.last.isInstanceOf[Node]) " " else "")
   )
+
+  def _prettyPrintStringPrefixed(prefix:String): String = "%s(%s %s)".format(
+    prefix,
+    name,
+    (for (child <- children) yield child._prettyPrintStringPrefixed(prefix + _indent)).mkString(" ")
+      + (if (children != Nil && children.last.isInstanceOf[Node]) " " else "")
+  )
+  
+  def prettyPrintString(): String = _prettyPrintStringPrefixed("\n")
 
   def maxChildHeight(children: List[TreeNode]): Int = {
     if (children.length == 0) {

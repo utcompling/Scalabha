@@ -14,8 +14,13 @@ object Merge {
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val input = parser.option[String](List("i", "input"), "FILEorDIR", "tree source file or directory to compile")
   val output = parser.option[String](List("o", "output"), "FILE", "output file to write compiled trees to.")
+  val skipErrs = parser.flag[Boolean](List("f","skipErrs"),"Do not exit on errors. " +
+    "The default is to exit as soon as errors are caught in any input file.")
+  val pprintErrs = parser.flag[Boolean](List("pprintErrs"), "Format treenodes nicely in error reporting.")
+  
   var log = new SimpleLogger(this.getClass().getName, SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
 
+  
   def applyFile(file: File): List[TreeNode] = {
     if (file.getName.endsWith("tree"))
       MultiLineTreeParser(file.getName, scala.io.Source.fromFile(file, "UTF-8"))
@@ -25,11 +30,13 @@ object Merge {
     }
   }
 
+  def okToProceed() = (MultiLineTreeParser.log.getStats()._2 == 0 || skipErrs.value.isDefined)
+
   def applyDir(dir: File): List[TreeNode] = {
     (for (child <- dir.listFiles().sorted) yield {
       if (child.isDirectory) {
         applyDir(child)
-      } else if (child.isFile) {
+      } else if (child.isFile && okToProceed) {
         applyFile(child)
       } else {
         // there are other types of files, and we'll just ignore them
@@ -64,17 +71,8 @@ object Merge {
       }
 
       MultiLineTreeParser.log.logLevel = SimpleLogger.WARN
+      MultiLineTreeParser.pprintErrs = pprintErrs.value.isDefined
 
-      val outputBuffer = output.value match {
-        case Some(filename) =>
-          if (filename.endsWith(".tree")) {
-            (new File(filename)).getParentFile.mkdirs()
-            new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(filename))))
-          } else {
-            parser.usage("Output file must end with a '.tree' suffix")
-          }
-        case None => new BufferedWriter(new OutputStreamWriter(System.out))
-      }
       val parsedTrees = input.value match {
         case Some(filename) => apply(filename)
         case None => parser.usage("you must specify an input tree file or directory of input tree files")
@@ -86,12 +84,24 @@ object Merge {
       val (warnings, errors) = (compileWarnings + parseWarnings, compileErrors + parseErrors)
 
       log.summary("Warnings,Errors: %s\n".format((warnings, errors)))
-      if (errors == 0)
+      if (errors == 0){
+        val outputBuffer = output.value match {
+          case Some(filename) =>
+            if (filename.endsWith(".tree")) {
+              (new File(filename)).getParentFile.mkdirs()
+              new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File(filename))))
+            } else {
+              parser.usage("Output file must end with a '.tree' suffix")
+            }
+          case None => new BufferedWriter(new OutputStreamWriter(System.out))
+        }
         outputBuffer.write(parsedTrees.map(tree => tree.getCanonicalString()).mkString("\n") + "\n")
-      else
-        log.summary("Suspending output since there were errors.\n")
 
-      outputBuffer.close()
+        outputBuffer.close()
+      }
+      else
+      log.summary("Suspending output since there were errors.\n")
+
       System.exit(errors)
     }
     catch {

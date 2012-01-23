@@ -15,9 +15,20 @@ object MultiLineTreeParser {
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val input = parser.option[String](List("i", "input"), "FILE", "input inputFile to tokenize")
   var log = new SimpleLogger(this.getClass().getName, SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
+  var pprintErrs = false
+  val pprintErrsOpt = parser.flag[Boolean](List("pprintErrs"), "Format treenodes nicely in error reporting.")
 
+  
   val openSymRestRegex = """\s*(\(?)\s*([^\s)(]+)\s*(.*)""".r
 
+  private def sprintNode(node: TreeNode): String = {
+    if (pprintErrs) {
+      node.prettyPrintString()
+    } else {
+      node.getCanonicalString()
+    }
+  }
+  
   /**
    * Parse a string representation of a syntax tree into a TreeNode tree.
    * @param groupName This is used for logging errors. It's the name of the group that
@@ -61,10 +72,10 @@ object MultiLineTreeParser {
           // a Node that contains a Value child must contain only one child
           if (children.length == 0
             || (children.filter(_.isInstanceOf[Value]).length > 0 && children.length != 1)) {
-            log.err("(file:%s,tree#:%d): A leaf node may only contain a tag and a token. I.e., (TAG token). Tree node %s fails this test.\n".format(groupName, index, Node(name, children).getCanonicalString))
+            log.err("(file:%s,tree#:%d): A leaf node may only contain a tag and a token. I.e., (TAG token). Following tree node fails this test: %s\n".format(groupName, index, sprintNode(Node(name, children))))
           }
           if (children.filter(_.isHead()).length != 1) {
-            log.err("(file:%s,tree#:%d): A node must have exactly one head. Tree node %s fails this test.\n".format(groupName, index, Node(name, children).getCanonicalString))
+            log.err("(file:%s,tree#:%d): A node must have exactly one head. Following tree node fails this test: %s\n".format(groupName, index, sprintNode(Node(name, children))))
           }
           log.trace("%sresult: %s,\"%s\"\n".format(prefix, Node(name, children), childRest.substring(cutoff + 1)))
           return Some((Node(name, children), childRest.substring(cutoff + 1)))
@@ -145,6 +156,8 @@ object MultiLineTreeParser {
       if (help.value.isDefined) {
         parser.usage()
       }
+
+      pprintErrs = pprintErrsOpt.value.isDefined
 
       val inputTrees = input.value match {
         case Some(filename) => apply(filename)
