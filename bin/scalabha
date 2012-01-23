@@ -54,7 +54,7 @@ elif [[ $CMD = 'treeseed' ]]; then
     (( EXIT_CODE += $? ))
 
 elif [[ $CMD = 'treemerge' ]]; then
-    treemerge.sh $1
+    treemerge.sh $1 $2
     (( EXIT_CODE += $? ))
 
 elif [ $CMD = 'viz' ]; then

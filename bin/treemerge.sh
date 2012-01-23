@@ -49,7 +49,11 @@ case $1 in
                     lang=$( basename $( dirname $( dirname $( dirname $( dirname $fullpath ) ) ) ) )
                     echo "merging $fullpath to $root/$lang/tree/$collection/$base.tree"
                     #echo "running: scalabha run opennlp.scalabha.tree.Merge -i $fullpath -o $root/$lang/tree/$collection/$base.tree"
-                    scalabha run opennlp.scalabha.tree.Merge --pprintErrs -i $fullpath -o $root/$lang/tree/$collection/$base.tree
+                    if [[ $2 == "-f" ]]; then
+                      scalabha run opennlp.scalabha.tree.Merge -f -i $fullpath -o $root/$lang/tree/$collection/$base.tree
+                    else
+                      scalabha run opennlp.scalabha.tree.Merge --pprintErrs -i $fullpath -o $root/$lang/tree/$collection/$base.tree
+                    fi
                     (( exit_code += $? ))
                 else
                     echo 
