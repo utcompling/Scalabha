@@ -22,10 +22,12 @@ class ParserTest extends FlatSpec with ShouldMatchers {
     val log = new SimpleLogger("", SimpleLogger.WARN, new BufferedWriter(logString))
     assert(MultiLineTreeParser.parseLine(log, "", 0, "")("(a b c)")
       === Some((Node("a", List(Value("b"), Value("c"))), "")))
-    assert(log.getStats() === (0, 1))
+    assert(log.getStats() === (0, 2))
     assert(logString.toString
-      === ": [ERR] (file:,tree#:0): A leaf node may only contain a tag and a token. " +
-      "I.e., (TAG token). Tree node (a b c) fails this test.\n")
+      === ": [ERR] (file:,tree#:0): A leaf node may only contain a tag and a token." +
+      " I.e., (TAG token). Following tree node fails this test: (a b c)\n" +
+      ": [ERR] (file:,tree#:0): A node must have exactly one head." +
+      " Following tree node fails this test: (a b c)\n")
   }
 
   "parseLine1" should "succeed and complain" in {
@@ -33,10 +35,13 @@ class ParserTest extends FlatSpec with ShouldMatchers {
     val log = new SimpleLogger("", SimpleLogger.WARN, new BufferedWriter(logString))
     assert(MultiLineTreeParser.parseLine(log, "", 0, "")("(a)")
       === Some((Node("a", List()), "")))
-    assert(log.getStats() === (0, 1))
+    assert(log.getStats() === (0, 2))
+    println(logString.toString)
     assert(logString.toString
       === ": [ERR] (file:,tree#:0): A leaf node may only contain a tag and a token. " +
-      "I.e., (TAG token). Tree node (a ) fails this test.\n")
+      "I.e., (TAG token). Following tree node fails this test: (a )\n" +
+      ": [ERR] (file:,tree#:0): A node must have exactly one head. " +
+      "Following tree node fails this test: (a )\n")
   }
 
   "parseLine" should "succeed and return extra string" in {
