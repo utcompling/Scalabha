@@ -17,14 +17,29 @@ object Merge {
   val skipErrs = parser.flag[Boolean](List("f", "skipErrs"), "Do not exit on errors. " +
     "The default is to exit as soon as errors are caught in any input file.")
   val pprintErrs = parser.flag[Boolean](List("pprintErrs"), "Format treenodes nicely in error reporting.")
+  val tokenFileOpt = parser.option[String](List("tok"), "FILE", "Optional. If present, the file that contains the tokens to " +
+    "check the tree against.")
+  val TreeFileName = """([^.]*).([^.]*).([^.]*).tree""".r
+  var tokensFromFile: List[List[String]] = Nil
 
   var log = new SimpleLogger(this.getClass().getName, SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
 
 
   def applyFile(file: File): List[TreeNode] = {
-    if (file.getName.endsWith("tree"))
-      MultiLineTreeParser(file.getName, scala.io.Source.fromFile(file, "UTF-8"))
-    else {
+    if (file.getName.endsWith("tree")) {
+      val trees: List[TreeNode] = MultiLineTreeParser(file.getName, scala.io.Source.fromFile(file, "UTF-8"))
+      if (tokensFromFile.length != 0) {
+        val TreeFileName(file_id, lang, treeNum) = file.getName
+        val treeIndexBase = treeNum.toInt - 1
+
+        for ((tree, index) <- trees.zipWithIndex) {
+          val treeTokens = tree.getTokens()
+          val tokens = tokensFromFile(treeIndexBase + index)
+          val pass = TokenChecker.checkTokensInLine(treeTokens, tokens)
+        }
+      }
+      trees
+    } else {
       log.warn("Assuming that %s is not a tree file because it does not end with the extension '.tree'. Skipping...\n".format(file.getName))
       List[TreeNode]()
     }
@@ -70,6 +85,13 @@ object Merge {
         parser.usage()
       }
 
+      tokensFromFile = tokenFileOpt.value match {
+        case Some(filename) =>
+          scala.io.Source.fromFile(filename, "UTF-8").getLines.map(line => line.replace("<EOS>", "").split("\\s+").toList).toList
+        case _ =>
+          Nil
+      }
+
       MultiLineTreeParser.log.logLevel = SimpleLogger.WARN
       MultiLineTreeParser.pprintErrs = pprintErrs.value.isDefined
 
@@ -81,7 +103,10 @@ object Merge {
 
       val (compileWarnings, compileErrors) = log.getStats()
       val (parseWarnings, parseErrors) = MultiLineTreeParser.log.getStats()
-      val (warnings, errors) = (compileWarnings + parseWarnings, compileErrors + parseErrors)
+      val (tokenWarnings, tokenErrors) = TokenChecker.log.getStats()
+      val (warnings, errors) = (
+        compileWarnings + parseWarnings + tokenWarnings,
+        compileErrors + parseErrors + tokenErrors)
 
       log.summary("Warnings,Errors: %s\n".format((warnings, errors)))
       if (errors == 0 || skipErrs.value.isDefined) {

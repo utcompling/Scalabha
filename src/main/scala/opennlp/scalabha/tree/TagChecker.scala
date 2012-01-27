@@ -108,7 +108,7 @@ object TagChecker {
 
   def checkTokensInLine(aList: List[String], bList: List[String]): String = {
     if (aList.length != bList.length) {
-      //log.err("Lists should be the same length: %s %s\n".format(aList, bList))
+      //log.err("Lists should be the same length: %s %s\n".format(treeTokens, tokFileTokens))
       "Fail: \n\ttree: %s is not the same length as \n\ttok:  %s".format(aList, bList)
     } else if (aList.length == 0) {
       ""

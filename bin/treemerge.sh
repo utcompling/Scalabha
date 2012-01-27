@@ -14,7 +14,6 @@ case $1 in
     kin|mlg)
         echo "merging $1"
         treesrc=$root/$1/tree/src
-        treedst=$root/$1/tree
         for collection in $treesrc/* ; do
             echo $collection
             for tree in $collection/* ; do
@@ -49,11 +48,12 @@ case $1 in
                     collection=$( basename $( dirname $fullpath ) )
                     lang=$( basename $( dirname $( dirname $( dirname $( dirname $fullpath ) ) ) ) )
                     echo "merging $fullpath to $root/$lang/tree/$collection/$base.tree"
-                    #echo "running: scalabha run opennlp.scalabha.tree.Merge -i $fullpath -o $root/$lang/tree/$collection/$base.tree"
+                    outputpath=$root/$lang/tree/$collection/$base.tree
+                    tokpath=$root/$lang/tok/$collection/$base.tok
                     if [[ $2 == "-f" ]]; then
-                      scalabha run opennlp.scalabha.tree.Merge -f -i $fullpath -o $root/$lang/tree/$collection/$base.tree
+                      scalabha run opennlp.scalabha.tree.Merge -f -i $fullpath -o $outputpath --tok $tokpath
                     else
-                      scalabha run opennlp.scalabha.tree.Merge --pprintErrs -i $fullpath -o $root/$lang/tree/$collection/$base.tree
+                      scalabha run opennlp.scalabha.tree.Merge --pprintErrs -i $fullpath -o $outputpath --tok $tokpath
                     fi
                     (( exit_code += $? ))
                 else
