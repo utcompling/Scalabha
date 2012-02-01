@@ -56,7 +56,7 @@ object TokenChecker {
       val inTree = MultiLineTreeParser("trees",index,inTreeLine)
       inTree match {
         case Some(root) =>
-          val inTreeTokens: List[String] = root.getTokens
+          val inTreeTokens: List[String] = root.getTokenStrings
           val tokTokens = tokLine.replace("<EOS>", "").split("\\s+").toList
           checkTokensInLine(inTreeTokens, tokTokens) match {
             case true => "%d: pass".format(index)

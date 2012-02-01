@@ -23,9 +23,9 @@ object MultiLineTreeParser {
 
   private def sprintNode(node: TreeNode): String = {
     if (pprintErrs) {
-      node.prettyPrintString()
+      node.getPrettyString
     } else {
-      node.getCanonicalString()
+      node.getCanonicalString
     }
   }
   
@@ -74,7 +74,7 @@ object MultiLineTreeParser {
             || (children.filter(_.isInstanceOf[Value]).length > 0 && children.length != 1)) {
             log.err("(file:%s,tree#:%d): A leaf node may only contain a tag and a token. I.e., (TAG token). Following tree node fails this test: %s\n".format(groupName, index, sprintNode(Node(name, children))))
           }
-          if (children.filter(_.isHead()).length != 1) {
+          if (children.filter(_.isHead).length != 1) {
             log.err("(file:%s,tree#:%d): A node must have exactly one head. Following tree node fails this test: %s\n".format(groupName, index, sprintNode(Node(name, children))))
           }
           log.trace("%sresult: %s,\"%s\"\n".format(prefix, Node(name, children), childRest.substring(cutoff + 1)))
@@ -166,7 +166,7 @@ object MultiLineTreeParser {
 
       val (warnings, errors) = log.getStats()
       if (errors == 0)
-        println(inputTrees.map(tree => tree.getCanonicalString()).mkString("\n"))
+        println(inputTrees.map(tree => tree.getCanonicalString).mkString("\n"))
       else
         log.summary("Suspending output since there were errors.\n")
 

@@ -6,6 +6,15 @@ import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 
 class TreeNodeTest extends FlatSpec with ShouldMatchers {
+  val equal: (TreeNode, TreeNode) => Boolean =
+    (a, b) => {
+      (a.name == b.name)
+      &&(a.getChildren.length == b.getChildren.length)
+      &&((a.getChildren zip b.getChildren).filter(
+        (ca: TreeNode, cb: TreeNode) => equal(ca, cb)
+      ).length == a.getChildren.length)
+    }
+  
   "A Value" should "always compare true to a Value" in {
     assert(Value("1").compareStructure(Value("1")))
     assert(Value("1").compareStructure(Value("2")))
@@ -38,19 +47,6 @@ class TreeNodeTest extends FlatSpec with ShouldMatchers {
     assert(!n3.compareStructure(n4))
     assert(!n3.compareStructure(n1))
   }
-
-  val tests = List[(TreeNode, HashMap[String, HashMap[List[String], Int]])](
-    (Node("a", List(Value("b"))), HashMap(("a", HashMap(List("b") -> 1)))),
-    (Node("a", List(Value("b"), Value("c"))), HashMap(("a", HashMap(List("b", "c") -> 1)))),
-    (Node("a", List(Node("b", List(Value("c"))))), HashMap(("a", HashMap(List("b") -> 1)), ("b", HashMap(List("c") -> 1)))),
-    (Node("r", List(Node("a", List(Value("b"))), Node("a", List(Value("c"))), Node("a", List(Value("b"))))),
-      HashMap(("a", HashMap(List("b") -> 2, List("c") -> 1)), ("r", HashMap(List("a", "a", "a") -> 1)))),
-    (Node("a", List(Value("b"), Value("c"), Value("d"))), HashMap(("a", HashMap(List("b", "c", "d") -> 1)))),
-    (Node("a", List(Node("b", List(Value("c"), Value("d"))), Node("e", List(Value("f"), Value("g"))))),
-      HashMap(("a", HashMap(List("b", "e") -> 1)), ("b", HashMap(List("c", "d") -> 1)), ("e", HashMap(List("f", "g") -> 1)))),
-    (Value("a"), HashMap()),
-    (Node("a", List()), HashMap(("a", HashMap(List() -> 1))))
-  )
 
   for ((tree, map) <- tests) {
     "%s.getTagMap()".format(tree) should "yield %s".format(map) in {

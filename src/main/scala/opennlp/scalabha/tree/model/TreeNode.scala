@@ -3,133 +3,94 @@ package opennlp.scalabha.model
 import collection.mutable.HashMap
 
 abstract class TreeNode {
+  protected[model] val _indent = "  "
+
+  protected[model] def _prettyPrintStringPrefixed(prefix: String): String
+
   val name: String
-  
-  def isHead(): Boolean
 
-  def compareStructure(other: TreeNode): Boolean
+  def isHead: Boolean
 
-  def getTagMap(): HashMap[String, HashMap[List[String], Int]]
+  def isTerminal: Boolean
 
-  def getTokens(): List[String]
+  def isToken: Boolean
 
-  def getCanonicalString(): String
+  def getChildren: List[TreeNode]
 
-  val _indent = "  "
-  def _prettyPrintStringPrefixed(prefix:String): String
-  def prettyPrintString(): String
+  def getTokenStrings: List[String]
 
-  def getHeight(): Int
+  def getTagStrings: List[String]
 
-  def getTagCounts(): HashMap[String, Int] = {
-    val result = HashMap[String, Int]()
-    for ((nodeName, innerMap) <- getTagMap()) {
-      for ((list, count) <- innerMap) {
-        if (result.contains(nodeName))
-          result(nodeName) += count
-        else
-          result(nodeName) = count
-      }
-    }
-    result
-  }
+  def getCanonicalString: String
+
+  def getPrettyString: String
+
 }
 
 case class Value(name: String) extends TreeNode {
-  def compareStructure(other: TreeNode): Boolean = {
-    other.isInstanceOf[Value]
-  }
-  
   // Values are heads by definition.
   // This isn't really meaningful, but since leaf Nodes are 
   // defined to have exactly one child, it makes validity checks easy
-  def isHead(): Boolean = true
+  def isHead: Boolean = true
 
-  def getTagMap(): HashMap[String, HashMap[List[String], Int]] = HashMap[String, HashMap[List[String], Int]]()
+  // terminals are interior nodes that contain Values as children. Values themselves are not terminals
+  def isTerminal = false
 
-  def getTokens(): List[String] = List(name)
+  def isToken = true
 
-  def getCanonicalString(): String = name
+  def getChildren = Nil
 
-  def prettyPrintString(): String = name
-  def _prettyPrintStringPrefixed(prefix:String): String = name
+  def getTokenStrings: List[String] = List(name)
 
-  def getHeight(): Int = 0
+  def getTagStrings = Nil // tokens are not tags, obviously
+
+  def getCanonicalString: String = name
+
+  def _prettyPrintStringPrefixed(prefix: String): String = name
+
+  def getPrettyString: String = name
 }
 
 case class Node(name: String, children: List[TreeNode]) extends TreeNode {
-  def compareStructure(other: TreeNode): Boolean = {
-    var result = other.isInstanceOf[Node]
-    if (result) {
-      val otherNode: Node = other.asInstanceOf[Node]
-      if (result) result &= (name == otherNode.name) && (children.length == otherNode.children.length)
-      if (result)
-        for ((t, o) <- (children zip otherNode.children)) {
-          if (result) result &= t.compareStructure(o)
-        }
-    }
-    result
-  }
-
   // if we decide to strip the head marking from the name, we can change this later to be set on
   // object creation.
-  def isHead(): Boolean = name.endsWith("-H")
+  def isHead: Boolean = name.endsWith("-H")
 
-  def getTokens(): List[String] = {
+  // I'm defining a terminal as a node with only Token children.
+  // Another valid definition might be a node with _any_ Token child.
+  // Since the conventions we have adopted specify that terminals should
+  // have exactly one child and that child should be a Token, there isn't
+  // currently a difference.
+  def isTerminal: Boolean = {
+    children.filter(child => child.isToken) == children
+  }
+
+  def isToken = false
+
+  def getChildren = children
+
+  def getTokenStrings: List[String] = {
     (for (child <- children) yield {
-      child.getTokens()
+      child.getTokenStrings
     }).toList.flatten
   }
 
-  def getTagMap(): HashMap[String, HashMap[List[String], Int]] = {
-    val result: HashMap[String, HashMap[List[String], Int]] = HashMap[String, HashMap[List[String], Int]](
-      (name, HashMap((for (child <- children) yield child.name) -> 1))
-    )
-
-    for (child <- children) {
-      val childMap = child.getTagMap()
-      for ((nodeName, innerMap) <- childMap) {
-        for ((list, count) <- innerMap) {
-          if (result.contains(nodeName)) {
-            if (result(nodeName).contains(list)) {
-              result(nodeName)(list) += count
-            } else {
-              result(nodeName)(list) = count
-            }
-          } else {
-            result(nodeName) = HashMap(list -> count)
-          }
-        }
-      }
-    }
-    result
+  def getTagStrings = {
+    name :: children.flatMap(child=>child.getTagStrings)
   }
 
-  def getCanonicalString(): String = "(%s %s)".format(
+  def getCanonicalString: String = "(%s %s)".format(
     name,
-    (for (child <- children) yield child.getCanonicalString()).mkString(" ")
+    (for (child <- children) yield child.getCanonicalString).mkString(" ")
       + (if (children != Nil && children.last.isInstanceOf[Node]) " " else "")
   )
 
-  def _prettyPrintStringPrefixed(prefix:String): String = "%s(%s %s)".format(
+  def _prettyPrintStringPrefixed(prefix: String): String = "%s(%s %s)".format(
     prefix,
     name,
     (for (child <- children) yield child._prettyPrintStringPrefixed(prefix + _indent)).mkString(" ")
       + (if (children != Nil && children.last.isInstanceOf[Node]) " " else "")
   )
-  
-  def prettyPrintString(): String = _prettyPrintStringPrefixed("\n")
 
-  def maxChildHeight(children: List[TreeNode]): Int = {
-    if (children.length == 0) {
-      0
-    } else {
-      val c :: cs = children
-      math.max(c.getHeight(), maxChildHeight(cs))
-    }
-  }
-
-  def getHeight(): Int = {
-    1 + maxChildHeight(children)
-  }
+  def getPrettyString: String = _prettyPrintStringPrefixed("\n")
 }

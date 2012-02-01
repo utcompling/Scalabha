@@ -33,7 +33,7 @@ object Merge {
         val treeIndexBase = treeNum.toInt - 1
 
         for ((tree, index) <- trees.zipWithIndex) {
-          val treeTokens = tree.getTokens()
+          val treeTokens = tree.getTokenStrings
           val tokens = tokensFromFile(treeIndexBase + index)
           val pass = TokenChecker.checkTokensInLine(treeTokens, tokens)
         }
@@ -120,7 +120,7 @@ object Merge {
             }
           case None => new BufferedWriter(new OutputStreamWriter(System.out))
         }
-        outputBuffer.write(parsedTrees.map(tree => tree.getCanonicalString()).mkString("\n") + "\n")
+        outputBuffer.write(parsedTrees.map(tree => tree.getCanonicalString).mkString("\n") + "\n")
 
         outputBuffer.close()
       } else {
