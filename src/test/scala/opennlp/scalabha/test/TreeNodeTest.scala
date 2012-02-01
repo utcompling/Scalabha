@@ -6,86 +6,120 @@ import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 
 class TreeNodeTest extends FlatSpec with ShouldMatchers {
+  val getTagChildren: (TreeNode) => List[TreeNode] =
+    (node) => {
+      node.getChildren.filter(!_.isToken)
+    }
   val equal: (TreeNode, TreeNode) => Boolean =
     (a, b) => {
-      (a.name == b.name)
-      &&(a.getChildren.length == b.getChildren.length)
-      &&((a.getChildren zip b.getChildren).filter(
-        (ca: TreeNode, cb: TreeNode) => equal(ca, cb)
-      ).length == a.getChildren.length)
+      (
+        ((a.isToken && b.isToken) || (a.name == b.name))
+          && (a.getChildren.length == b.getChildren.length)
+          && ((a.getChildren zip b.getChildren).filter {
+          case (ca, cb) => equal(ca, cb)
+        }.length == a.getChildren.length)
+        )
     }
-  
+  //TESTING THE TESTS ----------------------------------------------------------
   "A Value" should "always compare true to a Value" in {
-    assert(Value("1").compareStructure(Value("1")))
-    assert(Value("1").compareStructure(Value("2")))
-    assert(Value("1").compareStructure(Value("")))
+    assert(equal(Value("1"), Value("1")))
+    assert(equal(Value("1"), Value("2")))
+    assert(equal(Value("1"), Value("")))
   }
-
   it should "compare false to a Node" in {
-    assert(!Value("1").compareStructure(Node("", List(Value("2")))))
+    assert(!equal(Value("1"), Node("", List(Value("2")))))
   }
 
   "A Node" should "compare false to a Value" in {
-    assert(!Node("", List(Value("2"))).compareStructure(Value("1")))
+    assert(!equal(Node("", List(Value("2"))), Value("1")))
   }
 
   it should "compare true to a same-structured Node regardless of Value" in {
     val n1 = Node("a", List(Value("2")))
     val n2 = Node("a", List(Value("2")))
-    assert(n1 compareStructure n2)
+    assert(equal(n1, n2))
     val n3 = Node("b", List(Value("3"), n1))
     val n4 = Node("b", List(Value("5"), n2))
-    assert(n3 compareStructure n4)
+    assert(equal(n3, n4))
   }
 
   it should "compare false to a different-structured Node regardless of Value" in {
     val n1 = Node("b", List(Value("2")))
     val n2 = Node("a", List(Value("4")))
-    assert(!n1.compareStructure(n2))
     val n3 = Node("b", List(Value("3"), n1))
     val n4 = Node("a", List(Value("5"), n2))
-    assert(!n3.compareStructure(n4))
-    assert(!n3.compareStructure(n1))
+    assert(!equal(n1, n2))
+    assert(!equal(n2, n3))
+    assert(!equal(n3, n4))
   }
 
-  for ((tree, map) <- tests) {
-    "%s.getTagMap()".format(tree) should "yield %s".format(map) in {
-      assert(tree.getTagMap() === map)
-    }
+  //TESTING THE OBJECT --------------------------------------------------------
+
+  "isTerminal" should "work" in {
+    val n0 = Value("1")
+    val n1 = Node("a", List(Value("1")))
+    val n2 = Node("b", List(Node("a", List(Value("1")))))
+
+    assert(!n0.isTerminal)
+    assert(n1.isTerminal)
+    assert(!n2.isTerminal)
   }
 
-  val tests2 = List[(TreeNode, Set[String])](
-    (Node("a", List(Value("b"))), Set("a")),
-    (Node("a", List(Value("b"), Value("c"))), Set("a")),
-    (Node("a", List(Value("b"), Value("c"), Value("d"))), Set("a")),
-    (Node("a", List(Node("b", List(Value("c"))))), Set("a", "b")),
-    (Node("a", List(Node("b", List(Value("c"), Value("d"))), Node("e", List(Value("f"), Value("g"))))),
-      Set("a", "b", "e")),
-    (Value("a"), Set()),
-    (Node("a", List()), Set("a"))
-  )
-  for ((tree, set) <- tests2) {
-    "%s.getTagMap().keySet".format(tree) should "yield %s".format(set) in {
-      assert(tree.getTagMap().keySet === set)
-    }
+  "isToken" should "work" in {
+    val n0 = Value("1")
+    val n1 = Node("a", List(Value("1")))
+    val n2 = Node("b", List(Node("a", List(Value("1")))))
+
+    assert(n0.isToken)
+    assert(!n1.isToken)
+    assert(!n2.isToken)
   }
 
-  val tests3 = List[(TreeNode, HashMap[String, Int])](
-    (Node("a", List(Value("b"))), HashMap(("a", 1))),
-    (Node("a", List(Value("b"), Value("c"))), HashMap(("a", 1))),
-    (Node("a", List(Node("b", List(Value("c"))))), HashMap(("a", 1), ("b", 1))),
-    (Node("r", List(Node("a", List(Value("b"))), Node("a", List(Value("c"))), Node("a", List(Value("b"))))),
-      HashMap(("a", 3), ("r", 1))),
-    (Node("a", List(Value("b"), Value("c"), Value("d"))), HashMap(("a", 1))),
-    (Node("a", List(Node("b", List(Value("c"), Value("d"))), Node("e", List(Value("f"), Value("g"))))),
-      HashMap(("a", 1), ("b", 1), ("e", 1))),
-    (Value("a"), HashMap()),
-    (Node("a", List()), HashMap(("a", 1)))
-  )
+  "getTokenStrings" should "work" in {
+    val n0 = Value("1")
+    val n1 = Node("a", List(Value("1")))
+    val n2 = Node("b", List(Node("a", List(Value("1")))))
+    val n3 = Node("b", List(Node("a", List(Value("1"))),Node("b", List(Value("2")))))
 
-  for ((tree, map) <- tests3) {
-    "%s.getTagCounts()".format(tree) should "yield %s".format(map) in {
-      assert(tree.getTagCounts() === map)
-    }
+    assert(n0.getTokenStrings === List("1"))
+    assert(n1.getTokenStrings === List("1"))
+    assert(n2.getTokenStrings === List("1"))
+    assert(n3.getTokenStrings === List("1","2"))
+  }
+
+  "getTagStrings" should "work" in {
+    val n0 = Value("1")
+    val n1 = Node("a", List(Value("1")))
+    val n2 = Node("b", List(Node("a", List(Value("1")))))
+    val n3 = Node("b", List(Node("a", List(Value("1"))),Node("c", List(Value("2")))))
+
+    assert(n0.getTagStrings === List())
+    assert(n1.getTagStrings === List("a"))
+    assert(n2.getTagStrings === List("b","a"))
+    assert(n3.getTagStrings === List("b","a","c"))
+  }
+
+  "getCanonicalString" should "work" in {
+    val n0 = Value("1")
+    val n1 = Node("a", List(Value("1")))
+    val n2 = Node("b", List(Node("a", List(Value("1")))))
+    val n3 = Node("b", List(Node("a", List(Value("1"))),Node("c", List(Value("2")))))
+
+    assert(n0.getCanonicalString === "1")
+    assert(n1.getCanonicalString === "(a 1)")
+    assert(n2.getCanonicalString === "(b (a 1) )")
+    assert(n3.getCanonicalString === "(b (a 1) (c 2) )")
+  }
+
+  "getPrettyString" should "work" in {
+    val n0 = Value("1")
+    val n1 = Node("a", List(Value("1")))
+    val n2 = Node("b", List(Node("a", List(Value("1")))))
+    val n3 = Node("b", List(Node("a", List(Value("1"))),Node("c", List(Value("2")))))
+
+    assert(n0.getPrettyString === "1")
+    assert(n1.getPrettyString === "\n(a 1)")
+    assert(n2.getPrettyString === "\n(b \n  (a 1) )")
+    assert(n3.getPrettyString === "\n(b \n  (a 1) \n  (c 2) )")
   }
 }
