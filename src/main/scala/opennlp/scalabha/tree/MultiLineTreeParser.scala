@@ -148,6 +148,7 @@ object MultiLineTreeParser {
     apply(filename, scala.io.Source.fromFile(filename, "UTF-8"))
   }
 
+  val getTreeId:(String,Int)=>String = (file,tree)=>"%s#%d".format(file,tree)
 
   def main(args: Array[String]) {
     try {
