@@ -8,13 +8,6 @@ import java.io.{PrintStream, File, OutputStreamWriter, BufferedWriter}
 
 case class Observation(tag: String, observation: Any, count: Int, source: String) {}
 
-case class NonTerminalGrammar() extends Grammar {
-  def getObservationKeyString(key: Any): String = key.asInstanceOf[Iterable[String]].mkString(" ")
-}
-
-case class TerminalGrammar() extends Grammar {
-  def getObservationKeyString(key: Any): String = key.toString
-}
 
 abstract case class Grammar() {
   private var grammar: Map[String, Map[Any, (Int, List[String])]]
@@ -53,17 +46,48 @@ abstract case class Grammar() {
 
   def getObservationKeyString(key: Any): String
 
+  def getCountList(count: (Int, List[String])): List[(String, Int)] = {
+    val (_, sources) = count
+    sources.groupBy(x => x).map {
+      case (k, v) => (k, v.length)
+    }.toList
+  }
+
   def toJSONString: String = {
+    lazy val getCountString: ((Int, List[String])) => String = (count) => {
+      ("[ %s \n%"+(14+lengthOfObsKey)+"s]").format(getCountList(count).map("\""+_.toString()+"\"").mkString(("\n%"+(14+lengthOfObsKey)+"s, ").format("")),"")
+    }
     "{ %s\n}".format((for ((tag, observations) <- grammar.toList.sortBy(_._1)) yield {
       "%5s : { ".format(tag) + observations.map {
-        case (key, count) => ("%-"+lengthOfObsKey+"s: \"%s\"").format("\""+getObservationKeyString(key)+"\"",count)
+        case (key, count) => ("%-" + lengthOfObsKey + "s: %s").format("\"" + getObservationKeyString(key) + "\"", getCountString(count))
       }.mkString("\n          , ") + "\n          }\n"
     }).mkString("\n, "))
   }
 
-  val toCSVString: String = {
-    ""
+  def toCSVString: String = {
+    lazy val getCountString: ((Int, List[String])) => String = (count) => {
+      "%s".format(getCountList(count).map{
+        case(id,tally) =>
+          ",,\"%s\",%d".format(id,tally)
+      }.mkString("\n"))
+    }
+    "%s".format((for ((tag,observations) <- grammar.toList.sortBy(_._1)) yield {
+      "%s\n%s\n".format(tag,observations.map{
+        case (key,count) =>
+          val (total,_) = count
+          ",\"%s\",,,%s\n%s".format(getObservationKeyString(key).replaceAll("\"","<quote>"),total,getCountString(count))
+      }.mkString("\n"))
+    }).mkString("\n"))
+
   }
+}
+
+case class NonTerminalGrammar() extends Grammar {
+  def getObservationKeyString(key: Any): String = key.asInstanceOf[Iterable[String]].mkString(" ")
+}
+
+case class TerminalGrammar() extends Grammar {
+  def getObservationKeyString(key: Any): String = key.toString
 }
 
 object Grammarian {
@@ -72,7 +96,7 @@ object Grammarian {
 
   import ArgotConverters._
 
-  val parser = new ArgotParser(this.getClass().getName, preUsage = Some("Version 0.0"))
+  val parser = new ArgotParser(this.getClass.getName, preUsage = Some("Version 0.0"))
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val srcO = parser.flag(List("sources", "read_sources"), "Set this flag to read the tree/src files. " +
     "Leave it off to read the tree/ files.")
@@ -93,7 +117,7 @@ object Grammarian {
       }
       s
   }
- 
+
   val collectionsO = parser.multiOption[(String, String)]("coll", "COLLECTION ...", "One or more collections to examine." +
     " If this option is unspecified, all collections in the language will be used.") {
     (s, opt) =>
@@ -107,19 +131,15 @@ object Grammarian {
         case e: MatchError => parser.usage("You must specify the collection by it's native language and name, as in 'kin:kgmc'. ")
       }
   }
-  val outputFormatO = parser.option[String]("format","json or csv","the format to output grammars in. Default is json") {
-    (s,opt) =>
-      s.toLowerCase match {
-        case "json" => "json"
-        case "csv" => "csv"
-        case _ => parser.usage("The format choices are 'json' and 'csv'.")
-      }
-  }
-  val outputerFileO = parser.option[File](List("o","out"),"FILENAME","The file to write grammars to. If none is specified," +
-    "stdout will be used.") {
-    (s,opt)=>new File(s)
-  }
-  var log = new SimpleLogger(this.getClass().getName, SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
+  val outputFormatO = parser.option[String]("format", "json or csv", "the format to output grammars in. Default is json")((s, opt) => s.toLowerCase match {
+    case "json" => "json"
+    case "csv" => "csv"
+    case _ => parser.usage("The format choices are 'json' and 'csv'.")
+  })
+  val outputerFileO = parser.option[String](List("o", "out"), "FILENAME", "The file to write grammars to. If none is specified," +
+    "stdout will be used.")
+  
+  var log = new SimpleLogger(this.getClass.getName, SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
 
   val getAllFiles: (File, String, String, List[String]) => List[File] =
     (root, lang, extension, searchList) => {
@@ -153,8 +173,8 @@ object Grammarian {
   val getTreeGrammar: (TreeNode, String) => (Grammar, Grammar) =
     (tree, source) => {
       // looks like type sugar doesn't extend to application
-      var nonTerminals = NonTerminalGrammar()
-      var terminals = TerminalGrammar()
+      val nonTerminals = NonTerminalGrammar()
+      val terminals = TerminalGrammar()
 
       lazy val getTreeGrammarHelper: (TreeNode) => Unit =
         (tree) => {
@@ -184,31 +204,43 @@ object Grammarian {
       val terminals = TerminalGrammar()
       for (file <- files) {
         val trees = MultiLineTreeParser(file.getAbsolutePath)
-        for ((tree,index) <- trees.zipWithIndex) {
+        for ((tree, index) <- trees.zipWithIndex) {
           log.debug(file.getName + " " + tree.getCanonicalString)
-          val (tempNonTerm, tempTerm) = getTreeGrammar(tree,MultiLineTreeParser.getTreeId(file.getName,index+1))
+          val (tempNonTerm, tempTerm) = getTreeGrammar(tree, MultiLineTreeParser.getTreeId(file.getName, index + 1))
           nonTerminals.foldIn(tempNonTerm)
           terminals.foldIn(tempTerm)
         }
       }
       (nonTerminals, terminals)
     }
-  
-  def doOutput(nonTerminal:Grammar,terminal:Grammar) {
-    val strFunc:(Grammar)=>String = outputFormatO.value match {
-      case Some("csv")  => (gram)=>gram.toCSVString
-      case Some("json") => (gram)=>gram.toJSONString
-      case _ => (gram)=>gram.toJSONString
+
+  def doOutput(nonTerminal: Grammar, terminal: Grammar) {
+    val strFunc: (Grammar) => String = outputFormatO.value match {
+      case Some("csv") => (gram) => gram.toCSVString
+      case Some("json") => (gram) => gram.toJSONString
+      case _ => (gram) => gram.toJSONString
     }
-    val outputPrinter = outputerFileO.value match {
-      case Some(file:File) => new PrintStream(file)
-      case _ => System.out
+    val extension = outputFormatO.value match {
+      case Some(string) => string
+      case _ => "json"
     }
-    outputPrinter.println("NonTerminals:")
-    outputPrinter.println(strFunc(nonTerminal))
-    outputPrinter.println("Terminals:")
-    outputPrinter.println(strFunc(terminal))
-    outputPrinter.flush()//not closing because closing stdout can kill the process
+    val ntOutputPrinter = outputerFileO.value match {
+      case Some(filename: String) => new PrintStream(new File(filename+".nonterminal."+extension))
+      case _ => 
+        System.out.println("NonTerminals:")
+        System.out
+    }
+    ntOutputPrinter.println(strFunc(nonTerminal))
+    ntOutputPrinter.flush() //not closing because closing stdout can kill the process
+
+    val tOutputPrinter = outputerFileO.value match {
+      case Some(filename: String) => new PrintStream(new File(filename+".terminal."+extension))
+      case _ =>
+        System.out.println("Terminals:")
+        System.out
+    }
+    tOutputPrinter.println(strFunc(nonTerminal))
+    tOutputPrinter.flush() //not closing because closing stdout can kill the process
   }
 
   def main(args: Array[String]) {
@@ -231,7 +263,7 @@ object Grammarian {
         case (k, v) => k
       }.map {
         case (k, vs) => (k, vs.map {
-          case (k, v) => v
+          case (_, v) => v
         })
       }
 
