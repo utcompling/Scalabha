@@ -6,6 +6,42 @@ import java.io.{File, OutputStreamWriter, BufferedWriter}
 import opennlp.scalabha.tree.MultiLineTreeParser
 import opennlp.scalabha.model.TreeNode
 
+case class Observation(tag: String, observation: Any, count: Int, source: String) {}
+
+case class Grammar() {
+  private var grammar: Map[String, Map[Any, (Int, List[String])]]
+  = Map().withDefaultValue(Map().withDefaultValue((0, Nil)))
+
+  val addObservation: (Observation) => Unit =
+    (observation) => {
+      val Observation(tag, observKey, count, source) = observation
+      grammar += ((tag, grammar(tag) + ((observKey, {
+        val (oldCount, oldSources) = grammar(tag)(observKey)
+        (count + oldCount, source :: oldSources)
+      }))))
+    }
+
+  private val addObservations: (String, Any, Int, List[String]) => Unit =
+    (tag, observKey, count, sources) => {
+      grammar += ((tag, grammar(tag) + ((observKey, {
+        val (oldCount, oldSources) = grammar(tag)(observKey)
+        (count + oldCount, sources ::: oldSources)
+      }))))
+    }
+
+  def getGrammar = grammar
+
+  val mergeWith: (Grammar) => Grammar =
+    (otherGrammar) => {
+      val oGram:Map[String, Map[Any, (Int,List[String])]] = otherGrammar.getGrammar
+      for ((oTag, oObservations) <- oGram) {
+        for ((oObservKey, (oCount, oSources)) <- oObservations) {
+          addObservations(oTag,oObservKey,oCount,oSources)
+        }
+      }
+    }
+}
+
 object Grammarian {
   final val ALLOWED_LANGUAGES = List("kin", "mlg", "eng")
   final val IGNORE_DIRS = List("src")
@@ -65,9 +101,6 @@ object Grammarian {
       result
     }
 
-  type NonTerminalGrammar = Map[String, Map[List[String], Int]]
-  type TerminalGrammar = Map[String, Map[String, Int]]
-  type Grammar = Map[String, Map[Any, Int]]
 
   /**
    * @return (X,Y): X is the non-terminal census and Y is the terminal census
@@ -81,7 +114,7 @@ object Grammarian {
    *     where "token" is an observation of TAG's child token and 1 is the count
    *     <\p>
    */
-  val getTreeGrammar: (TreeNode) => (NonTerminalGrammar, TerminalGrammar) =
+  val getTreeGrammar: (TreeNode) => (Grammar, Grammar) =
     (tree: TreeNode) => {
       // looks like type sugar doesn't extend to application
       var nonTerminals = Map[String, Map[List[String], Int]]().withDefaultValue(
@@ -181,18 +214,16 @@ object Grammarian {
     }
 
   val getListString: (List[String]) => String =
-    (strings) => "[%s]".format(strings.mkString(","))
-  val getNonTerminalGrammarPrettyString: (NonTerminalGrammar) => String =
+    (strings) => "\"%s\"".format(strings.sorted.mkString(" "))
+  val getNonTerminalGrammarJSONString: (NonTerminalGrammar) => String =
     (grammar) => {
-      var resultString = ""
-      for ((tag, observations) <- grammar.toList.sortBy(_._1)) {
-        resultString += "%5s = { ".format(tag) + observations.map {
+      "{ %s\n}".format((for ((tag, observations) <- grammar.toList.sortBy(_._1)) yield {
+        "%5s : { ".format(tag) + observations.map {
           case (key, count) => "" + getListString(key) + ": " + count
-        }.mkString("\n        , ") + "\n        }\n"
-      }
-      resultString
+        }.mkString("\n          , ") + "\n          }\n"
+      }).mkString("\n, "))
     }
-  val getTerminalGrammarPrettyString: (TerminalGrammar) => String =
+  val getTerminalGrammarJSONString: (TerminalGrammar) => String =
     (grammar) => {
       var resultString = ""
       for ((tag, observations) <- grammar.toList.sortBy(_._1)) {
@@ -239,9 +270,9 @@ object Grammarian {
 
         val (nonTerminalGrammar, terminalGrammar) = buildGrammar(treeFileList)
         println("Terminals:")
-        println(getNonTerminalGrammarPrettyString(nonTerminalGrammar))
+        println(getNonTerminalGrammarJSONString(nonTerminalGrammar))
         println("Non Terminals:")
-        println(getTerminalGrammarPrettyString(terminalGrammar))
+        println(getTerminalGrammarJSONString(terminalGrammar))
       }
 
     } catch {
