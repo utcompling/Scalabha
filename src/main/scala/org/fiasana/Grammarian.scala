@@ -58,7 +58,7 @@ abstract case class Grammar() {
       ("[ %s \n%"+(14+lengthOfObsKey)+"s]").format(getCountList(count).map("\""+_.toString()+"\"").mkString(("\n%"+(14+lengthOfObsKey)+"s, ").format("")),"")
     }
     "{ %s\n}".format((for ((tag, observations) <- grammar.toList.sortBy(_._1)) yield {
-      "%5s : { ".format(tag) + observations.map {
+      "%5s : { ".format("\""+tag+"\"") + observations.map {
         case (key, count) => ("%-" + lengthOfObsKey + "s: %s").format("\"" + getObservationKeyString(key) + "\"", getCountString(count))
       }.mkString("\n          , ") + "\n          }\n"
     }).mkString("\n, "))
@@ -75,7 +75,7 @@ abstract case class Grammar() {
       "%s\n%s\n".format(tag,observations.map{
         case (key,count) =>
           val (total,_) = count
-          ",\"%s\",,,%s\n%s".format(getObservationKeyString(key).replaceAll("\"","<quote>"),total,getCountString(count))
+          ",\"%s\",,,%s\n%s".format(getObservationKeyString(key),total,getCountString(count))
       }.mkString("\n"))
     }).mkString("\n"))
 
@@ -83,11 +83,11 @@ abstract case class Grammar() {
 }
 
 case class NonTerminalGrammar() extends Grammar {
-  def getObservationKeyString(key: Any): String = key.asInstanceOf[Iterable[String]].mkString(" ")
+  def getObservationKeyString(key: Any): String = key.asInstanceOf[Iterable[String]].mkString(" ").replaceAll("\"","<quote>")
 }
 
 case class TerminalGrammar() extends Grammar {
-  def getObservationKeyString(key: Any): String = key.toString
+  def getObservationKeyString(key: Any): String = key.toString.replaceAll("\"","<quote>")
 }
 
 object Grammarian {
@@ -119,7 +119,8 @@ object Grammarian {
   }
 
   val collectionsO = parser.multiOption[(String, String)]("coll", "COLLECTION ...", "One or more collections to examine." +
-    " If this option is unspecified, all collections in the language will be used.") {
+    " Collections are of the form lang:collectionName, as in kin:kgmc. Note lang:* will scan all the collections" +
+    " under language 'lang'.") {
     (s, opt) =>
       try {
         val (lang :: coll :: Nil) = s.split(":").toList
@@ -264,9 +265,11 @@ object Grammarian {
       }.map {
         case (k, vs) => (k, vs.map {
           case (_, v) => v
-        })
+        }.filter(s=>s!="*"))
       }
 
+      val nonTerminalGrammar = NonTerminalGrammar()
+      val terminalGrammar = TerminalGrammar()
       for ((collectionLang, collections) <- langsAndCollections) {
         val root = new File(
           (List(muri_dir, "data", "phase2", collectionLang, "tree") :::
@@ -275,9 +278,11 @@ object Grammarian {
 
         val treeFileList = getAllFiles(root, language, ".tree", collections).reverse
 
-        val (nonTerminalGrammar, terminalGrammar) = buildGrammar(treeFileList)
-        doOutput(nonTerminalGrammar, terminalGrammar)
+        val (tmpNonTerminalGrammar, tmpTerminalGrammar) = buildGrammar(treeFileList)
+        nonTerminalGrammar.foldIn(tmpNonTerminalGrammar)
+        terminalGrammar.foldIn(tmpTerminalGrammar)
       }
+      doOutput(nonTerminalGrammar, terminalGrammar)
 
     } catch {
       case e: ArgotUsageException =>
