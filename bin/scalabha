@@ -28,7 +28,7 @@ shift
 help()
 {
 cat <<EOF
-Scalabha 0.1 commands: 
+Scalabha 0.2.1 commands: 
 
   build         build Scalabha with SBT
   run           run the main method of a given class
