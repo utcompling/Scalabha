@@ -27,6 +27,7 @@ object Merge {
 
   def applyFile(file: File): List[TreeNode] = {
     if (file.getName.endsWith("tree")) {
+      log.info("checking "+file.getName + "\n")
       val trees: List[TreeNode] = MultiLineTreeParser(file.getName, scala.io.Source.fromFile(file, "UTF-8"))
       if (tokensFromFile.length != 0) {
         val TreeFileName(file_id, lang, treeNum) = file.getName
