@@ -13,6 +13,7 @@ import opennlp.scalabha.util.Probability._
 import opennlp.scalabha.util.Probability
 import opennlp.scalabha.tag.hmm.support.SimpleTagDictFactory
 import opennlp.scalabha.tag.support.CondFreqCounter
+import opennlp.scalabha.tag.support.CondFreqCounts
 import org.apache.commons.logging.LogFactory
 import opennlp.scalabha.tag.support.RandomCondFreqDist
 
@@ -63,8 +64,8 @@ class HmmTaggerTrainer[Sym, Tag](
     val initialEmissions = new RandomCondFreqDist[Tag, Sym]()
 
     // Do not assume any known counts -- use only EM-estimated counts
-    val initialTransitionCounts = CondFreqCounter[Tag, Tag]()
-    val initialEmissionCounts = CondFreqCounter[Tag, Sym]()
+    val initialTransitionCounts = CondFreqCounts[Tag, Tag, Double]()
+    val initialEmissionCounts = CondFreqCounts[Tag, Sym, Double]()
 
     trainFromInitialHmm(tagDict, rawTrainSequences,
       initialTransitionCounts, initialEmissionCounts,
@@ -111,7 +112,7 @@ class HmmTaggerTrainer[Sym, Tag](
     val initialEmissions = initialEmissionCounter.toFreqDist
 
     trainFromInitialHmm(tagDict, rawTrainSequences,
-      initialTransitionCounter, initialEmissionCounter,
+      CondFreqCounts(initialTransitionCounter.resultCounts._1.mapValuesStrict(_._1)), CondFreqCounts(initialEmissionCounter.resultCounts._1.mapValuesStrict(_._1)),
       initialTransitions, initialEmissions)
   }
 
@@ -130,8 +131,8 @@ class HmmTaggerTrainer[Sym, Tag](
   def trainFromInitialHmm(
     tagDict: Map[Sym, Set[Tag]],
     rawTrainSequences: Iterable[IndexedSeq[Sym]],
-    initialTransitionCounter: CondFreqCounter[Tag, Tag],
-    initialEmissionCounter: CondFreqCounter[Tag, Sym],
+    initialTransitionCounts: CondFreqCounts[Tag, Tag, Double],
+    initialEmissionCounts: CondFreqCounts[Tag, Sym, Double],
     initialTransitions: Tag => Tag => Probability,
     initialEmissions: Tag => Sym => Probability) = {
 
@@ -141,7 +142,7 @@ class HmmTaggerTrainer[Sym, Tag](
     // Re-estimate probability distributions using EM
     val (transitions, emissions) = reestimateProbabilityDistributions(
       tagDictWithEnds, rawTrainSequences,
-      initialTransitionCounter, initialEmissionCounter,
+      initialTransitionCounts, initialEmissionCounts,
       initialTransitions, initialEmissions)
 
     // Construct the HMM tagger from the estimated probabilities
@@ -157,16 +158,16 @@ class HmmTaggerTrainer[Sym, Tag](
   private def reestimateProbabilityDistributions(
     tagDict: Map[Sym, Set[Tag]],
     rawTrainSequences: Iterable[IndexedSeq[Sym]],
-    initialTransitionCounter: CondFreqCounter[Tag, Tag],
-    initialEmissionCounter: CondFreqCounter[Tag, Sym],
+    initialTransitionCounts: CondFreqCounts[Tag, Tag, Double],
+    initialEmissionCounts: CondFreqCounts[Tag, Sym, Double],
     initialTransitions: Tag => Tag => Probability,
     initialEmissions: Tag => Sym => Probability) = {
 
     if (LOG.isDebugEnabled) {
       LOG.debug("Initial counts (before EM)")
-      for ((tag, count) <- initialTransitionCounter.resultCounts._1("D".asInstanceOf[Tag])._1.toList.sortBy(-_._2).take(5))
+      for ((tag, count) <- initialTransitionCounts.toMap("D".asInstanceOf[Tag]).toList.sortBy(-_._2).take(5))
         LOG.debug("  D -> " + tag + ": " + count)
-      for ((word, count) <- initialEmissionCounter.resultCounts._1("D".asInstanceOf[Tag])._1.toList.sortBy(-_._2).take(5))
+      for ((word, count) <- initialEmissionCounts.toMap("D".asInstanceOf[Tag]).toList.sortBy(-_._2).take(5))
         LOG.debug("  D -> " + word + ": " + count)
     }
 
@@ -188,7 +189,7 @@ class HmmTaggerTrainer[Sym, Tag](
       //          generating the training data
 
       val (expectedTransitionCounter, expectedEmmissionCounter, avgLogProb) =
-        estimateCounts(rawTrainSequences, tagDict, transitions, emissions, initialTransitionCounter, initialEmissionCounter)
+        estimateCounts(rawTrainSequences, tagDict, transitions, emissions, initialTransitionCounts, initialEmissionCounts)
 
       if (LOG.isDebugEnabled) {
         LOG.debug("Re-estimated counts (after E-step)")
@@ -219,7 +220,7 @@ class HmmTaggerTrainer[Sym, Tag](
 
     (transitions, emissions)
   }
-  
+
   /**
    * Estimate transition and emission counts for each sequence in
    * rawTrainSequences using the forward/backward procedure.
@@ -229,12 +230,12 @@ class HmmTaggerTrainer[Sym, Tag](
     tagDict: Map[Sym, Set[Tag]],
     transitions: Tag => Tag => Probability,
     emissions: Tag => Sym => Probability,
-    initialTransitionCounter: CondFreqCounter[Tag, Tag],
-    initialEmissionCounter: CondFreqCounter[Tag, Sym]) = {
+    initialTransitionCounts: CondFreqCounts[Tag, Tag, Double],
+    initialEmissionCounts: CondFreqCounts[Tag, Sym, Double]) = {
 
     // Create counters for accumulating the counts that we estimate for each sequence 
-    val expectedTransitionCounter = estimatedTransitionCounterFactory.get ++= initialTransitionCounter
-    val expectedEmmissionCounter = estimatedEmissionCounterFactory.get ++= initialEmissionCounter
+    val expectedTransitionCounter = estimatedTransitionCounterFactory.get ++= initialTransitionCounts
+    val expectedEmmissionCounter = estimatedEmissionCounterFactory.get ++= initialEmissionCounts
 
     // iterate over all raw training sequences, estimating counts for each
     val (totalSeqProb, numSequences) =

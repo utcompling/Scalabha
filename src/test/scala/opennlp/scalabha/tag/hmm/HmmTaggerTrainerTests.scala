@@ -19,6 +19,24 @@ import org.apache.log4j.BasicConfigurator
 class HmmTaggerTrainerTests {
 
   @Test
+  def unsupervised_training_en_fullTagDict() {
+    val trainLab = TaggedFile("data/postag/english/entrain") ++ TaggedFile("data/postag/english/entest")
+    val results = runUnsupervisedTrainingTest(trainLab)
+    assertResultsEqual("""
+		Total:   85.72 (20530/23949)
+		Known:   85.72 (20530/23949)
+		Unknown: NaN (0/0)
+		Common Mistakes:
+		#Err     Gold      Model
+		975      D        N
+		491      D        F
+		378      V        N
+		275      J        N
+		175      R        J
+    	""", results)
+  }
+
+  @Test
   def unsupervised_training_en_largeTagDict() {
     val trainLab = TaggedFile("data/postag/english/entrain")
     val results = runUnsupervisedTrainingTest(trainLab)
