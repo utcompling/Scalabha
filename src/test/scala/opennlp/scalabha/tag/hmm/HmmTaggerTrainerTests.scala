@@ -19,64 +19,61 @@ import org.apache.log4j.BasicConfigurator
 class HmmTaggerTrainerTests {
 
   @Test
-  def semisupervised_training_en_smoothed() {
+  def unsupervised_training_en_largeTagDict() {
+    val trainLab = TaggedFile("data/postag/english/entrain")
+    val results = runUnsupervisedTrainingTest(trainLab)
+    assertResultsEqual("""
+		Total:   77.13 (18471/23949)
+		Known:   84.54 (18464/21841)
+		Unknown: 0.33 (7/2108)
+		Common Mistakes:
+		#Err     Gold      Model
+		1174     N        E
+		1039     D        N
+		492      D        F
+		342      V        N
+		326      V        E
+    	""", results)
+  }
+
+  @Test
+  def unsupervised_training_en_smallTagDict() {
     val trainLab = TaggedFile("data/postag/english/entrain500")
+    val results = runUnsupervisedTrainingTest(trainLab)
+    assertResultsEqual("""
+		Total:   46.29 (11086/23949)
+		Known:   96.61 (10777/11155)
+		Unknown: 2.42 (309/12794)
+		Common Mistakes:
+		#Err     Gold      Model
+		5536     N        E
+		1890     V        E
+		1420     J        E
+		776      C        E
+		682      R        E
+    	""", results)
+  }
+
+  private def runUnsupervisedTrainingTest(trainLab: Seq[IndexedSeq[(String, String)]]) = {
     val trainRaw = RawFile("data/postag/english/enraw20k")
     val testRaw = AsRawFile("data/postag/english/entest")
     val gold = TaggedFile("data/postag/english/entest")
 
-    val transitionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleSmoothingTransitionFreqCounter(0.5, "<END>", new SimpleCondFreqCounter()) }
-    val emissionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleSmoothingEmissionFreqCounter(0.5, "<END>", "<END>", new SimpleCondFreqCounter[String, String]()) }
-
-    {
-      ///////////////////////////////
-      // First, see how well supervised learning does on the small labeled set.
-      // The result: not very well.
-      ///////////////////////////////
-      val supervisedTrainer: SupervisedTaggerTrainer[String, String] =
-        new SupervisedHmmTaggerTrainer(
-          transitionCounterFactory = transitionCounterFactory,
-          emissionCounterFactory = emissionCounterFactory,
-          "<END>", "<END>",
-          new SimpleTagDictFactory())
-      val supervisedTagger = supervisedTrainer.trainSupervised(trainLab)
-      val output = supervisedTagger.tag(testRaw)
-      val results = new TaggerEvaluator().evaluate(output, gold, supervisedTagger.asInstanceOf[HmmTagger[String, String]].tagDict)
-      assertResultsEqual("""
-		Total:   72.16 (17282/23949)
-		Known:   98.06 (10939/11155)
-		Unknown: 49.58 (6343/12794)
-		Common Mistakes:
-		#Err     Gold      Model
-		1113     J        N       
-		938      V        N       
-		496      R        N       
-		461      C        N       
-		399      N        J   
-		""", results)
-    }
-
-    {
-      ///////////////////////////////
-      // Now add raw training data and do semi-supervised training.
-      // The result: hopefully better than labeled data alone.
-      ///////////////////////////////
-      val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
-        new HmmTaggerTrainer(
-          initialTransitionCounterFactory = transitionCounterFactory,
-          initialEmissionCounterFactory = emissionCounterFactory,
-          estimatedTransitionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter() },
-          estimatedEmissionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter[String, String]() },
-          "<END>", "<END>",
-          maxIterations = 20,
-          minAvgLogProbChangeForEM = 0.00001,
-          new SimpleTagDictFactory())
-      val unsupervisedTagger = unsupervisedTrainer.trainSemisupervised(trainRaw, trainLab)
-      val output = unsupervisedTagger.tag(testRaw)
-      val results = new TaggerEvaluator().evaluate(output, gold, unsupervisedTagger.asInstanceOf[HmmTagger[String, String]].tagDict)
-      assertResultsEqual("""
-    	""", results)
-    }
+    val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
+      new HmmTaggerTrainer(
+        initialTransitionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleSmoothingTransitionFreqCounter(0.5, "<END>", new SimpleCondFreqCounter()) },
+        initialEmissionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleSmoothingEmissionFreqCounter(0.5, "<END>", "<END>", new SimpleCondFreqCounter[String, String]()) },
+        estimatedTransitionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter() },
+        estimatedEmissionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter[String, String]() },
+        "<END>", "<END>",
+        maxIterations = 20,
+        minAvgLogProbChangeForEM = 0.00001,
+        new SimpleTagDictFactory())
+    val tagDict = new SimpleTagDictFactory().make(trainLab)
+    val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainRaw)
+    val output = unsupervisedTagger.tag(testRaw)
+    val results = new TaggerEvaluator().evaluate(output, gold, unsupervisedTagger.asInstanceOf[HmmTagger[String, String]].tagDict)
+    results
   }
 
   object TaggedFile {
