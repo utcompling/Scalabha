@@ -47,11 +47,11 @@ import opennlp.scalabha.util.Probability._
  */
 abstract class CondFreqCounter[A, B] {
   def increment(a: A, b: B, n: Double)
-  def resultCounts(): (Map[A, (Map[B, Double], Double, Double)], Double, Double)
+  def resultCounts(): DefaultedCondFreqCounts[A, B, Double]
 
   final def ++=(other: CondFreqCounts[A, B, Double]): CondFreqCounter[A, B] = { other.iterator.foreach { case (a, bs) => bs.iterator.foreach { case (b, n) => increment(a, b, n) } }; this }
-  final def ++=(other: CondFreqCounter[A, B]): CondFreqCounter[A, B] = this ++= CondFreqCounts(other.resultCounts._1.mapValuesStrict(_._1))
-  final def ++=(other: TraversableOnce[(A, B)]): CondFreqCounter[A, B] = this ++= new CondFreqCounts(other.toIterator.groupByKey.mapValuesStrict(m => new FreqCounts(m.counts.mapValuesStrict(_.toDouble))))
+  final def ++=(other: CondFreqCounter[A, B]): CondFreqCounter[A, B] = this ++= new CondFreqCounts(other.resultCounts.counts.mapValuesStrict(_.counts))
+  final def ++=(other: TraversableOnce[(A, B)]): CondFreqCounter[A, B] = this ++= new CondFreqCounts(other.toIterator.groupByKey.mapValuesStrict(m => FreqCounts(m.counts.mapValuesStrict(_.toDouble))))
 
   final def toFreqDist: A => B => Probability = {
     CondFreqDist(resultCounts())
@@ -91,7 +91,7 @@ object CondFreqCounter {
 class SimpleCondFreqCounter[A, B] extends CondFreqCounter[A, B] {
   private val storedCounts = collection.mutable.Map[A, FreqCounter[B]]()
   override def increment(a: A, b: B, n: Double) { storedCounts.getOrElseUpdate(a, new SimpleFreqCounter[B]).increment(b, n) }
-  override def resultCounts() = (storedCounts.toMap.mapValuesStrict(_.resultCounts), 0, 0)
+  override def resultCounts() = DefaultedCondFreqCounts(storedCounts.toMap.mapValuesStrict(_.resultCounts), 0, 0)
   override def toString = storedCounts.mapValues(_.toString).toString
 }
 
@@ -123,23 +123,24 @@ abstract class DelegatingCondFreqCounter[A, B](delegate: CondFreqCounter[A, B]) 
  */
 class ConstrainingCondFreqCounter[A, B](validBigrams: Map[A, Set[B]], strict: Boolean, delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
   override def resultCounts() = {
-    val (delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts
+    val DefaultedCondFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts
     val filteredResultCounts =
-      for ((a, (aCounts, aTotalAdd, aDefault)) <- delegateResultCounts) yield {
-        val filtered = validBigrams.get(a).map(aCounts.filterKeys).getOrElse(Map())
+      for ((a, DefaultedFreqCounts(aCounts, aTotalAdd, aDefault)) <- delegateResultCounts) yield {
+        val filtered = FreqCounts(validBigrams.get(a).map(aCounts.toMap.filterKeys).getOrElse(Map()))
         val totalAdd = if (strict) 0 else aTotalAdd
         val default = if (strict) 0 else aDefault
-        (a, (filtered, totalAdd, default))
+        (a, DefaultedFreqCounts(filtered, totalAdd, default))
       }
     val totalAddition = if (strict) 0 else delegateTotalAddition
     val defaultCount = if (strict) 0 else delegateDefaultCount
-    (filteredResultCounts, delegateTotalAddition, delegateDefaultCount)
+    DefaultedCondFreqCounts(filteredResultCounts, delegateTotalAddition, delegateDefaultCount)
   }
 }
 
 object ConstrainingCondFreqCounter {
   def apply[A, B](validEntries: Map[A, Set[B]], strict: Boolean, delegate: CondFreqCounter[A, B]) =
     new ConstrainingCondFreqCounter(validEntries, strict, delegate)
+
   def apply[A, B](validEntries: Option[Map[A, Set[B]]], strict: Boolean, delegate: CondFreqCounter[A, B]) =
     validEntries match {
       case Some(validEntries) => new ConstrainingCondFreqCounter(validEntries, strict, delegate)
@@ -163,33 +164,33 @@ class SimpleSmoothingCondFreqCounter[A, B](lambda: Double, delegate: CondFreqCou
   protected def getDelegateResultCounts() = delegate.resultCounts
 
   override def resultCounts() = {
-    val (delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = getDelegateResultCounts()
+    val DefaultedCondFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = getDelegateResultCounts()
 
     // Compute MLE of B values alone (with add-one smoothing) for backoff
-    val bigramCounts = delegateResultCounts.mapValuesStrict(_._1)
-    val backoffCounts = amendBackoffCounts(bigramCounts.iterator.flatMap(_._2).groupByKey.mapValuesStrict(_.sum)) // Sum Bs across all As
-    val smoothedBackoffCounts = backoffCounts.mapValuesStrict(_.toDouble + 1) // add-one smoothing
+    val bigramCounts = delegateResultCounts.mapValuesStrict(_.counts)
+    val backoffCounts = amendBackoffCounts(bigramCounts.map(_._2).reduce(_ ++ _)) // Sum Bs across all As
+    val smoothedBackoffCounts = backoffCounts.toMap.mapValuesStrict(_.toDouble + 1) // add-one smoothing
     val smoothedBackoffTotal = 1.0 + smoothedBackoffCounts.values.sum // add-one smoothing
     val backoffDist = smoothedBackoffCounts.mapValuesStrict(_ / smoothedBackoffTotal) // P(B) = C(B) / Sum[C(x) for all x]
-      .withDefaultValue(1.0 / smoothedBackoffTotal) // for "unseen" B's, assume C(B) = 1
+      .withDefaultValue(1.0 / smoothedBackoffTotal) // for "unseen" Bs, assume C(B) = 1
 
     val smoothedResultCounts =
       delegateResultCounts.mapValuesStrict {
-        case (aCounts, aTotalAdd, aDefault) =>
-          val singleCountItems = aCounts.count(_._2 <= 1.00000000001) // Count Bs occurring <= 1 time
+        case DefaultedFreqCounts(aCounts, aTotalAdd, aDefault) =>
+          val singleCountItems = aCounts.toMap.count(_._2 <= 1.00000000001) // Count Bs occurring <= 1 time
           val smoothedLambda = lambda + singleCountItems
-          val smoothedBackoff = backoffDist.mapValuesStrict(_ * smoothedLambda)
-          val smoothedCounts = (smoothedBackoff.iterator ++ aCounts.mapValues(_.toDouble)).groupByKey.mapValuesStrict(_.sum)
+          val smoothedBackoff = FreqCounts(backoffDist.mapValuesStrict(_ * smoothedLambda))
+          val smoothedCounts = smoothedBackoff ++ aCounts
           val totalAddition = 0.0
           val defaultCount = smoothedLambda / smoothedBackoffTotal
-          (smoothedCounts, aTotalAdd + totalAddition, aDefault + defaultCount)
+          DefaultedFreqCounts(smoothedCounts, aTotalAdd + totalAddition, aDefault + defaultCount)
       }
     val totalAddition = 1.0
     val defaultCount = lambda / smoothedBackoffTotal
-    (smoothedResultCounts, totalAddition + delegateTotalAddition.toDouble, defaultCount + delegateDefaultCount.toDouble)
+    DefaultedCondFreqCounts(smoothedResultCounts, totalAddition + delegateTotalAddition.toDouble, defaultCount + delegateDefaultCount.toDouble)
   }
 
-  protected def amendBackoffCounts(backoffCounts: Map[B, Double]) = backoffCounts
+  protected def amendBackoffCounts(backoffCounts: FreqCounts[B, Double]) = backoffCounts
 }
 
 //////////////////////////////////////
@@ -198,8 +199,13 @@ class SimpleSmoothingCondFreqCounter[A, B](lambda: Double, delegate: CondFreqCou
 
 class AddDeltaSmoothingCondFreqCounter[A, B](delta: Double, delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
   override def resultCounts() = {
-    val (delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts
-    (delegateResultCounts.mapValuesStrict { case (c, t, d) => (c, t + delta, d + delta) }, delegateTotalAddition + delta, delegateDefaultCount + delta)
+    val DefaultedCondFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts
+    DefaultedCondFreqCounts(
+      delegateResultCounts.toMap
+        .mapValuesStrict {
+          case DefaultedFreqCounts(c, t, d) => DefaultedFreqCounts(c, t + delta, d + delta)
+        },
+      delegateTotalAddition + delta, delegateDefaultCount + delta)
   }
 }
 

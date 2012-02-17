@@ -112,7 +112,7 @@ class HmmTaggerTrainer[Sym, Tag](
     val initialEmissions = initialEmissionCounter.toFreqDist
 
     trainFromInitialHmm(tagDict, rawTrainSequences,
-      CondFreqCounts(initialTransitionCounter.resultCounts._1.mapValuesStrict(_._1)), CondFreqCounts(initialEmissionCounter.resultCounts._1.mapValuesStrict(_._1)),
+      initialTransitionCounter.resultCounts.simpleCounts, initialEmissionCounter.resultCounts.simpleCounts,
       initialTransitions, initialEmissions)
   }
 
@@ -193,9 +193,9 @@ class HmmTaggerTrainer[Sym, Tag](
 
       if (LOG.isDebugEnabled) {
         LOG.debug("Re-estimated counts (after E-step)")
-        for ((tag, count) <- expectedTransitionCounter.resultCounts._1("D".asInstanceOf[Tag])._1.toList.sortBy(-_._2).take(5))
+        for ((tag, count) <- expectedTransitionCounter.resultCounts.simpleCounts.toMap("D".asInstanceOf[Tag]).toList.sortBy(-_._2).take(5))
           LOG.debug("  D -> " + tag + ": " + count)
-        for ((word, count) <- expectedEmmissionCounter.resultCounts._1("D".asInstanceOf[Tag])._1.toList.sortBy(-_._2).take(5))
+        for ((word, count) <- expectedEmmissionCounter.resultCounts.simpleCounts.toMap("D".asInstanceOf[Tag]).toList.sortBy(-_._2).take(5))
           LOG.debug("  D -> " + word + ": " + count)
       }
 

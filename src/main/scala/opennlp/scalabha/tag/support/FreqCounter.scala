@@ -13,9 +13,9 @@ import opennlp.scalabha.util.Probability._
  * This is the top of a hierarchy designed for a modular approach to
  * frequency distribution building.  SimpleFreqCounter serves as the basic
  * form of the counter; it stores and increments the actual counts.  Other
- * implementation of FreqCounter will be count-transforming decorators 
- * extending DelegatingFreqCounter that wrap SimpleFreqCounter or wrap 
- * wrappers thereof.  Multiple layers of decoration allow various 
+ * implementation of FreqCounter will be count-transforming decorators
+ * extending DelegatingFreqCounter that wrap SimpleFreqCounter or wrap
+ * wrappers thereof.  Multiple layers of decoration allow various
  * transformations to be applied to the counts, and in varying orders.
  *
  * The operation of the system is such that counts, when added via the
@@ -46,10 +46,10 @@ import opennlp.scalabha.util.Probability._
  */
 abstract class FreqCounter[B] {
   def increment(b: B, n: Double)
-  def resultCounts(): (Map[B, Double], Double, Double)
+  def resultCounts(): DefaultedFreqCounts[B, Double]
 
   final def ++=(other: FreqCounts[B, Double]): FreqCounter[B] = { other.toMap.foreach { case (b, n) => increment(b, n) }; this }
-  final def ++=(other: TraversableOnce[B]): FreqCounter[B] = this ++= new FreqCounts(other.toIterator.counts.mapValuesStrict(_.toDouble))
+  final def ++=(other: TraversableOnce[B]): FreqCounter[B] = this ++= FreqCounts(other.toIterator.counts.mapValuesStrict(_.toDouble))
 
   final def toFreqDist(): B => Probability = {
     FreqDist(resultCounts())
@@ -89,7 +89,7 @@ object FreqCounter {
 class SimpleFreqCounter[B] extends FreqCounter[B] {
   private val storedCounts = collection.mutable.Map[B, Double]()
   override def increment(b: B, n: Double) { storedCounts(b) = storedCounts.getOrElse(b, 0.0) + n }
-  override def resultCounts() = (storedCounts.toMap, 0, 0)
+  override def resultCounts() = DefaultedFreqCounts(storedCounts.toMap, 0, 0)
   override def toString = storedCounts.toString
 }
 
@@ -121,10 +121,10 @@ abstract class DelegatingFreqCounter[B](delegate: FreqCounter[B]) extends FreqCo
  */
 class ConstrainingFreqCounter[B](validEntries: Set[B], strict: Boolean, delegate: FreqCounter[B]) extends DelegatingFreqCounter[B](delegate) {
   override def resultCounts() = {
-    val (delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts
+    val DefaultedFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts
     val totalAddition = if (strict) 0 else delegateTotalAddition
     val defaultCount = if (strict) 0 else delegateDefaultCount
-    (delegateResultCounts.filterKeys(validEntries), totalAddition, defaultCount)
+    DefaultedFreqCounts(delegateResultCounts.toMap.filterKeys(validEntries), totalAddition, defaultCount)
   }
 }
 

@@ -27,7 +27,7 @@ class FreqCounterTests {
       new FreqCounter[Symbol] {
         val delegate = new SimpleFreqCounter[Symbol]()
         override def increment(b: Symbol, n: Double) { delegate.increment(b, n) }
-        override def resultCounts() = (delegate.resultCounts._1, totalAddition, defaultCount)
+        override def resultCounts() = DefaultedFreqCounts(delegate.resultCounts.counts, totalAddition, defaultCount)
       })
     x ++= List('c, 'a, 'd, 'd, 'b, 'c, 'a)
     x ++= FreqCounts(Map('a -> 3.0, 'b -> 2.0, 'c -> 4.0, 'd -> 5.0))
@@ -49,7 +49,7 @@ class FreqCounterTests {
       new FreqCounter[Symbol] {
         val delegate = new SimpleFreqCounter[Symbol]()
         override def increment(b: Symbol, n: Double) { delegate.increment(b, n) }
-        override def resultCounts() = (delegate.resultCounts._1, totalAddition, defaultCount)
+        override def resultCounts() = DefaultedFreqCounts(delegate.resultCounts.counts, totalAddition, defaultCount)
       })
     x ++= List('c, 'a, 'd, 'd, 'b, 'c, 'a)
     x ++= FreqCounts(Map('a -> 3.0, 'b -> 2.0, 'c -> 4.0, 'd -> 5.0))

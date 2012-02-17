@@ -2,16 +2,15 @@ package opennlp.scalabha.tag.hmm.support
 
 import opennlp.scalabha.tag.support.CondFreqCounter
 import opennlp.scalabha.util.CollectionUtils._
-import opennlp.scalabha.tag.support.FreqDist
-import opennlp.scalabha.tag.support.SimpleSmoothingCondFreqCounter
+import opennlp.scalabha.tag.support._
 
 /**
  * CondFreqCounter decorator that smoothes emission counts.
  *
  * @param lambda	smoothing parameter
  */
-class SimpleSmoothingEmissionFreqCounter[Sym, Tag](lambda: Double, startEndSymbol: Sym, startEndTag: Tag, delegate: CondFreqCounter[Sym, Tag])
-  extends SimpleSmoothingCondFreqCounter[Sym, Tag](lambda, delegate) {
+class SimpleSmoothingEmissionFreqCounter[Tag, Sym](lambda: Double, startEndSymbol: Sym, startEndTag: Tag, delegate: CondFreqCounter[Tag, Sym])
+  extends SimpleSmoothingCondFreqCounter[Tag, Sym](lambda, delegate) {
 
   override protected def getDelegateResultCounts() =
     removeStartEnds(super.getDelegateResultCounts)
@@ -19,18 +18,18 @@ class SimpleSmoothingEmissionFreqCounter[Sym, Tag](lambda: Double, startEndSymbo
   override def resultCounts() =
     removeStartEnds(super.resultCounts)
 
-  private def removeStartEnds(resultCounts: (Map[Sym, (Map[Tag, Double], Double, Double)], Double, Double)): (Map[Sym, (Map[Tag, Double], Double, Double)], Double, Double) = {
-    val (superResultCounts, totalAddition, defaultCount) = resultCounts
+  private def removeStartEnds(resultCounts: DefaultedCondFreqCounts[Tag, Sym, Double]): DefaultedCondFreqCounts[Tag, Sym, Double] = {
+    val DefaultedCondFreqCounts(superResultCounts, totalAddition, defaultCount) = resultCounts
 
     val corrected =
       superResultCounts.mapValuesStrict {
-        case (aCounts, aTotalAdd, aDefault) =>
+        case DefaultedFreqCounts(aCounts, aTotalAdd, aDefault) =>
           // Remove startEndTag from association with any symbol
-          (aCounts - startEndTag, aTotalAdd, aDefault)
+          DefaultedFreqCounts(aCounts - startEndSymbol, aTotalAdd, aDefault)
       }
 
     // Make sure startEndSymbol maps only to startEndTag, and with Probability=1
-    (corrected + (startEndSymbol -> (Map(startEndTag -> 2.0), 0, 0)), totalAddition, defaultCount)
+    DefaultedCondFreqCounts(corrected + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 2.0), 0, 0)), totalAddition, defaultCount)
   }
 
 }

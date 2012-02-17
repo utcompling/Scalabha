@@ -14,29 +14,25 @@ import scala.collection.GenTraversable
  * function is to make adding counts easier.  The "++" operator adds the
  * counts for each respective entry (unlike Map's standard behavior).
  */
-abstract class DefaultedFreqCounts[B, N: Numeric] {
-  def ++(that: DefaultedFreqCounts[B, N]): DefaultedFreqCounts[B, N] =
-    new CompositeDefaultedFreqCounts(this, that)
-
-}
-
-class BaseDefaultedFreqCounts[B, N: Numeric](private val counts: FreqCounts[B, N], private val totalAddition: N, private val defaultCount: N) extends DefaultedFreqCounts[B, N] {
-  override def ++(that: DefaultedFreqCounts[B, N]) = {
-    that match {
-      case base: BaseDefaultedFreqCounts[B, N] =>
-        if (totalAddition == implicitly[Numeric[N]].zero && defaultCount == implicitly[Numeric[N]].zero)
-          new BaseDefaultedFreqCounts(counts ++ base.counts, base.totalAddition, base.defaultCount)
-        else if (base.totalAddition == implicitly[Numeric[N]].zero && base.defaultCount == implicitly[Numeric[N]].zero)
-          new BaseDefaultedFreqCounts(counts ++ base.counts, totalAddition, defaultCount)
-        else
-          super.++(that)
-      case _ => super.++(that)
+case class DefaultedFreqCounts[B, N: Numeric](val counts: FreqCounts[B, N], val totalAddition: N, val defaultCount: N) {
+  def ++(that: DefaultedFreqCounts[B, N]) = {
+    if (totalAddition == implicitly[Numeric[N]].zero && defaultCount == implicitly[Numeric[N]].zero)
+      new DefaultedFreqCounts(counts ++ that.counts, that.totalAddition, that.defaultCount)
+    else if (that.totalAddition == implicitly[Numeric[N]].zero && that.defaultCount == implicitly[Numeric[N]].zero)
+      new DefaultedFreqCounts(counts ++ that.counts, totalAddition, defaultCount)
+    else {
+      assert(totalAddition == that.totalAddition)
+      assert(defaultCount == that.defaultCount)
+      new DefaultedFreqCounts(counts ++ that.counts, totalAddition, defaultCount)
     }
   }
+
+  def simpleCounts = counts
 }
 
-class CompositeDefaultedFreqCounts[B, N: Numeric](private val a: DefaultedFreqCounts[B, N], private val b: DefaultedFreqCounts[B, N]) extends DefaultedFreqCounts[B, N] {
-
+object DefaultedFreqCounts {
+  def apply[B, N: Numeric](counts: Map[B, N], totalAddition: N, defaultCount: N) =
+    new DefaultedFreqCounts(FreqCounts(counts), totalAddition, defaultCount)
 }
 
 /**
@@ -44,27 +40,23 @@ class CompositeDefaultedFreqCounts[B, N: Numeric](private val a: DefaultedFreqCo
  * function is to make adding counts easier.  The "++" operator adds the
  * counts for each respective entry (unlike Map's standard behavior).
  */
-abstract class DefaultedCondFreqCounts[A, B, N: Numeric] {
-  def ++(that: DefaultedCondFreqCounts[A, B, N]): DefaultedCondFreqCounts[A, B, N] =
-    new CompositeDefaultedCondFreqCounts(this, that)
-
-}
-
-class BaseDefaultedCondFreqCounts[A, B, N: Numeric](private val counts: Map[A, DefaultedFreqCounts[B, N]], private val totalAddition: N, private val defaultCount: N) extends DefaultedCondFreqCounts[A, B, N] {
-  override def ++(that: DefaultedCondFreqCounts[A, B, N]) = {
-    that match {
-      case base: BaseDefaultedCondFreqCounts[A, B, N] =>
-        if (totalAddition == implicitly[Numeric[N]].zero && defaultCount == implicitly[Numeric[N]].zero)
-          new BaseDefaultedCondFreqCounts(counts ++ base.counts, base.totalAddition, base.defaultCount)
-        else if (base.totalAddition == implicitly[Numeric[N]].zero && base.defaultCount == implicitly[Numeric[N]].zero)
-          new BaseDefaultedCondFreqCounts(counts ++ base.counts, totalAddition, defaultCount)
-        else
-          super.++(that)
-      case _ => super.++(that)
+case class DefaultedCondFreqCounts[A, B, N: Numeric](val counts: Map[A, DefaultedFreqCounts[B, N]], val totalAddition: N, val defaultCount: N) {
+  def ++(that: DefaultedCondFreqCounts[A, B, N]) = {
+    if (totalAddition == implicitly[Numeric[N]].zero && defaultCount == implicitly[Numeric[N]].zero)
+      add(that.counts, that.totalAddition, that.defaultCount)
+    else if (that.totalAddition == implicitly[Numeric[N]].zero && that.defaultCount == implicitly[Numeric[N]].zero)
+      add(that.counts, totalAddition, defaultCount)
+    else {
+      assert(totalAddition == that.totalAddition)
+      assert(defaultCount == that.defaultCount)
+      add(that.counts, totalAddition, defaultCount)
     }
   }
-}
 
-class CompositeDefaultedCondFreqCounts[A, B, N: Numeric](private val a: DefaultedCondFreqCounts[A, B, N], private val b: DefaultedCondFreqCounts[A, B, N]) extends DefaultedCondFreqCounts[A, B, N] {
+  private def add(thatCounts: Map[A, DefaultedFreqCounts[B, N]], totalAddition: N, defaultCount: N) {
+    val totalCounts = (counts.iterator ++ thatCounts).groupByKey.mapValuesStrict(_.reduce(_ ++ _))
+    new DefaultedCondFreqCounts(totalCounts, totalAddition, defaultCount)
+  }
 
+  def simpleCounts = new CondFreqCounts(counts.mapValuesStrict(_.simpleCounts))
 }

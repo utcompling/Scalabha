@@ -37,10 +37,10 @@ class CondFreqCounterTests {
         val delegate = new SimpleCondFreqCounter[Char, Symbol]
         override def increment(a: Char, b: Symbol, n: Double) { delegate.increment(a, b, n) }
         override def resultCounts() =
-          (delegate.resultCounts._1.map {
-            case ('A', (x, _, _)) => ('A', (x, 1.5, 2.5))
-            case ('B', (x, _, _)) => ('B', (x, 2.0, 3.0))
-            case ('C', (x, _, _)) => ('C', (x, 2.5, 3.5))
+          DefaultedCondFreqCounts(delegate.resultCounts.counts.map {
+            case ('A', DefaultedFreqCounts(x, _, _)) => ('A', DefaultedFreqCounts(x, 1.5, 2.5))
+            case ('B', DefaultedFreqCounts(x, _, _)) => ('B', DefaultedFreqCounts(x, 2.0, 3.0))
+            case ('C', DefaultedFreqCounts(x, _, _)) => ('C', DefaultedFreqCounts(x, 2.5, 3.5))
           }, totalAddition, defaultCount)
       })
     x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 6.0), 'B' -> Map('a -> 4.0)))
@@ -70,10 +70,10 @@ class CondFreqCounterTests {
         val delegate = new SimpleCondFreqCounter[Char, Symbol]
         override def increment(a: Char, b: Symbol, n: Double) { delegate.increment(a, b, n) }
         override def resultCounts() =
-          (delegate.resultCounts._1.map {
-            case ('A', (x, _, _)) => ('A', (x, 1.5, 2.5))
-            case ('B', (x, _, _)) => ('B', (x, 2.0, 3.0))
-            case ('C', (x, _, _)) => ('C', (x, 2.5, 3.5))
+          DefaultedCondFreqCounts(delegate.resultCounts.counts.map {
+            case ('A', DefaultedFreqCounts(x, _, _)) => ('A', DefaultedFreqCounts(x, 1.5, 2.5))
+            case ('B', DefaultedFreqCounts(x, _, _)) => ('B', DefaultedFreqCounts(x, 2.0, 3.0))
+            case ('C', DefaultedFreqCounts(x, _, _)) => ('C', DefaultedFreqCounts(x, 2.5, 3.5))
           }, totalAddition, defaultCount)
       })
     x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 6.0), 'B' -> Map('a -> 4.0)))

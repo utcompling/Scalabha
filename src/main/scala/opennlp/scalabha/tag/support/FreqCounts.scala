@@ -16,6 +16,7 @@ import scala.collection.GenTraversable
  */
 class FreqCounts[B, N: Numeric](private val self: Map[B, N]) {
   def ++(that: FreqCounts[B, N]) = new FreqCounts((self.iterator ++ that.iterator).groupByKey.mapValuesStrict(_.sum))
+  def -(b: B) = new FreqCounts(self - b)
   def iterator = self.iterator
   def toMap = self
   override def toString = "FreqCounts(%s)".format(self)
@@ -33,8 +34,7 @@ object FreqCounts {
  */
 class CondFreqCounts[A, B, N: Numeric](private val self: Map[A, FreqCounts[B, N]]) {
   def ++(that: CondFreqCounts[A, B, N]) =
-    new CondFreqCounts((self.iterator ++ that.iterator)
-      .groupByKey.mapValuesStrict(m => new FreqCounts(m.flatMap(_.iterator).groupByKey.mapValuesStrict(_.sum))))
+    new CondFreqCounts((self.iterator ++ that.iterator).groupByKey.mapValuesStrict(_.reduce(_ ++ _)))
   def iterator = self.iterator
   def map[C](f: ((A, FreqCounts[B, N])) => C) = iterator.map(f)
   def values = iterator.map(_._2)
@@ -44,5 +44,5 @@ class CondFreqCounts[A, B, N: Numeric](private val self: Map[A, FreqCounts[B, N]
 
 object CondFreqCounts {
   def apply[A, B, N: Numeric]() = new CondFreqCounts[A, B, N](Map())
-  def apply[A, B, N: Numeric](self: Map[A, Map[B, N]]) = new CondFreqCounts(self.mapValuesStrict(m => new FreqCounts(m)))
+  def apply[A, B, N: Numeric](self: Map[A, Map[B, N]]) = new CondFreqCounts(self.mapValuesStrict(FreqCounts(_)))
 }

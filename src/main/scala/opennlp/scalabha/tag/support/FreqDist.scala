@@ -50,13 +50,13 @@ object FreqDist {
    * Note that if the total (after additions) is zero, the distribution
    * returned is simply the empty distribution.
    */
-  def apply[B](resultCounts: (Map[B, Double], Double, Double)): B => Probability = {
-    val (counts, totalAddition, defaultCount) = resultCounts
-    val total = counts.values.sum + totalAddition
+  def apply[B](resultCounts: DefaultedFreqCounts[B, Double]): B => Probability = {
+    val DefaultedFreqCounts(counts, totalAddition, defaultCount) = resultCounts
+    val total = counts.toMap.values.sum + totalAddition
     if (total == 0)
       FreqDist.empty
     else
-      counts.mapValuesStrict(count => (count / total).toProbability)
+      counts.toMap.mapValuesStrict(count => (count / total).toProbability)
         .withDefaultValue((defaultCount / total).toProbability)
   }
 }
@@ -115,17 +115,17 @@ object CondFreqDist {
    * (including additions from the top level and all 'A' entries) is zero,
    * then the empty conditional distribution is returned.
    */
-  def apply[A, B](resultCounts: (Map[A, (Map[B, Double], Double, Double)], Double, Double)): A => B => Probability = {
-    val (counts, totalAddition, defaultCount) = resultCounts
+  def apply[A, B](resultCounts: DefaultedCondFreqCounts[A, B, Double]): A => B => Probability = {
+    val DefaultedCondFreqCounts(counts, totalAddition, defaultCount) = resultCounts
     val (dists: List[(A, B => Probability)], total) =
       counts.foldLeft(List[(A, B => Probability)](), totalAddition) {
-        case ((dists, total), (a, (aCounts, aTotalAddition, aDefaultCount))) =>
-          val aTotal = aCounts.values.sum + aTotalAddition
+        case ((dists, total), (a, DefaultedFreqCounts(aCounts, aTotalAddition, aDefaultCount))) =>
+          val aTotal = aCounts.toMap.values.sum + aTotalAddition
           val aDistDefaulted =
             if (aTotal == 0)
               FreqDist.empty
             else
-              aCounts.mapValuesStrict(count => (count / aTotal).toProbability)
+              aCounts.toMap.mapValuesStrict(count => (count / aTotal).toProbability)
                 .withDefaultValue((aDefaultCount / aTotal).toProbability)
           ((a, aDistDefaulted) :: dists, total + aTotal)
       }
