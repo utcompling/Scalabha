@@ -105,14 +105,14 @@ class HmmTaggerTrainer[Sym, Tag](
     taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag] = {
 
     // Get initial counts and probability distributions from the labeled data alone
-    val (initialTransitionCounter, initialEmissionCounter) = getCountsFromTagged(taggedTrainSequences)
+    val (initialTransitionCounts, initialEmissionCounts) = getCountsFromTagged(taggedTrainSequences)
 
     // Initial distributions come directly from counts of labeled data
-    val initialTransitions = initialTransitionCounter.toFreqDist
-    val initialEmissions = initialEmissionCounter.toFreqDist
+    val initialTransitions = initialTransitionCounterFactory.get(initialTransitionCounts).toFreqDist
+    val initialEmissions = initialEmissionCounterFactory.get(initialEmissionCounts).toFreqDist
 
     trainFromInitialHmm(tagDict, rawTrainSequences,
-      initialTransitionCounter.resultCounts.simpleCounts, initialEmissionCounter.resultCounts.simpleCounts,
+      initialTransitionCounts, initialEmissionCounts,
       initialTransitions, initialEmissions)
   }
 
@@ -163,14 +163,6 @@ class HmmTaggerTrainer[Sym, Tag](
     initialTransitions: Tag => Tag => Probability,
     initialEmissions: Tag => Sym => Probability) = {
 
-    if (LOG.isDebugEnabled) {
-      LOG.debug("Initial counts (before EM)")
-      for ((tag, count) <- initialTransitionCounts.toMap("D".asInstanceOf[Tag]).toList.sortBy(-_._2).take(5))
-        LOG.debug("  D -> " + tag + ": " + count)
-      for ((word, count) <- initialEmissionCounts.toMap("D".asInstanceOf[Tag]).toList.sortBy(-_._2).take(5))
-        LOG.debug("  D -> " + word + ": " + count)
-    }
-
     // initial transition and emission probability distributions to be 
     // re-estimated using EM.  
     var transitions = initialTransitions
@@ -190,14 +182,6 @@ class HmmTaggerTrainer[Sym, Tag](
 
       val (expectedTransitionCounter, expectedEmmissionCounter, avgLogProb) =
         estimateCounts(rawTrainSequences, tagDict, transitions, emissions, initialTransitionCounts, initialEmissionCounts)
-
-      if (LOG.isDebugEnabled) {
-        LOG.debug("Re-estimated counts (after E-step)")
-        for ((tag, count) <- expectedTransitionCounter.resultCounts.simpleCounts.toMap("D".asInstanceOf[Tag]).toList.sortBy(-_._2).take(5))
-          LOG.debug("  D -> " + tag + ": " + count)
-        for ((word, count) <- expectedEmmissionCounter.resultCounts.simpleCounts.toMap("D".asInstanceOf[Tag]).toList.sortBy(-_._2).take(5))
-          LOG.debug("  D -> " + word + ": " + count)
-      }
 
       // M Step: Use these probability estimates to re-estimate the 
       //         probability distributions
@@ -396,17 +380,6 @@ class HmmTaggerTrainer[Sym, Tag](
           }.toMap
       }
 
-    if (LOG.isDebugEnabled) {
-      LOG.debug("Estimate Transition Counts:")
-      LOG.debug("  " + sequence.mkString(" "))
-      for (((currTok, nextTok), counts) <- (startEndSymbol +: sequence) zipEqual (sequence :+ startEndSymbol) zipEqual expectedTransitionCounts) {
-        val orderedCounts = counts.flattenOver.map { case (curTag, (nxtTag, count)) => (curTag, nxtTag) -> count }.toList.sortBy(-_._2)
-        LOG.debug("    " + currTok + " -> " + nextTok)
-        for (((curTag, nxtTag), count) <- orderedCounts.take(3))
-          LOG.debug("      " + curTag + " -> " + nxtTag + ": " + count)
-      }
-    }
-
     expectedTransitionCounts.map(CondFreqCounts(_)).reduce(_ ++ _)
   }
 
@@ -436,17 +409,6 @@ class HmmTaggerTrainer[Sym, Tag](
 
           counts
       }
-
-    if (LOG.isDebugEnabled) {
-      LOG.debug("Estimate Emission Counts:")
-      LOG.debug("  " + sequence.mkString(" "))
-      for ((tok, counts) <- fullSeq zipEqual expectedEmissionCounts) {
-        LOG.debug("    " + tok)
-        val orderedCounts = counts.flattenOver.map { case (curTag, (nxtTag, count)) => (curTag, nxtTag) -> count }.toList.sortBy(-_._2)
-        for (((tag, tok), count) <- orderedCounts.take(3))
-          LOG.debug("      " + tag + ": " + count)
-      }
-    }
 
     expectedEmissionCounts.map(CondFreqCounts(_)).reduce(_ ++ _)
   }

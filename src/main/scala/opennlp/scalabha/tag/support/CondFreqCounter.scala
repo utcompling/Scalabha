@@ -49,7 +49,7 @@ abstract class CondFreqCounter[A, B] {
   def increment(a: A, b: B, n: Double)
   def resultCounts(): DefaultedCondFreqCounts[A, B, Double]
 
-  final def ++=(other: CondFreqCounts[A, B, Double]): CondFreqCounter[A, B] = { other.iterator.foreach { case (a, bs) => bs.iterator.foreach { case (b, n) => increment(a, b, n) } }; this }
+  final def ++=[N](other: CondFreqCounts[A, B, N])(implicit num: Numeric[N]): CondFreqCounter[A, B] = { other.iterator.foreach { case (a, bs) => bs.iterator.foreach { case (b, n) => increment(a, b, num.toDouble(n)) } }; this }
   final def ++=(other: CondFreqCounter[A, B]): CondFreqCounter[A, B] = this ++= new CondFreqCounts(other.resultCounts.counts.mapValuesStrict(_.counts))
   final def ++=(other: TraversableOnce[(A, B)]): CondFreqCounter[A, B] = this ++= new CondFreqCounts(other.toIterator.groupByKey.mapValuesStrict(m => FreqCounts(m.counts.mapValuesStrict(_.toDouble))))
 
@@ -133,7 +133,7 @@ class ConstrainingCondFreqCounter[A, B](validBigrams: Map[A, Set[B]], strict: Bo
       }
     val totalAddition = if (strict) 0 else delegateTotalAddition
     val defaultCount = if (strict) 0 else delegateDefaultCount
-    DefaultedCondFreqCounts(filteredResultCounts, delegateTotalAddition, delegateDefaultCount)
+    DefaultedCondFreqCounts(filteredResultCounts, totalAddition, defaultCount)
   }
 }
 
@@ -146,6 +146,28 @@ object ConstrainingCondFreqCounter {
       case Some(validEntries) => new ConstrainingCondFreqCounter(validEntries, strict, delegate)
       case None => delegate
     }
+}
+
+//////////////////////////////////////
+// Scaling Implementation
+//////////////////////////////////////
+
+/**
+ * CondFreqCounter decorator that multiplies every count by some lambda
+ *
+ * @param lambda	the amount to scale each count
+ * @param delegate	the delegate counter upon which the transformation is performed
+ */
+class ScalingCondFreqCounter[A, B](lambda: Double, delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
+  override def resultCounts() = {
+    val DefaultedCondFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts
+    val filteredResultCounts =
+      for ((a, DefaultedFreqCounts(aCounts, aTotalAdd, aDefault)) <- delegateResultCounts) yield {
+        val scaled = FreqCounts(aCounts.toMap.mapValuesStrict(_ * lambda))
+        (a, DefaultedFreqCounts(scaled, aTotalAdd * lambda, aDefault * lambda))
+      }
+    DefaultedCondFreqCounts(filteredResultCounts, delegateTotalAddition * lambda, delegateDefaultCount * lambda)
+  }
 }
 
 //////////////////////////////////////
@@ -225,7 +247,7 @@ class AddDeltaSmoothingCondFreqCounter[A, B](delta: Double, delegate: CondFreqCo
  */
 abstract class CondFreqCounterFactory[A, B] {
   def get(): CondFreqCounter[A, B]
-  def get(initial: CondFreqCounts[A, B, Double]): CondFreqCounter[A, B] = get() ++= initial
+  def get[N: Numeric](initial: CondFreqCounts[A, B, N]): CondFreqCounter[A, B] = get() ++= initial
 }
 
 object CondFreqCounterFactory {

@@ -51,8 +51,10 @@ class SupervisedHmmTaggerTrainer[Sym, Tag](
    */
   override def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag] = {
     val tagDict = tagDictFactory.make(taggedTrainSequences)
-    val (transitions, emissions) = getCountsFromTagged(taggedTrainSequences)
-    new HmmTagger(transitions.toFreqDist, emissions.toFreqDist, tagDict, startEndSymbol, startEndTag)
+    val (transitionCounts, emissionCounts) = getCountsFromTagged(taggedTrainSequences)
+    val transitionDist = transitionCounterFactory.get(transitionCounts).toFreqDist
+    val emissionDist = emissionCounterFactory.get(emissionCounts).toFreqDist
+    new HmmTagger(transitionDist, emissionDist, tagDict, startEndSymbol, startEndTag)
   }
 
   /**
@@ -66,12 +68,12 @@ class SupervisedHmmTaggerTrainer[Sym, Tag](
 
     // Get the tag transitions, including start/final tags
     val tagPairs = tagSequences.map(_.sliding2).flatten
-    val transitionCounter = transitionCounterFactory.get ++= tagPairs
+    val transitionCounts = tagPairs.groupByKey.mapValuesStrict(_.counts.mapValuesStrict(_.toDouble))
 
     // Get the word/tag pairs (emissions)
     val tagSymbolPairs = (tagSequences.flatten zipEqual symSequences.flatten)
-    val emissionCounter = emissionCounterFactory.get ++= tagSymbolPairs
+    val emissionCounts = tagSymbolPairs.groupByKey.mapValuesStrict(_.counts.mapValuesStrict(_.toDouble))
 
-    (transitionCounter, emissionCounter)
+    (CondFreqCounts(transitionCounts), CondFreqCounts(emissionCounts))
   }
 }

@@ -79,10 +79,28 @@ class HmmTaggerTrainerTests {
 
     val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
       new HmmTaggerTrainer(
-        initialTransitionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleSmoothingTransitionFreqCounter(0.5, "<END>", new SimpleCondFreqCounter()) },
-        initialEmissionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleSmoothingEmissionFreqCounter(0.5, "<END>", "<END>", new SimpleCondFreqCounter[String, String]()) },
-        estimatedTransitionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter() },
-        estimatedEmissionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter[String, String]() },
+        initialTransitionCounterFactory =
+          new CondFreqCounterFactory[String, String] {
+            def get() =
+              new SimpleSmoothingTransitionFreqCounter(0.5, "<END>",
+                new SimpleCondFreqCounter())
+          },
+        initialEmissionCounterFactory =
+          new CondFreqCounterFactory[String, String] {
+            def get() =
+              new SimpleSmoothingEmissionFreqCounter(0.5, "<END>", "<END>",
+                new SimpleCondFreqCounter[String, String]())
+          },
+        estimatedTransitionCounterFactory =
+          new CondFreqCounterFactory[String, String] {
+            def get() =
+              new SimpleCondFreqCounter()
+          },
+        estimatedEmissionCounterFactory =
+          new CondFreqCounterFactory[String, String] {
+            def get() =
+              new SimpleCondFreqCounter[String, String]()
+          },
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001,
