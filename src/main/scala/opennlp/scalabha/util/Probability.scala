@@ -32,6 +32,7 @@ final class Probability(val underlying: Double) extends Ordered[Probability] {
     case _ => false
   }
   override def hashCode(): Int = toDouble ##
+  
   override def compare(that: Probability) = underlying.compare(that.underlying)
   def approx(o: Probability, tolerance: Double): Boolean = {
     if(this == Probability.zero && o == Probability.zero)
@@ -45,6 +46,7 @@ final class Probability(val underlying: Double) extends Ordered[Probability] {
   def toLong = toDouble.toLong
   def toFloat = toDouble.toFloat
   def toDouble = math.exp(underlying)
+  
   override def toString = "Probability(%s)".format(toDouble)
 }
 
@@ -69,7 +71,7 @@ object Probability {
     def minus(x: Probability, y: Probability): Probability = sys.error("not implemented")
     def times(x: Probability, y: Probability): Probability = x * y
     def div(x: Probability, y: Probability): Probability = x / y
-    def negate(x: Probability): Probability = sys.error("not implemented")
+    def negate(x: Probability): Probability = sys.error("Probability values cannot be negated")
     def fromInt(x: Int): Probability = x.toDouble.toProbability
     def toInt(x: Probability): Int = x.toInt
     def toLong(x: Probability): Long = x.toLong

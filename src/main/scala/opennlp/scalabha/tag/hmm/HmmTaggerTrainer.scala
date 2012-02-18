@@ -311,7 +311,7 @@ class HmmTaggerTrainer[Sym, Tag](
           val currForward =
             tagDict(tok).mapTo { currTag => // each legal tag for the current token
               val tProb =
-                prevForward.mapSum {
+                prevForward.sumMap {
                   case (prevTag, prevFwdScore) => prevFwdScore * transitions(prevTag)(currTag)
                 }
               val eProb = emissions(currTag)(tok)
@@ -352,7 +352,7 @@ class HmmTaggerTrainer[Sym, Tag](
         case (tok, (nextBackwrd, otherBackwrds, nextTok)) =>
           val currBackwrd =
             tagDict(tok).mapTo { currTag =>
-              nextBackwrd.mapSum {
+              nextBackwrd.sumMap {
                 case (nextTag, nextBkwdScore) =>
                   transitions(currTag)(nextTag) * emissions(nextTag)(nextTok) * nextBkwdScore
               }
