@@ -406,11 +406,8 @@ class HmmTaggerTrainer[Sym, Tag](
     val expectedEmissionCounts =
       (fullSeq zipEqual forwards zipEqual backwrds).map {
         case ((tok, forward), backwrd) =>
-          val counts =
-            tagDict(tok).mapTo(tag =>
-              Map(tok -> (forward(tag) * backwrd(tag) / seqProb).toDouble)).toMap
-
-          counts
+          tagDict(tok).mapTo(tag =>
+            Map(tok -> (forward(tag) * backwrd(tag) / seqProb).toDouble)).toMap
       }
 
     expectedEmissionCounts.map(CondFreqCounts(_)).reduce(_ ++ _)

@@ -19,6 +19,36 @@ import org.apache.log4j.BasicConfigurator
 class HmmTaggerTrainerTests {
 
   @Test
+  def unsupervised_training_en_fullTagDict_noSmoothing() {
+    val trainLab = TaggedFile("data/postag/english/entrain")
+    val testLab = TaggedFile("data/postag/english/entest")
+
+    val testRaw = AsRawFile("data/postag/english/entest")
+    val gold = TaggedFile("data/postag/english/entest")
+
+    val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
+      new HmmTaggerTrainer(
+        initialTransitionCounterFactory =
+          new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter() },
+        initialEmissionCounterFactory =
+          new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter() },
+        estimatedTransitionCounterFactory =
+          new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter() },
+        estimatedEmissionCounterFactory =
+          new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter() },
+        "<END>", "<END>",
+        maxIterations = 20,
+        minAvgLogProbChangeForEM = 0.00001,
+        new SimpleTagDictFactory())
+    val tagDict = new SimpleTagDictFactory().make(trainLab ++ testLab)
+    val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._2)))
+    val output = unsupervisedTagger.tag(testRaw)
+    val results = new TaggerEvaluator().evaluate(output, gold, unsupervisedTagger.asInstanceOf[HmmTagger[String, String]].tagDict)
+    assertResultsEqual("""
+    	""", results)
+  }
+
+  @Test
   def unsupervised_training_en_fullTagDict() {
     val trainLab = TaggedFile("data/postag/english/entrain") ++ TaggedFile("data/postag/english/entest")
     val results = runUnsupervisedTrainingTest(trainLab)

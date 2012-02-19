@@ -89,7 +89,7 @@ class CondFreqCounterTests {
     assertEqualsProb(Probability(0.000), d('C')('a))
     assertEqualsProb(Probability(0.000), d('C')('b))
     assertEqualsProb(Probability(0.000), d('C')('z))
-    assertEqualsProb(Probability(0.200), d('Z')('z))
+    assertEqualsProb(Probability(0.000), d('Z')('z))
   }
 
   @Test
