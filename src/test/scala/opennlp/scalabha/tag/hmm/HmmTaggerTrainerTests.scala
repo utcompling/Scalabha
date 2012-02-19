@@ -41,7 +41,7 @@ class HmmTaggerTrainerTests {
         minAvgLogProbChangeForEM = 0.00001,
         new SimpleTagDictFactory())
     val tagDict = new SimpleTagDictFactory().make(trainLab ++ testLab)
-    val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._2)))
+    val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._1)))
     val output = unsupervisedTagger.tag(testRaw)
     val results = new TaggerEvaluator().evaluate(output, gold, unsupervisedTagger.asInstanceOf[HmmTagger[String, String]].tagDict)
     assertResultsEqual("""
@@ -71,7 +71,7 @@ class HmmTaggerTrainerTests {
         minAvgLogProbChangeForEM = 0.00001,
         new SimpleTagDictFactory())
     val tagDict = new SimpleTagDictFactory().make(trainLab ++ testLab)
-    val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._2)))
+    val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._1)))
     val output = unsupervisedTagger.tag(testRaw)
     val results = new TaggerEvaluator().evaluate(output, gold, unsupervisedTagger.asInstanceOf[HmmTagger[String, String]].tagDict)
     assertResultsEqual("""
