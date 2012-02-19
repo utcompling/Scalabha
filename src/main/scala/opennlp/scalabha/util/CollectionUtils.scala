@@ -1,15 +1,14 @@
 package opennlp.scalabha.util
 
-import scala.annotation.implicitNotFound
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.Builder
+import scala.collection.mutable.ListBuffer
 import scala.collection.GenTraversable
 import scala.collection.GenTraversableLike
 import scala.collection.GenTraversableOnce
 import scala.collection.TraversableLike
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 import scala.collection.GenMap
+import scala.collection.mutable
 
 object CollectionUtils {
 
@@ -537,6 +536,26 @@ object CollectionUtils {
       self ++ Iterator(elem)
   }
   implicit def enrich_prependAppend_Iterator[A](self: Iterator[A]) = new Enriched_prependAppend_Iterator(self)
+
+  //////////////////////////////////////////////////////
+  // avg(): A
+  //   - Find the average (mean) of this collection of numbers
+  //////////////////////////////////////////////////////
+
+  class Enrich_avg_GenTraversableOnce[A](self: GenTraversableOnce[A]) {
+    /**
+     * Find the average (mean) of this collection of numbers.
+     *
+     * @return the average (mean)
+     */
+    def avg(implicit num: Fractional[A]) = {
+      val (total, count) = self.toIterator.foldLeft((num.zero, num.zero)) {
+        case ((total, count), x) => (num.plus(total, x), num.plus(count, num.one))
+      }
+      num.div(total, count)
+    }
+  }
+  implicit def enrich_avg_GenTraversableOnce[A](self: GenTraversableOnce[A]) = new Enrich_avg_GenTraversableOnce(self)
 
   //  class ReversableIterableMap[A, B](map: Map[A, GenTraversableOnce[B]]) {
   //    def reverse(): Map[B, GenTraversableOnce[A]] =

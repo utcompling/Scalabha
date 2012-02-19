@@ -48,7 +48,7 @@ class HmmTaggerTrainer[Sym, Tag](
   extends SupervisedHmmTaggerTrainer[Sym, Tag](initialTransitionCounterFactory, initialEmissionCounterFactory, startEndSymbol, startEndTag, tagDictFactory)
   with UnsupervisedTaggerTrainer[Sym, Tag] {
 
-  private val LOG = LogFactory.getLog(HmmTaggerTrainer.getClass);
+  private val LOG = LogFactory.getLog(HmmTaggerTrainer.getClass)
 
   /**
    * Train a Hidden Markov Model tagger only on unlabeled data using the
@@ -59,6 +59,9 @@ class HmmTaggerTrainer[Sym, Tag](
    * @return						a trained tagger
    */
   def trainUnsupervised(tagDict: Map[Sym, Set[Tag]], rawTrainSequences: Iterable[IndexedSeq[Sym]]): Tagger[Sym, Tag] = {
+    LOG.info("Beginning unsupervised training")
+    LOG.info("Tag dict: %d symbols, %.3f avg tags/symbol".format(tagDict.size, tagDict.values.map(_.size.toDouble).avg))
+
     // Use random distributions as the starting point for EM
     val initialTransitions = new RandomCondFreqDist[Tag, Tag]()
     val initialEmissions = new RandomCondFreqDist[Tag, Sym]()
@@ -168,8 +171,8 @@ class HmmTaggerTrainer[Sym, Tag](
     var transitions = initialTransitions
     var emissions = initialEmissions
 
-    var prevAvgLogProb = Double.NegativeInfinity;
-    var averageLogProb = Double.NegativeInfinity;
+    var prevAvgLogProb = Double.NegativeInfinity
+    var averageLogProb = Double.NegativeInfinity
     var iteration = 0
     do {
       // update iteration information
@@ -191,16 +194,16 @@ class HmmTaggerTrainer[Sym, Tag](
 
       // compute new iteration information
       averageLogProb = avgLogProb
-      LOG.info("\t" + iteration + ": " + averageLogProb);
+      LOG.info("\t" + iteration + ": " + averageLogProb)
 
     } while (iteration < maxIterations &&
       (averageLogProb - prevAvgLogProb).abs > minAvgLogProbChangeForEM && //check if converged
       averageLogProb > prevAvgLogProb) // check for divergence
 
     if ((averageLogProb - prevAvgLogProb).abs < minAvgLogProbChangeForEM)
-      LOG.info("DONE: Change in average log probability is less than " + minAvgLogProbChangeForEM);
+      LOG.info("DONE: Change in average log probability is less than " + minAvgLogProbChangeForEM)
     if (averageLogProb < prevAvgLogProb)
-      LOG.info("DIVERGED: log probability decreased!!");
+      LOG.info("DIVERGED: log probability decreased!!")
 
     (transitions, emissions)
   }
