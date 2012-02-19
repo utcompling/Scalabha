@@ -225,7 +225,7 @@ class AddDeltaSmoothingCondFreqCounter[A, B](delta: Double, delegate: CondFreqCo
     DefaultedCondFreqCounts(
       delegateResultCounts.toMap
         .mapValuesStrict {
-          case DefaultedFreqCounts(c, t, d) => DefaultedFreqCounts(c, t + delta, d + delta)
+          case DefaultedFreqCounts(c, t, d) => DefaultedFreqCounts(c.toMap.mapValuesStrict(_ + delta), t + delta, d + delta)
         },
       delegateTotalAddition + delta, delegateDefaultCount + delta)
   }
