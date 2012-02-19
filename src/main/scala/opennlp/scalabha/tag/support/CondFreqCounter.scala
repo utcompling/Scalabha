@@ -51,7 +51,7 @@ abstract class CondFreqCounter[A, B] {
 
   final def ++=[N](other: CondFreqCounts[A, B, N])(implicit num: Numeric[N]): CondFreqCounter[A, B] = { other.iterator.foreach { case (a, bs) => bs.iterator.foreach { case (b, n) => increment(a, b, num.toDouble(n)) } }; this }
   final def ++=(other: CondFreqCounter[A, B]): CondFreqCounter[A, B] = this ++= new CondFreqCounts(other.resultCounts.counts.mapValuesStrict(_.counts))
-  final def ++=(other: TraversableOnce[(A, B)]): CondFreqCounter[A, B] = this ++= new CondFreqCounts(other.toIterator.groupByKey.mapValuesStrict(m => FreqCounts(m.counts.mapValuesStrict(_.toDouble))))
+  final def ++=(other: TraversableOnce[(B, A)]): CondFreqCounter[A, B] = this ++= new CondFreqCounts(other.toIterator.map(_.swap).groupByKey.mapValuesStrict(m => FreqCounts(m.counts.mapValuesStrict(_.toDouble))))
 
   final def toFreqDist: A => B => Probability = {
     CondFreqDist(resultCounts())

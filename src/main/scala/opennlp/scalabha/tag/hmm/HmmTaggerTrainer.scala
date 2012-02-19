@@ -15,7 +15,6 @@ import opennlp.scalabha.tag.hmm.support.SimpleTagDictFactory
 import opennlp.scalabha.tag.support.CondFreqCounter
 import opennlp.scalabha.tag.support.CondFreqCounts
 import org.apache.commons.logging.LogFactory
-import opennlp.scalabha.tag.support.RandomCondFreqDist
 
 /**
  * Factory for training a Hidden Markov Model tagger from a combination of
@@ -63,8 +62,10 @@ class HmmTaggerTrainer[Sym, Tag](
     LOG.info("Tag dict: %d symbols, %.3f avg tags/symbol".format(tagDict.size, tagDict.values.map(_.size.toDouble).avg))
 
     // Use random distributions as the starting point for EM
-    val initialTransitions = new RandomCondFreqDist[Tag, Tag]()
-    val initialEmissions = new RandomCondFreqDist[Tag, Sym]()
+    val tagDictWithEnds = tagDict + (startEndSymbol -> Set(startEndTag)) // add start/end symbol/tag to tag dict
+    val allTags = tagDictWithEnds.values.flatten.toSet
+    val initialTransitions = initialTransitionCounterFactory.get ++= (for (a <- allTags; b <- allTags) yield (a, b)) // all known tag->tag pairs
+    val initialEmissions = initialEmissionCounterFactory.get ++= tagDictWithEnds.flattenOver // all known symbol->tag pairs
 
     // Do not assume any known counts -- use only EM-estimated counts
     val initialTransitionCounts = CondFreqCounts[Tag, Tag, Double]()
@@ -72,7 +73,7 @@ class HmmTaggerTrainer[Sym, Tag](
 
     trainFromInitialHmm(tagDict, rawTrainSequences,
       initialTransitionCounts, initialEmissionCounts,
-      initialTransitions, initialEmissions)
+      initialTransitions.toFreqDist, initialEmissions.toFreqDist)
   }
 
   /**

@@ -11,7 +11,7 @@ class CondFreqCounterTests {
   def test_SimpleCondFreqCounter() {
     val x = new SimpleCondFreqCounter[Char, Symbol]()
     x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0), 'B' -> Map('a -> 4.0)))
-    x ++= List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a)
+    x ++= List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a).map(_.swap)
     val d = x.toFreqDist
 
     assertEqualsProb(Probability(0.200), d('A')('a))
@@ -44,7 +44,7 @@ class CondFreqCounterTests {
           }, totalAddition, defaultCount)
       })
     x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 6.0), 'B' -> Map('a -> 4.0)))
-    x ++= List('B' -> 'b, 'A' -> 'b, 'A' -> 'c, 'B' -> 'a, 'C' -> 'a, 'B' -> 'c, 'B' -> 'b, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a)
+    x ++= List('B' -> 'b, 'A' -> 'b, 'A' -> 'c, 'B' -> 'a, 'C' -> 'a, 'B' -> 'c, 'B' -> 'b, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a).map(_.swap)
     val d = x.toFreqDist
 
     assertEqualsProb(Probability(0.154), d('A')('a))
@@ -77,7 +77,7 @@ class CondFreqCounterTests {
           }, totalAddition, defaultCount)
       })
     x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 6.0), 'B' -> Map('a -> 4.0)))
-    x ++= List('B' -> 'b, 'A' -> 'b, 'A' -> 'c, 'B' -> 'a, 'C' -> 'a, 'B' -> 'c, 'B' -> 'b, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a)
+    x ++= List('B' -> 'b, 'A' -> 'b, 'A' -> 'c, 'B' -> 'a, 'C' -> 'a, 'B' -> 'c, 'B' -> 'b, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a).map(_.swap)
     val d = x.toFreqDist
 
     assertEqualsProb(Probability(0.200), d('A')('a))
@@ -98,7 +98,7 @@ class CondFreqCounterTests {
     val x = new SimpleSmoothingCondFreqCounter[Char, Symbol](lambda,
       new SimpleCondFreqCounter[Char, Symbol])
     x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 1.0), 'B' -> Map('a -> 3.0)))
-    x ++= List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'C' -> 'c, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a)
+    x ++= List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'C' -> 'c, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a).map(_.swap)
     val d = x.toFreqDist
 
     assertEqualsProb(Probability(0.230), d('A')('a))
@@ -130,7 +130,7 @@ class CondFreqCounterTests {
           new SimpleCondFreqCounter[Char, Symbol]))
 
     x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 1.0), 'B' -> Map('a -> 3.0, 'c -> 1.0)))
-    x ++= List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'C' -> 'c, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a)
+    x ++= List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'C' -> 'c, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a).map(_.swap)
     val d = x.toFreqDist
 
     assertEqualsProb(Probability(0.230), d('A')('a))
@@ -159,7 +159,7 @@ class CondFreqCounterTests {
           new SimpleCondFreqCounter[Char, Symbol]))
 
     x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 1.0), 'B' -> Map('a -> 3.0, 'c -> 1.0)))
-    x ++= List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'C' -> 'c, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a)
+    x ++= List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'C' -> 'c, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a).map(_.swap)
     val d = x.toFreqDist
 
     assertEqualsProb(Probability(0.273), d('A')('a))
@@ -193,7 +193,7 @@ class CondFreqCounterTests {
             new SimpleCondFreqCounter[Char, Symbol])))
 
     x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 1.0), 'B' -> Map('a -> 3.0, 'c -> 1.0)))
-    x ++= List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'C' -> 'c, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a)
+    x ++= List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'C' -> 'c, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a).map(_.swap)
     val d = x.toFreqDist
 
     assertEqualsProb(Probability(0.235), d('A')('a))
