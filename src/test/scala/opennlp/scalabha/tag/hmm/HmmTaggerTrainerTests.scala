@@ -45,6 +45,13 @@ class HmmTaggerTrainerTests {
     val output = unsupervisedTagger.tag(testRaw)
     val results = new TaggerEvaluator().evaluate(output, gold, unsupervisedTagger.asInstanceOf[HmmTagger[String, String]].tagDict)
     assertResultsEqual("""
+		Total:   12.12 (4/33)
+		Known:   12.12 (4/33)
+		Unknown: NaN (0/0)
+		Common Mistakes:
+		#Err     Gold      Model
+		15       H        C
+		14       C        H
     	""", results)
   }
 
@@ -75,24 +82,34 @@ class HmmTaggerTrainerTests {
     val output = unsupervisedTagger.tag(testRaw)
     val results = new TaggerEvaluator().evaluate(output, gold, unsupervisedTagger.asInstanceOf[HmmTagger[String, String]].tagDict)
     assertResultsEqual("""
+		Total:   88.42 (21176/23949)
+		Known:   88.42 (21176/23949)
+		Unknown: NaN (0/0)
+		Common Mistakes:
+		#Err     Gold      Model
+		693      D        N
+		522      D        F
+		279      V        N
+		198      J        N
+		137      R        J
     	""", results)
   }
 
   @Test
-  def unsupervised_training_en_fullTagDict() {
+  def unsupervised_training_en_testInTagDict() {
     val trainLab = TaggedFile("data/postag/english/entrain") ++ TaggedFile("data/postag/english/entest")
     val results = runUnsupervisedTrainingTest(trainLab)
     assertResultsEqual("""
-		Total:   85.72 (20530/23949)
-		Known:   85.72 (20530/23949)
+		Total:   86.02 (20600/23949)
+		Known:   86.02 (20600/23949)
 		Unknown: NaN (0/0)
 		Common Mistakes:
 		#Err     Gold      Model
-		975      D        N
-		491      D        F
+		972      D        N
+		522      D        F
 		378      V        N
-		275      J        N
-		175      R        J
+		264      J        N
+		176      R        J
     	""", results)
   }
 
@@ -101,34 +118,16 @@ class HmmTaggerTrainerTests {
     val trainLab = TaggedFile("data/postag/english/entrain")
     val results = runUnsupervisedTrainingTest(trainLab)
     assertResultsEqual("""
-		Total:   77.13 (18471/23949)
-		Known:   84.54 (18464/21841)
-		Unknown: 0.33 (7/2108)
+		Total:   77.46 (18550/23949)
+		Known:   84.91 (18545/21841)
+		Unknown: 0.24 (5/2108)
 		Common Mistakes:
 		#Err     Gold      Model
-		1174     N        E
-		1039     D        N
-		492      D        F
-		342      V        N
-		326      V        E
-    	""", results)
-  }
-
-  @Test
-  def unsupervised_training_en_smallTagDict() {
-    val trainLab = TaggedFile("data/postag/english/entrain500")
-    val results = runUnsupervisedTrainingTest(trainLab)
-    assertResultsEqual("""
-		Total:   46.29 (11086/23949)
-		Known:   96.61 (10777/11155)
-		Unknown: 2.42 (309/12794)
-		Common Mistakes:
-		#Err     Gold      Model
-		5536     N        E
-		1890     V        E
-		1420     J        E
-		776      C        E
-		682      R        E
+		1173     N        E
+		968      D        N
+		522      D        F
+		341      V        N
+		327      V        E
     	""", results)
   }
 
