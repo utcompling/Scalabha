@@ -39,6 +39,7 @@ class HmmTaggerTrainerTests {
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001,
+        tagDictContribToDist = 0.1,
         new SimpleTagDictFactory())
     val tagDict = new SimpleTagDictFactory().make(trainLab ++ testLab)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._1)))
@@ -76,6 +77,7 @@ class HmmTaggerTrainerTests {
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001,
+        tagDictContribToDist = 0.1,
         new SimpleTagDictFactory())
     val tagDict = new SimpleTagDictFactory().make(trainLab ++ testLab)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._1)))
@@ -163,6 +165,7 @@ class HmmTaggerTrainerTests {
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001,
+        tagDictContribToDist = 0.1,
         new SimpleTagDictFactory())
     val tagDict = new SimpleTagDictFactory().make(trainLab)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainRaw)
