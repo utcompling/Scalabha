@@ -24,21 +24,21 @@ object TokenChecker {
     ("]" -> "-RSB-")
   )
   val treeBankTransforms = Map(
-    ("“"->"\""),
-    ("”"->"\""),
-    ("❞"->"\""),
-    ("❝"->"\""),
-    ("″"->"\""),
-    ("‟"->"\""),
-    ("ʹ"->"'"),
-    ("ʼ"->"'"),
-    ("ˈ"->"'"),
-    ("٬"->"'"),
-    ("‘"->"'"),
-    ("’"->"'"),
-    ("′"->"'"),
-    ("＇"->"'"),
-    (""->"")
+    ("“" -> "\""),
+    ("”" -> "\""),
+    ("❞" -> "\""),
+    ("❝" -> "\""),
+    ("″" -> "\""),
+    ("‟" -> "\""),
+    ("ʹ" -> "'"),
+    ("ʼ" -> "'"),
+    ("ˈ" -> "'"),
+    ("٬" -> "'"),
+    ("‘" -> "'"),
+    ("’" -> "'"),
+    ("′" -> "'"),
+    ("＇" -> "'"),
+    ("" -> "")
   )
 
   def spprintRepr(map: Map[String, Int], join: String): String = {
@@ -46,10 +46,18 @@ object TokenChecker {
     val regex(string) = map.toList.sorted.toString
     string.replace(", ", join)
   }
-  
-  def checkForMarkup(a:String,b:String):Boolean = {
-    (treeBankMarkup.contains(b) && treeBankMarkup(b).equals(a)) ||
-    (treeBankMarkup.contains(a) && treeBankMarkup(a).equals(b))
+
+  private def checkDict(dict: Map[String, String], a: String, b: String): Boolean = {
+    (dict.contains(b) && dict(b).equals(a)) ||
+      (dict.contains(a) && dict(a).equals(b))
+  }
+
+  def checkForMarkup(a: String, b: String): Boolean = {
+    checkDict(treeBankMarkup, a, b)
+  }
+
+  def checkForTransform(a: String, b: String): Boolean = {
+    checkDict(treeBankTransforms, a, b)
   }
 
   def checkTokensInLine(treeTokens: List[String], tokFileTokens: List[String]): Boolean = {
@@ -63,8 +71,12 @@ object TokenChecker {
       val a :: as = treeTokens
       val b :: bs = tokFileTokens
       if (a != b) {
-        if (checkForMarkup(a,b)) {
+        if (checkForMarkup(a, b)) {
           checkTokensInLine(as, bs)
+        } else if (checkForTransform(a,b)) {
+          log.err(("Fail: It looks like there is a tree character "+a+" that should have been the character "+b+":"+
+            "\n\ttree:%s\n\t tok:%s\n").format(treeTokens,tokFileTokens))
+          false
         } else {
           //log.err("%s does not match %s\n".format(a, b))
           log.err(("Fail: \"%s\" does not match \"%s\" in:" +
