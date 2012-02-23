@@ -9,6 +9,7 @@ import collection.mutable.HashMap
 object TokenChecker {
 
   import ArgotConverters._
+
   val parser = new ArgotParser(this.getClass.getName, preUsage = Some("Version 0.0"))
   val help = parser.flag[Boolean](List("h", "help"), "print help")
   val input = parser.option[String](List("i", "input"), "FILE", "input inputFile in which to check tokens")
@@ -16,12 +17,47 @@ object TokenChecker {
   val silent = parser.flag[Boolean](List("s"), "Set this flag to silence warnings and errors in the tree parser.")
   val log = new SimpleLogger(this.getClass.getName, SimpleLogger.WARN, new BufferedWriter(new OutputStreamWriter(System.err)))
 
-
+  val treeBankMarkup = Map(
+    ("(" -> "-LRB-"),
+    ("[" -> "-LSB-"),
+    (")" -> "-RRB-"),
+    ("]" -> "-RSB-")
+  )
+  val treeBankTransforms = Map(
+    ("“" -> "\""),
+    ("”" -> "\""),
+    ("❞" -> "\""),
+    ("❝" -> "\""),
+    ("″" -> "\""),
+    ("‟" -> "\""),
+    ("ʹ" -> "'"),
+    ("ʼ" -> "'"),
+    ("ˈ" -> "'"),
+    ("٬" -> "'"),
+    ("‘" -> "'"),
+    ("’" -> "'"),
+    ("′" -> "'"),
+    ("＇" -> "'"),
+    ("" -> "")
+  )
 
   def spprintRepr(map: Map[String, Int], join: String): String = {
     val regex = "[^(]+\\((.*)\\)".r
     val regex(string) = map.toList.sorted.toString
     string.replace(", ", join)
+  }
+
+  private def checkDict(dict: Map[String, String], a: String, b: String): Boolean = {
+    (dict.contains(b) && dict(b).equals(a)) ||
+      (dict.contains(a) && dict(a).equals(b))
+  }
+
+  def checkForMarkup(a: String, b: String): Boolean = {
+    checkDict(treeBankMarkup, a, b)
+  }
+
+  def checkForTransform(a: String, b: String): Boolean = {
+    checkDict(treeBankTransforms, a, b)
   }
 
   def checkTokensInLine(treeTokens: List[String], tokFileTokens: List[String]): Boolean = {
@@ -35,10 +71,12 @@ object TokenChecker {
       val a :: as = treeTokens
       val b :: bs = tokFileTokens
       if (a != b) {
-        if ((a == "-LRB-" && b == "(")||(b == "-LRB-" && a == "(")) {
+        if (checkForMarkup(a, b)) {
           checkTokensInLine(as, bs)
-        } else if ((a == "-RRB-" && b == ")") || (b == "-RRB-" && a == ")")) {
-          checkTokensInLine(as, bs)
+        } else if (checkForTransform(a,b)) {
+          log.err(("Fail: It looks like there is a tree character "+a+" that should have been the character "+b+":"+
+            "\n\ttree:%s\n\t tok:%s\n").format(treeTokens,tokFileTokens))
+          false
         } else {
           //log.err("%s does not match %s\n".format(a, b))
           log.err(("Fail: \"%s\" does not match \"%s\" in:" +
@@ -53,7 +91,7 @@ object TokenChecker {
 
   def checkTokens(infile: Iterator[String], tokfile: Iterator[String]): List[String] = {
     for (((inTreeLine, tokLine), index) <- (infile zip tokfile).toList.zipWithIndex) yield {
-      val inTree = MultiLineTreeParser("trees",index,inTreeLine)
+      val inTree = MultiLineTreeParser("trees", index, inTreeLine)
       inTree match {
         case Some(root) =>
           val inTreeTokens: List[String] = root.getTokenStrings
@@ -84,11 +122,11 @@ object TokenChecker {
       }
 
       val input_file = input.value match {
-        case Some(filename:String) => scala.io.Source.fromFile(filename, "UTF-8").getLines()
+        case Some(filename: String) => scala.io.Source.fromFile(filename, "UTF-8").getLines()
         case _ => parser.usage()
       }
       val token_file = tokens.value match {
-        case Some(filename:String) => scala.io.Source.fromFile(filename, "UTF-8").getLines()
+        case Some(filename: String) => scala.io.Source.fromFile(filename, "UTF-8").getLines()
         case _ => parser.usage()
       }
 
