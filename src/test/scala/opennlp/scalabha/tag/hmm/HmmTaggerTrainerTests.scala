@@ -7,8 +7,6 @@ import scala.io.Source
 import opennlp.scalabha.tag._
 import opennlp.scalabha.tag.support._
 import opennlp.scalabha.tag.hmm.support._
-import opennlp.scalabha.tag.support._
-import support.SimpleTagDictFactory
 import opennlp.scalabha.tag.TaggerEvaluator
 import opennlp.scalabha.tag.ScoreResults
 import org.apache.log4j.Logger

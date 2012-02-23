@@ -1,4 +1,4 @@
-package opennlp.scalabha.tag.hmm.support
+package opennlp.scalabha.tag.support
 
 import opennlp.scalabha.util.CollectionUtils._
 

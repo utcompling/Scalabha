@@ -1,20 +1,17 @@
 package opennlp.scalabha.tag.hmm
 
-import opennlp.scalabha.tag.hmm.support.TagDictFactory
-import opennlp.scalabha.tag.support.CondFreqCounterFactory
+import org.apache.commons.logging.LogFactory
 import opennlp.scalabha.tag.support.CondFreqCounts
-import opennlp.scalabha.tag.support.FreqCounts
+import opennlp.scalabha.tag.support.TagDictFactory
+import opennlp.scalabha.tag.support.CondFreqCounterFactory
 import opennlp.scalabha.tag.Tagger
 import opennlp.scalabha.tag.UnsupervisedTaggerTrainer
 import opennlp.scalabha.util.CollectionUtils._
-import opennlp.scalabha.util.Pattern
-import opennlp.scalabha.util.Pattern.{ +:, :+, -> }
 import opennlp.scalabha.util.Probability._
+import opennlp.scalabha.util.Pattern
+import opennlp.scalabha.util.Pattern.{ -> }
 import opennlp.scalabha.util.Probability
-import opennlp.scalabha.tag.hmm.support.SimpleTagDictFactory
-import opennlp.scalabha.tag.support.CondFreqCounter
-import opennlp.scalabha.tag.support.CondFreqCounts
-import org.apache.commons.logging.LogFactory
+import opennlp.scalabha.tag.support.SimpleTagDictFactory
 
 /**
  * Factory for training a Hidden Markov Model tagger from a combination of

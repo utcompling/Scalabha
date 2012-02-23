@@ -5,13 +5,9 @@ import org.junit._
 import opennlp.scalabha.util.CollectionUtils._
 import scala.io.Source
 import opennlp.scalabha.tag.SupervisedTaggerTrainer
-import opennlp.scalabha.tag.support.CondFreqCounterFactory
-import opennlp.scalabha.tag.support.SimpleCondFreqCounter
-import opennlp.scalabha.tag.support.SimpleFreqCounter
 import opennlp.scalabha.tag.Tagger
 import opennlp.scalabha.tag.hmm.support._
 import opennlp.scalabha.tag.support._
-import support.SimpleTagDictFactory
 import opennlp.scalabha.tag.TaggerEvaluator
 import opennlp.scalabha.tag.ScoreResults
 import org.apache.log4j.Logger
