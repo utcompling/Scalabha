@@ -1,10 +1,17 @@
 package opennlp.scalabha.cluster
 
+import org.apache.commons.logging.LogFactory
+import opennlp.scalabha.util.CollectionUtils._
+import org.apache.log4j.Logger
+import org.apache.log4j.Level
+
 class Kmeans(
   points: IndexedSeq[Point],
   distance: DistanceFunction,
   minChangeInDispersion: Double = 0.0001,
   maxIterations: Int = 100) {
+
+  private val LOG = LogFactory.getLog(Kmeans.getClass)
 
   private[this] val numDimensions = points.head.numDimensions
   private[this] val origin = Point(IndexedSeq.fill(numDimensions)(0.0))
@@ -24,17 +31,18 @@ class Kmeans(
 
   // Run from a given starting set of centroids.
   def moveCentroids(centroids: IndexedSeq[Point]) = {
-    
+
     // Inner recursive function for computing next centroids
     def inner(centroids: IndexedSeq[Point],
       lastDispersion: Double,
       iteration: Int): (Double, IndexedSeq[Point]) = {
-      println("Iteration " + iteration)
+      LOG.info("Iteration " + iteration)
 
       val (dispersion, memberships) = computeClusterMemberships(centroids)
       val updatedCentroids = computeCentroids(memberships)
 
-      println("Dispersion: " + dispersion)
+      LOG.info("Dispersion: " + dispersion)
+      if (LOG.isDebugEnabled())
       updatedCentroids.foreach(println)
 
       val dispersionChange = lastDispersion - dispersion
@@ -44,7 +52,7 @@ class Kmeans(
       else
         inner(updatedCentroids, dispersion, iteration + 1)
     }
-    
+
     inner(centroids, Double.PositiveInfinity, 1)
   }
   // Given a sequence of centroids, compute the cluster memberships for 
@@ -63,9 +71,9 @@ class Kmeans(
   // cluster.
   private[this] def computeCentroids(memberships: IndexedSeq[Int]) = {
     memberships.zip(points)
-      .groupBy(_._1)
+      .groupByKey
       .mapValues { groupForCentroid =>
-        val (_, pointsForCentroid) = groupForCentroid.unzip
+        val pointsForCentroid = groupForCentroid
         val summed = pointsForCentroid.foldLeft(origin)(_ ++ _)
         summed / pointsForCentroid.length.toDouble
       }
@@ -85,6 +93,10 @@ class Kmeans(
 object Kmeans {
 
   def main(args: Array[String]) {
+
+    Logger.getRootLogger.setLevel(Level.INFO)
+    val LOG = LogFactory.getLog(Kmeans.getClass)
+    LOG.info("Hello.")
 
     val distanceOption = "euclidean"
     val maxIterations = 100
@@ -106,11 +118,11 @@ object Kmeans {
     val kmeans = new Kmeans(points, distance, minChangeInDispersion, maxIterations)
 
     val (dispersion, centroids) = kmeans.run(3)
-//    val results = (1 to 10).map(kmeans.run(_))
-//    val (dispersions, centroidsPerK) = results.unzip
-//    dispersions.zipWithIndex.foreach {
-//      case (dispersion, index) => println(index + 1 + ": " + dispersion)
-//    }
+    //    val results = (1 to 10).map(kmeans.run(_))
+    //    val (dispersions, centroidsPerK) = results.unzip
+    //    dispersions.zipWithIndex.foreach {
+    //      case (dispersion, index) => println(index + 1 + ": " + dispersion)
+    //    }
   }
 
   private def lineToInfo(inputLine: String): (String, String, IndexedSeq[Double]) = {

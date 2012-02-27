@@ -11,7 +11,7 @@ fi
 
 SCALA_LIB="$HOME/.sbt/boot/scala-2.9.1/lib/scala-library.jar"
 
-CP=$SCALABHA_DIR/target/classes:$JARS:$JARS_MANAGED:$SCALA_LIB:$CLASSPATH
+CP=$SCALABHA_DIR/target/classes:$SCALABHA_DIR/src/main/resources:$JARS:$JARS_MANAGED:$SCALA_LIB:$CLASSPATH
 
 if [ -z $JAVA_MEM_FLAG ] 
 then
