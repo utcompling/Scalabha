@@ -62,8 +62,17 @@ object ZscoreTransformer {
 
 }
 
-
 abstract class DistanceFunction extends ((Point, Point) => Double)
+
+object DistanceFunction {
+  def apply(distanceDescription: String) = distanceDescription match {
+    case "cosine" => CosineDistance
+    case "manhattan" => ManhattanDistance
+    case "euclidean" => EuclideanDistance
+    case _ =>
+      throw new MatchError("Invalid distance function: " + distanceDescription)
+  }
+}
 
 object CosineDistance extends DistanceFunction {
   def apply(x: Point, y: Point) = 1 - x.dotProduct(y) / (x.norm * y.norm)
