@@ -144,7 +144,7 @@ class HmmTaggerTrainer[Sym, Tag](
 
     LOG.debug(">>> tagDict(a) = " + tagDict("a".asInstanceOf[Sym]))
     LOG.debug(">>> emissions(DT)(a) = " + emissions("DT".asInstanceOf[Tag])("a".asInstanceOf[Sym]))
-    LOG.debug(">>>     emissions(DT) = " + emissions("DT".asInstanceOf[Tag]).asInstanceOf[Map[String,Probability]].filter(_._2.toDouble >= 0.01).toList.sortBy(-_._2.toDouble).mapValuesStrict(p => "%.2f".format(p.toDouble)))
+    LOG.debug(">>>     emissions(DT) = " + emissions("DT".asInstanceOf[Tag]).asInstanceOf[Map[String, Probability]].filter(_._2.toDouble >= 0.01).toList.sortBy(-_._2.toDouble).mapValuesStrict(p => "%.2f".format(p.toDouble)))
     LOG.debug(">>> emissions(FW)(a) = " + emissions("FW".asInstanceOf[Tag])("a".asInstanceOf[Sym]))
     LOG.debug(">>> emissions(SYM)(a) = " + emissions("SYM".asInstanceOf[Tag])("a".asInstanceOf[Sym]))
 

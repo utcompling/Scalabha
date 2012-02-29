@@ -29,13 +29,10 @@ trait TagDictFactory[Sym, Tag] {
  */
 class SimpleTagDictFactory[Sym, Tag]() extends TagDictFactory[Sym, Tag] {
   def make(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
-    val (symSequences, tagSequences) = taggedTrainSequences.map(_.unzip).unzip
-    val symTagPairs = (symSequences.flatten zipEqual tagSequences.flatten)
-
     // Construct the tag dictionary (words to their known possible tags).
     // By default, map any unseen words to all known tags since, if we don't know anything 
     // about the word, then we must assume it can be anything.
-    val tagDict = symTagPairs.toSet.groupByKey
+    val tagDict = taggedTrainSequences.flatten.toSet.groupByKey
     val allTags = tagDict.flatMap(_._2).toSet
     tagDict.withDefaultValue(allTags)
   }
