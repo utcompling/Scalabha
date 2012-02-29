@@ -2,7 +2,7 @@
 
 # Set equal to 1 to generate clusters with spread out x values
 unequal_x_variance = 0
-#unequal_x_variance = 1 
+unequal_x_variance = 1 
 
 # Generate clusters with equal variance in x and y dimensions.
 outputName = "clusters_equal_variance"
@@ -20,7 +20,7 @@ centroid1 = c(-1,-1)
 centroid2 = c(6,4)
 centroid3 = c(-2,8)
 
-outputFile = paste(outputName,"txt",sep=".")
+outputFile = paste(outputName,"dat",sep=".")
 outputPdf = paste(outputName,"pdf",sep=".")
 
 # Three clusters in 2 dimensions

@@ -1,9 +1,10 @@
 package opennlp.scalabha.cluster
 
 import org.apache.commons.logging.LogFactory
-import opennlp.scalabha.util.CollectionUtils._
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
+
+import opennlp.scalabha.util.CollectionUtils._
 
 class Kmeans(
   points: IndexedSeq[Point],
@@ -26,7 +27,13 @@ class Kmeans(
 
     val bestDispersion = dispersions.min
     val bestIndex = dispersions.indexWhere(bestDispersion==)
-    (dispersions(bestIndex), centroidGroups(bestIndex))
+    val bestCentroids = centroidGroups(bestIndex)
+    LOG.debug("Dispersion: " + bestDispersion)
+    LOG.debug("Centroids: ")
+    if (LOG.isDebugEnabled)
+      bestCentroids.foreach(println)
+
+    (bestDispersion, bestCentroids)
   }
 
   // Run from a given starting set of centroids.
@@ -36,14 +43,15 @@ class Kmeans(
     def inner(centroids: IndexedSeq[Point],
       lastDispersion: Double,
       iteration: Int): (Double, IndexedSeq[Point]) = {
-      LOG.info("Iteration " + iteration)
+      LOG.debug("Iteration " + iteration)
 
       val (dispersion, memberships) = computeClusterMemberships(centroids)
       val updatedCentroids = computeCentroids(memberships)
 
-      LOG.info("Dispersion: " + dispersion)
-      if (LOG.isDebugEnabled())
-      updatedCentroids.foreach(println)
+      LOG.debug("Dispersion: " + dispersion)
+      LOG.debug("Centroids: ")
+      if (LOG.isDebugEnabled)
+        updatedCentroids.foreach(println)
 
       val dispersionChange = lastDispersion - dispersion
 
@@ -55,6 +63,7 @@ class Kmeans(
 
     inner(centroids, Double.PositiveInfinity, 1)
   }
+  
   // Given a sequence of centroids, compute the cluster memberships for 
   // each point.
   def computeClusterMemberships(centroids: IndexedSeq[Point]) = {
@@ -88,79 +97,6 @@ class Kmeans(
     randomIndices.map(points(_)).toIndexedSeq
   }
 
-}
-
-object Kmeans {
-
-  def main(args: Array[String]) {
-
-    Logger.getRootLogger.setLevel(Level.INFO)
-    val LOG = LogFactory.getLog(Kmeans.getClass)
-    LOG.info("Hello.")
-
-    val distanceOption = "euclidean"
-    val maxIterations = 100
-    val minChangeInDispersion = .0001
-
-    val input = io.Source.fromFile(args(0)).getLines.map(lineToInfo)
-    val (ids, labels, coords) = input.toList.unzip3
-
-    val points: IndexedSeq[Point] = coords.map(coord => Point(coord)).toIndexedSeq
-
-    val distance = distanceOption match {
-      case "cosine" => CosineDistance
-      case "manhattan" => ManhattanDistance
-      case "euclidean" => EuclideanDistance
-      case _ =>
-        throw new MatchError("Invalid distance function: " + distanceOption)
-    }
-
-    val kmeans = new Kmeans(points, distance, minChangeInDispersion, maxIterations)
-
-    val (dispersion, centroids) = kmeans.run(3)
-    //    val results = (1 to 10).map(kmeans.run(_))
-    //    val (dispersions, centroidsPerK) = results.unzip
-    //    dispersions.zipWithIndex.foreach {
-    //      case (dispersion, index) => println(index + 1 + ": " + dispersion)
-    //    }
-  }
-
-  private def lineToInfo(inputLine: String): (String, String, IndexedSeq[Double]) = {
-    val id :: label :: coord = inputLine.split(" ").toList
-    (id, label, coord.map(_.toDouble).toIndexedSeq)
-  }
-
-}
-
-case class Point(val coord: IndexedSeq[Double]) {
-  import scala.math.sqrt
-
-  def zip(that: Point) = this.coord.zip(that.coord)
-  def ++(that: Point) = Point(this.zip(that).map { case (a, b) => a + b })
-  def /(divisor: Double) = Point(coord.map(_ / divisor))
-  def -(that: Point) = Point(this.zip(that).map { case (a, b) => a - b })
-  def dotProduct(that: Point) = this.zip(that).map { case (x, y) => x * y }.sum
-
-  lazy val abs = Point(coord.map(_.abs))
-  lazy val norm = sqrt(this.dotProduct(this))
-  lazy val numDimensions = coord.length
-  lazy val sum = coord.sum
-
-  override def toString = "[" + coord.mkString(",") + "]"
-}
-
-abstract class DistanceFunction extends ((Point, Point) => Double)
-
-object CosineDistance extends DistanceFunction {
-  def apply(x: Point, y: Point) = 1 - x.dotProduct(y) / (x.norm * y.norm)
-}
-
-object ManhattanDistance extends DistanceFunction {
-  def apply(x: Point, y: Point) = (x - y).abs.sum
-}
-
-object EuclideanDistance extends DistanceFunction {
-  def apply(x: Point, y: Point) = (x - y).norm
 }
 
 
