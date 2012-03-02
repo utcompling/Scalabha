@@ -103,8 +103,7 @@ class HmmTaggerTrainer[Sym, Tag](
     // Get initial counts and probability distributions from the labeled data alone
     val (initialTransitionCounts, initialEmissionCounts) = getCountsFromTagged(taggedTrainSequences)
 
-    trainFromInitialHmm(tagDict, rawTrainSequences,
-      initialTransitionCounts, initialEmissionCounts)
+    trainFromInitialHmm(tagDict, rawTrainSequences, initialTransitionCounts, initialEmissionCounts)
   }
 
   /**
@@ -127,7 +126,8 @@ class HmmTaggerTrainer[Sym, Tag](
     val tagDictWithEnds = tagDict + (startEndSymbol -> Set(startEndTag))
 
     // Create counts from the tag dict entries, one count per entry, to 
-    // (optionally) ensure that every possibility is represented
+    // (optionally) ensure that every possibility is represented.
+    // These default counts are set with `tagDictContribToDist`.
     val allTags = tagDictWithEnds.values.flatten.toSet
     val tagDictTransitionCounts = CondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => tagDictContribToDist).toMap).toMap) // all known tag->tag pairs
     val tagDictEmissionCounts = CondFreqCounts(tagDictWithEnds.flattenOver.map(_.swap).groupByKey.mapValuesStrict(_.mapTo(_ => tagDictContribToDist).toMap)) // all known symbol->tag pairs
