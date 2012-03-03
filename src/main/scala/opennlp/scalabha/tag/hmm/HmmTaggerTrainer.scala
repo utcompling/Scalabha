@@ -46,7 +46,7 @@ class HmmTaggerTrainer[Sym, Tag](
   extends SupervisedHmmTaggerTrainer[Sym, Tag](initialTransitionCounterFactory, initialEmissionCounterFactory, startEndSymbol, startEndTag, tagDictFactory)
   with UnsupervisedTaggerTrainer[Sym, Tag] {
 
-  private val LOG = LogFactory.getLog(HmmTaggerTrainer.getClass)
+  protected val LOG = LogFactory.getLog(HmmTaggerTrainer.getClass)
 
   /**
    * Train a Hidden Markov Model tagger only on unlabeled data using the
@@ -158,7 +158,7 @@ class HmmTaggerTrainer[Sym, Tag](
    * Calculate probability distributions from these counts.  Repeat until
    * convergence.
    */
-  private def reestimateProbabilityDistributions(
+  protected def reestimateProbabilityDistributions(
     tagDict: Map[Sym, Set[Tag]],
     rawTrainSequences: Iterable[IndexedSeq[Sym]],
     initialTransitionCounts: CondFreqCounts[Tag, Tag, Double],
@@ -212,7 +212,7 @@ class HmmTaggerTrainer[Sym, Tag](
    * Estimate transition and emission counts for each sequence in
    * rawTrainSequences using the forward/backward procedure.
    */
-  private def estimateCounts(
+  protected def estimateCounts(
     rawTrainSequences: Iterable[IndexedSeq[Sym]],
     tagDict: Map[Sym, Set[Tag]],
     transitions: Tag => Tag => Probability,
@@ -220,17 +220,16 @@ class HmmTaggerTrainer[Sym, Tag](
     initialTransitionCounts: CondFreqCounts[Tag, Tag, Double],
     initialEmissionCounts: CondFreqCounts[Tag, Sym, Double]) = {
 
+    // iterate over all raw training sequences, estimating counts for each
+    val estimatedCounts = estimatedCountsBySequence(rawTrainSequences, transitions, emissions, tagDict)
+
     // Create counters for accumulating the counts that we estimate for each sequence 
     val expectedTransitionCounter = estimatedTransitionCounterFactory.get ++= initialTransitionCounts
     val expectedEmmissionCounter = estimatedEmissionCounterFactory.get ++= initialEmissionCounts
 
-    // iterate over all raw training sequences, estimating counts for each
     val (totalSeqProb, numSequences) =
-      rawTrainSequences.foldLeft((0.0, 0)) {
-        case ((accumSeqProb, numSequences), sequence) =>
-          // estimate counts for this sequence based on current parameters (transmission/emission probability distributions)
-          val (expTransitionCounts, expEmissionCounts, seqProb) = estimateCountsForSequence(sequence, transitions, emissions, tagDict)
-
+      estimatedCounts.foldLeft((0.0), 0) {
+        case ((accumSeqProb, numSequences), (expTransitionCounts, expEmissionCounts, seqProb)) =>
           // update accumulators to keep track of totals across all sequences
           expectedTransitionCounter ++= expTransitionCounts
           expectedEmmissionCounter ++= expEmissionCounts
@@ -240,11 +239,23 @@ class HmmTaggerTrainer[Sym, Tag](
     (expectedTransitionCounter, expectedEmmissionCounter, totalSeqProb / numSequences)
   }
 
+  protected def estimatedCountsBySequence(
+    rawTrainSequences: Iterable[IndexedSeq[Sym]],
+    transitions: Tag => Tag => Probability,
+    emissions: Tag => Sym => Probability,
+    tagDict: Map[Sym, Set[Tag]]) = {
+
+    rawTrainSequences.par.map { sequence =>
+      // estimate counts for this sequence based on current parameters (transmission/emission probability distributions)
+      estimateCountsForSequence(sequence, transitions, emissions, tagDict)
+    }.seq
+  }
+
   /**
    * Estimate transition and emission counts for the given sequence using
    * the forward/backward procedure.
    */
-  private def estimateCountsForSequence(
+  protected def estimateCountsForSequence(
     sequence: IndexedSeq[Sym],
     transitions: Tag => Tag => Probability,
     emissions: Tag => Sym => Probability,
@@ -277,7 +288,7 @@ class HmmTaggerTrainer[Sym, Tag](
    *
    *             forward(t)(j) = P(o1,o2,...,ot, q_t=j | lambda)
    */
-  private def forwardProbabilities(
+  protected def forwardProbabilities(
     sequence: IndexedSeq[Sym],
     transitions: Tag => Tag => Probability,
     emissions: Tag => Sym => Probability,
@@ -319,7 +330,7 @@ class HmmTaggerTrainer[Sym, Tag](
    *
    *             backwrd(j) = P(o1,o2,...,ot, q_t=j | lambda)
    */
-  private def backwrdProbabilities(
+  protected def backwrdProbabilities(
     sequence: IndexedSeq[Sym],
     transitions: Tag => Tag => Probability,
     emissions: Tag => Sym => Probability,
@@ -356,7 +367,7 @@ class HmmTaggerTrainer[Sym, Tag](
    *
    *    estTrans(i,j) = sum_t(fwd(t)(i) * a(i)(j) * b(o(t+1)) * bkw(t+1)(j) / seqProb)
    */
-  private def estimateTransitionCounts(
+  protected def estimateTransitionCounts(
     sequence: IndexedSeq[Sym],
     transitions: Tag => Tag => Probability,
     emissions: Tag => Sym => Probability,
@@ -392,7 +403,7 @@ class HmmTaggerTrainer[Sym, Tag](
    *
    *   estEmiss(t)(j) = fwd(t)(j) * bkw(t)(j) / seqProb
    */
-  private def estimateEmissionCounts(
+  protected def estimateEmissionCounts(
     sequence: IndexedSeq[Sym],
     tagDict: Map[Sym, Set[Tag]],
     forwards: IndexedSeq[Tag => Probability],
