@@ -1,8 +1,7 @@
 # Generate clusters for clustering 
 
 # Set equal to 1 to generate clusters with spread out x values
-unequal_x_variance = 0
-unequal_x_variance = 1 
+unequal_x_variance = 1
 
 # Generate clusters with equal variance in x and y dimensions.
 outputName = "clusters_equal_variance"
@@ -49,6 +48,6 @@ abline(h=0,lty=2)
 
 dev.off()
 
-write.table(data, file=outputFile, quote=FALSE, row.names=FALSE, col.names=FALSE)
+write.table(data, file=outputFile, quote=FALSE, col.names=FALSE)
 
 

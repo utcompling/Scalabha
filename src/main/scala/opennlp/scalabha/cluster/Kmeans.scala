@@ -10,14 +10,18 @@ class Kmeans(
   points: IndexedSeq[Point],
   distance: DistanceFunction,
   minChangeInDispersion: Double = 0.0001,
-  maxIterations: Int = 100) {
+  maxIterations: Int = 10) {
 
   private val LOG = LogFactory.getLog(Kmeans.getClass)
 
   private[this] val numDimensions = points.head.numDimensions
   private[this] val origin = Point(IndexedSeq.fill(numDimensions)(0.0))
 
+  // Actually, this should be "truly" random, but it is seeded with 13 to
+  // ensure consistency for homework. See the commented out line for a seed
+  // based on the current time.
   private[this] val random = new util.Random(13)
+  //private[this] val random = new util.Random(compat.Platform.currentTime)
 
   // Run the k-means algorithm on this set of points for some given k.
   def run(k: Int, restarts: Int = 25) = {
@@ -47,7 +51,7 @@ class Kmeans(
 
       val (dispersion, memberships) = computeClusterMemberships(centroids)
       val updatedCentroids = computeCentroids(memberships)
-
+     
       LOG.debug("Dispersion: " + dispersion)
       LOG.debug("Centroids: ")
       if (LOG.isDebugEnabled)

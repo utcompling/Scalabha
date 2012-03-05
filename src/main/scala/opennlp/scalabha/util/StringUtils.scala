@@ -2,6 +2,13 @@ package opennlp.scalabha.util
 
 import org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4
 
+object SimpleTokenizer {
+  def apply(text: String) = text
+    .replaceAll("""([\?!()\";\|\[\].,'])""", " $1")
+    .trim
+    .split("\\s+")
+}
+
 object StringUtils {
   val PERMILLE = "\u2030"
   val DEGREE = "\u00b0"
@@ -201,7 +208,6 @@ object StringUtils {
 
   def tokenizeEng(str: String): String = {
     str
-
 
   }
 

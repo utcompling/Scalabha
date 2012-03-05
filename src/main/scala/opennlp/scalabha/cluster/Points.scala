@@ -1,5 +1,8 @@
 package opennlp.scalabha.cluster
 
+import pca_transform.PCA
+import Jama.Matrix
+
 // A simple representation of a point in some n-dimensional space.
 case class Point(val coord: IndexedSeq[Double]) {
   import scala.math.sqrt
@@ -18,25 +21,34 @@ case class Point(val coord: IndexedSeq[Double]) {
   override def toString = "[" + coord.mkString(",") + "]"
 }
 
+trait PointTransformer extends (IndexedSeq[Point] => IndexedSeq[Point])
+
+object PointTransformer {
+  def apply(description: String, points: IndexedSeq[Point]) = description match {
+    case "ident" => new IdentityTransformer
+    case "zscore" => ZscoreTransformer(points)
+    case "pca" => PcaTransformer(points)
+  }
+}
+
+class IdentityTransformer extends PointTransformer {
+  def apply(points: IndexedSeq[Point]) = points
+}
+
 // A class for objects that transform Points to and from z-score
 // values based on means and standard deviations in each dimension.
 class ZscoreTransformer(
-  means: IndexedSeq[Double], standardDeviations: IndexedSeq[Double]) {
+  means: IndexedSeq[Double], standardDeviations: IndexedSeq[Double])
+  extends PointTransformer {
 
   // Transform a point to its z-score values.
-  def to(point: Point) = {
-    val transformed = point.coord.zip(means.zip(standardDeviations)).map {
-      case (x, (mean, sdev)) => (x - mean) / sdev
+  def apply(points: IndexedSeq[Point]) = {
+    points.map { point =>
+      val transformed = point.coord.zip(means.zip(standardDeviations)).map {
+        case (x, (mean, sdev)) => (x - mean) / sdev
+      }
+      Point(transformed)
     }
-    Point(transformed)
-  }
-
-  // Transform a point from the z-scores value back to its original ones.
-  def from(point: Point) = {
-    val untransformed = point.coord.zip(means.zip(standardDeviations)).map {
-      case (z, (mean, sdev)) => z * sdev + mean
-    }
-    Point(untransformed)
   }
 
 }
@@ -50,16 +62,53 @@ object ZscoreTransformer {
     val means = tpoints.map(values => values.sum / values.length)
     val standardDeviations = tpoints.zip(means).map {
       case (values, mean) =>
-        val squaredDifferences = values.map { value =>
-          val difference = value - mean
-          difference * difference
-        }
-        math.sqrt(squaredDifferences.sum)
+        val squaredDifferences = values.map(v => square(v-mean))
+        if (squaredDifferences == 0.0) 1.0
+        else math.sqrt(squaredDifferences.sum)
     }
+    println(means)
+    println(standardDeviations)
     new ZscoreTransformer(means, standardDeviations)
-
   }
 
+  private def square = (x: Double) => x*x 
+}
+
+class PcaTransformer(
+  pca: PCA,
+  scaler: ZscoreTransformer,
+  numComponents: Int) extends PointTransformer {
+
+  def apply(points: IndexedSeq[Point]) = {
+    val scaledPoints = scaler(points)
+    val pointMatrix = new Matrix(scaledPoints.map(_.coord.toArray).toArray)
+    val transformed = pca.transform(pointMatrix, PCA.TransformationType.ROTATION)
+    transformed.getArray.map { transformedCoord =>
+      Point(transformedCoord.take(numComponents).toIndexedSeq)
+    }
+  }
+
+}
+
+object PcaTransformer {
+  def apply(points: IndexedSeq[Point]) = {
+    
+    // First scale the points.
+    val scaler = ZscoreTransformer(points)
+    val scaledPoints = scaler(points)
+    
+    // Compute the PCA from the scaled points.
+    val pca = new PCA(new Matrix(scaledPoints.map(_.coord.toArray).toArray))
+
+    // Figure out how many components are needed to explain 95% of the variance.
+    val eigVals = (0 until pca.getOutputDimsNo).map(pca.getEigenvalue(_))
+    val eigValsSq = eigVals.map(x => x * x)
+    val propVariance = eigValsSq.map(_ / eigValsSq.sum)
+    val numComponents = propVariance.scan(0.0)(_ + _).indexWhere(.95<)
+
+    // Create the PCA Transformer
+    new PcaTransformer(pca, scaler, numComponents)
+  }
 }
 
 abstract class DistanceFunction extends ((Point, Point) => Double)
