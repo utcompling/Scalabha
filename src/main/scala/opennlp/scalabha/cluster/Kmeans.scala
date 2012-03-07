@@ -6,6 +6,14 @@ import org.apache.log4j.Level
 
 import opennlp.scalabha.util.CollectionUtils._
 
+/**
+ * A class for computing clusters for a set of points using k-means (specifically, Lloyd's algorithm).
+ *
+ * @param points	the set of points to be clustered
+ * @param distance  the DistanceFunction to use to compute distance between pairs of points
+ * @param maxChangeInDispersion each iteration of the algorithm produces a dispersion value, which is the squared sum distance from each centroid to the points it is responsible for. The minChangeInDispersion is a value that tells the algorithm to stop when change from one iteration to the next is less than this value.
+ * @param maxIterations the maximum number of iterations to run k-means for
+ */
 class Kmeans(
   points: IndexedSeq[Point],
   distance: DistanceFunction,
@@ -17,10 +25,20 @@ class Kmeans(
   private[this] val numDimensions = points.head.numDimensions
   private[this] val origin = Point(IndexedSeq.fill(numDimensions)(0.0))
 
+  // Actually, this should be "truly" random, but it is seeded with 13 to
+  // ensure consistency for homework. See the commented out line for a seed
+  // based on the current time.
   private[this] val random = new util.Random(13)
+  //private[this] val random = new util.Random(compat.Platform.currentTime)
 
-  // Run the k-means algorithm on this set of points for some given k.
-  def run(k: Int, restarts: Int = 25) = {
+  /**
+   * Run the k-means algorithm on this set of points for some given k.
+   *
+   * @param k The number of clusters to produce.
+   * @param restarts The number of times to run k-means from different random starting points.
+   * @return A pair, the first element of which is the dispersion for the best set of centroids found, and the second element of which is that set of centroids.
+   */
+  def run(k: Int, restarts: Int = 25): (Double, IndexedSeq[Point]) = {
     val (dispersions, centroidGroups) = (1 to restarts).map { _ =>
       moveCentroids(chooseRandomCentroids(k))
     }.unzip
@@ -36,13 +54,18 @@ class Kmeans(
     (bestDispersion, bestCentroids)
   }
 
-  // Run from a given starting set of centroids.
-  def moveCentroids(centroids: IndexedSeq[Point]) = {
+  /**
+   * Run the k-means algorithm starting from the given set of centroids.
+   *
+   * @return A pair, the first element of which is the dispersion for the best set of centroids found, and the second element of which is that set of centroids.
+   */
+  def moveCentroids(centroids: IndexedSeq[Point]): (Double, IndexedSeq[Point]) = {
 
     // Inner recursive function for computing next centroids
     def inner(centroids: IndexedSeq[Point],
       lastDispersion: Double,
       iteration: Int): (Double, IndexedSeq[Point]) = {
+      
       LOG.debug("Iteration " + iteration)
 
       val (dispersion, memberships) = computeClusterMemberships(centroids)
@@ -63,9 +86,13 @@ class Kmeans(
 
     inner(centroids, Double.PositiveInfinity, 1)
   }
-  
-  // Given a sequence of centroids, compute the cluster memberships for 
-  // each point.
+
+  /**
+   *  Given a sequence of centroids, compute the cluster memberships for each point.
+   *  
+   *  @param centroids A set of points representing centroids.
+   *  @return A pair, the first element of which is the dispersion given these centroids, and the second of which is the list of centroid indices for each of the points being clustered (based on the nearest centroid to each).
+   */
   def computeClusterMemberships(centroids: IndexedSeq[Point]) = {
     val (squaredDistances, memberships) = points.map { point =>
       val distances = centroids.map(distance(_, point))
@@ -76,22 +103,22 @@ class Kmeans(
     (squaredDistances.sum, memberships)
   }
 
-  // Given memberships for each point, compute the centroid for each
-  // cluster.
+  /**
+   *  Given memberships for each point, compute the centroid for each cluster.
+   */
   private[this] def computeCentroids(memberships: IndexedSeq[Int]) = {
     memberships.zip(points)
       .groupByKey
-      .mapValues { groupForCentroid =>
-        val pointsForCentroid = groupForCentroid
-        val summed = pointsForCentroid.foldLeft(origin)(_ ++ _)
-        summed / pointsForCentroid.length.toDouble
-      }
+      .mapValues(group => group.reduce(_ ++ _) / group.length.toDouble)
       .toList
       .sortBy(_._1)
       .map(_._2)
       .toIndexedSeq
   }
 
+  /**
+   * Randomly choose k of the points as initial centroids.
+   */
   private[this] def chooseRandomCentroids(k: Int) = {
     val randomIndices = random.shuffle(points.indices.toList).take(k)
     randomIndices.map(points(_)).toIndexedSeq

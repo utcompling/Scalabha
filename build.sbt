@@ -2,7 +2,7 @@ import AssemblyKeys._
 
 name := "Scalabha"
 
-version := "0.2.1"
+version := "0.2.2"
 
 organization := "OpenNLP"
 
