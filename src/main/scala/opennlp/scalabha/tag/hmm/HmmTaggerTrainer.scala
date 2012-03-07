@@ -128,10 +128,23 @@ class HmmTaggerTrainer[Sym, Tag](
     val initialTransitions = initialTransitionCounterFactory.get(initialTransitionCounts).toFreqDist
     val initialEmissions = initialEmissionCounterFactory.get(initialEmissionCounts).toFreqDist
 
-    LOG.debug("initialEmissions(NN)(default) = " + initialEmissions("NN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]))
-    LOG.debug("                    (man)     = " + initialEmissions("NN".asInstanceOf[Tag])("man".asInstanceOf[Sym]))
-    LOG.debug("initialEmissions(IN)(default) = " + initialEmissions("IN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]))
-    LOG.debug("                    (man)     = " + initialEmissions("IN".asInstanceOf[Tag])("man".asInstanceOf[Sym]))
+    if (LOG.isDebugEnabled) {
+      initialEmissions match {
+        case ie: Map[String, Map[String, Probability]] =>
+          if (ie contains "N") {
+            LOG.debug("initialEmissions(N)(default) = " + initialEmissions("N".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]))
+            LOG.debug("                   (man)     = " + initialEmissions("N".asInstanceOf[Tag])("man".asInstanceOf[Sym]))
+            LOG.debug("initialEmissions(I)(default) = " + initialEmissions("I".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]))
+            LOG.debug("                   (man)     = " + initialEmissions("I".asInstanceOf[Tag])("man".asInstanceOf[Sym]))
+          }
+          else {
+            LOG.debug("initialEmissions(NN)(default) = " + initialEmissions("NN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]))
+            LOG.debug("                    (man)     = " + initialEmissions("NN".asInstanceOf[Tag])("man".asInstanceOf[Sym]))
+            LOG.debug("initialEmissions(IN)(default) = " + initialEmissions("IN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]))
+            LOG.debug("                    (man)     = " + initialEmissions("IN".asInstanceOf[Tag])("man".asInstanceOf[Sym]))
+          }
+      }
+    }
 
     // Re-estimate probability distributions using EM
     val (transitions, emissions) = reestimateProbabilityDistributions(
@@ -139,11 +152,11 @@ class HmmTaggerTrainer[Sym, Tag](
       initialTransitionCounts, initialEmissionCounts,
       initialTransitions, initialEmissions)
 
-//    LOG.debug(">>> tagDict(a) = " + tagDict("a".asInstanceOf[Sym]))
-//    LOG.debug(">>> emissions(DT)(a) = " + emissions("DT".asInstanceOf[Tag])("a".asInstanceOf[Sym]))
-//    LOG.debug(">>>     emissions(DT) = " + emissions("DT".asInstanceOf[Tag]).asInstanceOf[Map[String, Probability]].filter(_._2.toDouble >= 0.01).toList.sortBy(-_._2.toDouble).mapValuesStrict(p => "%.2f".format(p.toDouble)))
-//    LOG.debug(">>> emissions(FW)(a) = " + emissions("FW".asInstanceOf[Tag])("a".asInstanceOf[Sym]))
-//    LOG.debug(">>> emissions(SYM)(a) = " + emissions("SYM".asInstanceOf[Tag])("a".asInstanceOf[Sym]))
+    //    LOG.debug(">>> tagDict(a) = " + tagDict("a".asInstanceOf[Sym]))
+    //    LOG.debug(">>> emissions(DT)(a) = " + emissions("DT".asInstanceOf[Tag])("a".asInstanceOf[Sym]))
+    //    LOG.debug(">>>     emissions(DT) = " + emissions("DT".asInstanceOf[Tag]).asInstanceOf[Map[String, Probability]].filter(_._2.toDouble >= 0.01).toList.sortBy(-_._2.toDouble).mapValuesStrict(p => "%.2f".format(p.toDouble)))
+    //    LOG.debug(">>> emissions(FW)(a) = " + emissions("FW".asInstanceOf[Tag])("a".asInstanceOf[Sym]))
+    //    LOG.debug(">>> emissions(SYM)(a) = " + emissions("SYM".asInstanceOf[Tag])("a".asInstanceOf[Sym]))
 
     // Construct the HMM tagger from the estimated probabilities
     new HmmTagger(transitions, emissions, tagDictWithEnds, startEndSymbol, startEndTag)

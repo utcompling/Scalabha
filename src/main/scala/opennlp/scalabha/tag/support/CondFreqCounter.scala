@@ -195,8 +195,8 @@ class SimpleSmoothingCondFreqCounter[A, B](lambda: Double, countsForBackoff: Con
           if (LOG.isDebugEnabled && Set("NN", "IN", "N", "I").contains(a.asInstanceOf[String])) {
             LOG.debug(a + ":")
             LOG.debug("    smoothedLambda = " + smoothedLambda)
-            LOG.debug("    smoothedBackoff = " + smoothedBackoff.toMap.asInstanceOf[Map[String, String]].toList.sorted.drop(5).take(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
-            LOG.debug("    smoothedCounts = " + smoothedCounts.toMap.asInstanceOf[Map[String, String]].toList.sorted.drop(5).take(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
+            LOG.debug("    smoothedBackoff = " + smoothedBackoff.toMap.asInstanceOf[Map[String, String]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
+            LOG.debug("    smoothedCounts = " + smoothedCounts.toMap.asInstanceOf[Map[String, String]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
             LOG.debug("    defaultCount = " + defaultCount)
           }
 
