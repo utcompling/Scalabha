@@ -1,7 +1,15 @@
-v 0.2.1
+v 0.2.2
 -------
 
+ - Added opennlp.scalabha.cluster package, with algorithms and data structures
+   for k-means clustering. (J. Baldridge)
 
+ - Added extended HMM implementation. (D. Garrette)
+ 
+ - Removed code for Kinyarwanda and Malagasy. (J. Roesler)
+ 
+ - Upgraded to SBT 0.11.2 (J. Baldridge)
+ 
 
 
 v 0.2.0
