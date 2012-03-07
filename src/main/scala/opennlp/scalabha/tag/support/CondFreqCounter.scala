@@ -162,7 +162,7 @@ class ScalingCondFreqCounter[A, B](lambda: Double, delegate: CondFreqCounter[A, 
  * @param countsForBackoff	counts to be used to compute backoff information
  */
 class SimpleSmoothingCondFreqCounter[A, B](lambda: Double, countsForBackoff: CondFreqCounts[A, B, Int], delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
-  private val LOG = LogFactory.getLog("opennlp.scalabha.tag.support.SimpleSmoothingCondFreqCounter")
+  private val LOG = LogFactory.getLog(classOf[SimpleSmoothingCondFreqCounter[A, B]])
 
   protected def getDelegateResultCounts() = delegate.resultCounts
 
@@ -181,7 +181,7 @@ class SimpleSmoothingCondFreqCounter[A, B](lambda: Double, countsForBackoff: Con
 
     val defaultedCountsForBackoff =
       DefaultedCondFreqCounts(countsForBackoff.toMap.mapValuesStrict(c =>
-        DefaultedFreqCounts(c.mapValuesStrict(_.toDouble), 0.0, 0.0)), 0.0, 0.0)
+        DefaultedFreqCounts(c.mapValuesStrict(_ => 0.0), 0.0, 0.0)), 0.0, 0.0)
 
     val smoothedResultCounts =
       (delegateResultCounts ++ defaultedCountsForBackoff).counts.map {
@@ -192,11 +192,11 @@ class SimpleSmoothingCondFreqCounter[A, B](lambda: Double, countsForBackoff: Con
           val totalAddition = 0.0
           val defaultCount = smoothedLambda / smoothedBackoffTotal
 
-          if (LOG.isDebugEnabled && Set("NN", "IN").contains(a.asInstanceOf[String])) {
+          if (LOG.isDebugEnabled && Set("NN", "IN", "N", "I").contains(a.asInstanceOf[String])) {
             LOG.debug(a + ":")
             LOG.debug("    smoothedLambda = " + smoothedLambda)
-            LOG.debug("    smoothedBackoff = " + smoothedBackoff.toMap.asInstanceOf[Map[String, String]].toList.sorted.take(15))
-            LOG.debug("    smoothedCounts = " + smoothedCounts.toMap.asInstanceOf[Map[String, String]].toList.sorted.take(15))
+            LOG.debug("    smoothedBackoff = " + smoothedBackoff.toMap.asInstanceOf[Map[String, String]].toList.sorted.drop(5).take(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
+            LOG.debug("    smoothedCounts = " + smoothedCounts.toMap.asInstanceOf[Map[String, String]].toList.sorted.drop(5).take(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
             LOG.debug("    defaultCount = " + defaultCount)
           }
 

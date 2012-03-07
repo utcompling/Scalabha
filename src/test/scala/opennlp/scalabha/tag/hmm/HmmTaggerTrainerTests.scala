@@ -135,8 +135,9 @@ class HmmTaggerTrainerTests {
     val gold = TaggedFile("data/postag/english/entest")
 
     val tagDict = new SimpleTagDictFactory().make(trainLab)
-    val backoffTransitionCounts = CondFreqCounts[String, String, Int]()
-    val backoffEmissionCounts = CondFreqCounts(tagDict.flattenOver.map(_.swap))
+    val allTags = tagDict.values.flatten.toSet + "<END>"
+    val backoffTransitionCounts = CondFreqCounts(for (a <- allTags; b <- allTags) yield (a, b))
+    val backoffEmissionCounts = CondFreqCounts(tagDict.flattenOver.map(_.swap) ++ List("<END>" -> "<END>"))
 
     val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
       new HmmTaggerTrainer(
