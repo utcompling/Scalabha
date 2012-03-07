@@ -7,13 +7,12 @@ import opennlp.scalabha.tag.support._
 /**
  * CondFreqCounter decorator that smoothes transition counts.
  *
- * @param lambda				smoothing parameter
- * @param numSingleCountItems	number of single-count Bs corresponding to each A.
- *                              More single-count items means more smoothing
+ * @param lambda			smoothing parameter
+ * @param countsForBackoff	counts to be used to compute backoff information
  */
-class SimpleSmoothingTransitionFreqCounter[Tag](lambda: Double, startEndTag: Tag, numSingleCountItems: Tag => Int, delegate: CondFreqCounter[Tag, Tag])
-  extends SimpleSmoothingCondFreqCounter[Tag, Tag](lambda, numSingleCountItems, delegate) {
+class SimpleSmoothingTransitionFreqCounter[Tag](lambda: Double, startEndTag: Tag, countsForBackoff: CondFreqCounts[Tag, Tag, Int], delegate: CondFreqCounter[Tag, Tag])
+  extends SimpleSmoothingCondFreqCounter[Tag, Tag](lambda, countsForBackoff, delegate) {
 
-  override protected def amendBackoffCounts(backoffCounts: FreqCounts[Tag, Double]) = backoffCounts - startEndTag
+  override protected def amendBackoffCounts(backoffCounts: FreqCounts[Tag, Int]) = backoffCounts - startEndTag
 
 }

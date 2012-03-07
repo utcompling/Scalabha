@@ -135,21 +135,21 @@ class HmmTaggerTrainerTests {
     val gold = TaggedFile("data/postag/english/entest")
 
     val tagDict = new SimpleTagDictFactory().make(trainLab)
-    val numSingleCountTransitions = Map[String, Int]().withDefaultValue(0)
-    val numSingleCountEmissions = tagDict.flatMap(_._2).counts.withDefaultValue(0)
+    val backoffTransitionCounts = CondFreqCounts[String, String, Int]()
+    val backoffEmissionCounts = CondFreqCounts(tagDict.flattenOver.map(_.swap))
 
     val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
       new HmmTaggerTrainer(
         initialTransitionCounterFactory =
           new CondFreqCounterFactory[String, String] {
             def get() =
-              new SimpleSmoothingTransitionFreqCounter(1.0, "<END>", numSingleCountTransitions,
+              new SimpleSmoothingTransitionFreqCounter(1.0, "<END>", backoffTransitionCounts,
                 new SimpleCondFreqCounter())
           },
         initialEmissionCounterFactory =
           new CondFreqCounterFactory[String, String] {
             def get() =
-              new SimpleSmoothingEmissionFreqCounter(1.0, "<END>", "<END>", numSingleCountEmissions,
+              new SimpleSmoothingEmissionFreqCounter(1.0, "<END>", "<END>", backoffEmissionCounts,
                 new SimpleCondFreqCounter[String, String]())
           },
         estimatedTransitionCounterFactory =

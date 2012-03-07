@@ -129,7 +129,9 @@ class HmmTaggerTrainer[Sym, Tag](
     val initialEmissions = initialEmissionCounterFactory.get(initialEmissionCounts).toFreqDist
 
     LOG.debug("initialEmissions(NN)(default) = " + initialEmissions("NN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]))
+    LOG.debug("                    (man)     = " + initialEmissions("NN".asInstanceOf[Tag])("man".asInstanceOf[Sym]))
     LOG.debug("initialEmissions(IN)(default) = " + initialEmissions("IN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]))
+    LOG.debug("                    (man)     = " + initialEmissions("IN".asInstanceOf[Tag])("man".asInstanceOf[Sym]))
 
     // Re-estimate probability distributions using EM
     val (transitions, emissions) = reestimateProbabilityDistributions(

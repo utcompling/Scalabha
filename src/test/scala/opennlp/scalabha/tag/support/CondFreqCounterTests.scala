@@ -95,7 +95,7 @@ class CondFreqCounterTests {
   @Test
   def test_SmoothingCondFreqCounter() {
     val lambda = 0.1
-    val x = new SimpleSmoothingCondFreqCounter[Char, Symbol](lambda, Map[Char, Int]().withDefaultValue(0),
+    val x = new SimpleSmoothingCondFreqCounter[Char, Symbol](lambda, CondFreqCounts[Char, Symbol, Int](),
       new SimpleCondFreqCounter[Char, Symbol])
     x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 1.0), 'B' -> Map('a -> 3.0)))
     x ++= List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'C' -> 'c, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a).map(_.swap)
@@ -124,7 +124,7 @@ class CondFreqCounterTests {
 
     val x =
       new SimpleSmoothingCondFreqCounter[Char, Symbol](
-        lambda, Map[Char, Int]().withDefaultValue(0),
+        lambda, CondFreqCounts[Char, Symbol, Int](),
         new ConstrainingCondFreqCounter[Char, Symbol](
           constr, strict,
           new SimpleCondFreqCounter[Char, Symbol]))
@@ -155,7 +155,7 @@ class CondFreqCounterTests {
       new ConstrainingCondFreqCounter[Char, Symbol](
         constr, strict,
         new SimpleSmoothingCondFreqCounter[Char, Symbol](
-          lambda, Map[Char, Int]().withDefaultValue(0),
+          lambda, CondFreqCounts[Char, Symbol, Int](),
           new SimpleCondFreqCounter[Char, Symbol]))
 
     x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 1.0), 'B' -> Map('a -> 3.0, 'c -> 1.0)))
@@ -187,7 +187,7 @@ class CondFreqCounterTests {
       new ConstrainingCondFreqCounter[Char, Symbol](
         constr, strict,
         new SimpleSmoothingCondFreqCounter[Char, Symbol](
-          lambda, Map[Char, Int]().withDefaultValue(0),
+          lambda, CondFreqCounts[Char, Symbol, Int](),
           new ConstrainingCondFreqCounter[Char, Symbol](
             constr, strict,
             new SimpleCondFreqCounter[Char, Symbol])))

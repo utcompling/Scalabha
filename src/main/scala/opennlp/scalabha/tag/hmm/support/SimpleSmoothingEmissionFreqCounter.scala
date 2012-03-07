@@ -7,12 +7,11 @@ import opennlp.scalabha.tag.support._
 /**
  * CondFreqCounter decorator that smoothes emission counts.
  *
- * @param lambda				smoothing parameter
- * @param numSingleCountItems	number of single-count Bs corresponding to each A.
- *                              More single-count items means more smoothing
+ * @param lambda			smoothing parameter
+ * @param countsForBackoff	counts to be used to compute backoff information
  */
-class SimpleSmoothingEmissionFreqCounter[Tag, Sym](lambda: Double, startEndSymbol: Sym, startEndTag: Tag, numSingleCountItems: Tag => Int, delegate: CondFreqCounter[Tag, Sym])
-  extends SimpleSmoothingCondFreqCounter[Tag, Sym](lambda, numSingleCountItems, delegate) {
+class SimpleSmoothingEmissionFreqCounter[Tag, Sym](lambda: Double, startEndSymbol: Sym, startEndTag: Tag, countsForBackoff: CondFreqCounts[Tag, Sym, Int], delegate: CondFreqCounter[Tag, Sym])
+  extends SimpleSmoothingCondFreqCounter[Tag, Sym](lambda, countsForBackoff, delegate) {
 
   override protected def getDelegateResultCounts() =
     removeStartEnds(super.getDelegateResultCounts)

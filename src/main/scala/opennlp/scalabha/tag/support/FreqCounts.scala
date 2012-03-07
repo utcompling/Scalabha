@@ -45,4 +45,5 @@ class CondFreqCounts[A, B, N: Numeric](private val self: Map[A, FreqCounts[B, N]
 object CondFreqCounts {
   def apply[A, B, N: Numeric]() = new CondFreqCounts[A, B, N](Map())
   def apply[A, B, N: Numeric](self: Map[A, Map[B, N]]) = new CondFreqCounts(self.mapValuesStrict(FreqCounts(_)))
+  def apply[A, B](self: TraversableOnce[(A, B)]) = new CondFreqCounts(self.toIterator.groupByKey.mapValuesStrict(x => FreqCounts(x.counts)))
 }
