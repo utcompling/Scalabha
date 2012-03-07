@@ -51,6 +51,23 @@ class SupervisedHmmTaggerTrainer[Sym, Tag](
    */
   override def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag] = {
     val tagDict = tagDictFactory.make(taggedTrainSequences)
+    trainSupervised(taggedTrainSequences, tagDict)
+  }
+
+  /**
+   * Train a Hidden Markov Model tagger directly from labeled data.
+   *
+   * Main features:
+   * <ul>
+   *   <li> Constructs a tag dictionary directly from labeled data using tagDictFactory.
+   *   <li> Uses transition and emission counters to compute distributions based on labeled data.
+   * </ul>
+   *
+   * @param taggedTrainSequences	labeled sequences to use for training the model
+   * @param tagDict					tag dictionary
+   * @return						a trained tagger
+   */
+  override def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]], tagDict: Map[Sym, Set[Tag]]): Tagger[Sym, Tag] = {
     val (transitionCounts, emissionCounts) = getCountsFromTagged(taggedTrainSequences)
     val transitionDist = transitionCounterFactory.get(transitionCounts).toFreqDist
     val emissionDist = emissionCounterFactory.get(emissionCounts).toFreqDist

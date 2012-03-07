@@ -42,10 +42,13 @@ class SupervisedHmmTaggerTrainerTests {
       "a/D dog/N barks/V ./.")
       .map(_.split(" ").map(_.split("/").toSeq.toTuple2).toIndexedSeq)
 
+    val numSingleCountTransitions = train.map(_.map(_._2).sliding2).flatten.groupByKey.mapValuesStrict(_.counts.count(_._2 == 1)).withDefaultValue(0)
+    val numSingleCountEmissions = train.flatMap(_.map(_.swap)).groupByKey.mapValuesStrict(_.counts.count(_._2 == 1)).withDefaultValue(0)
+
     val trainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(
-        transitionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleSmoothingTransitionFreqCounter[String](0.01, "<END>", new SimpleCondFreqCounter()) },
-        emissionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleSmoothingCondFreqCounter[String, String](0.01, new SimpleCondFreqCounter[String, String]()) },
+        transitionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleSmoothingTransitionFreqCounter(1.0, "<END>", numSingleCountTransitions, new SimpleCondFreqCounter()) },
+        emissionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleSmoothingEmissionFreqCounter(1.0, "<END>", "<END>", numSingleCountEmissions, new SimpleCondFreqCounter[String, String]()) },
         "<END>", "<END>",
         new SimpleTagDictFactory())
     val tagger: Tagger[String, String] = trainer.trainSupervised(train)
@@ -115,10 +118,13 @@ class SupervisedHmmTaggerTrainerTests {
   def supervised_training_en_smoothed() {
     val train = TaggedFile("data/postag/english/entrain")
 
+    val numSingleCountTransitions = train.map(_.map(_._2).sliding2).flatten.groupByKey.mapValuesStrict(_.counts.count(_._2 == 1)).withDefaultValue(0)
+    val numSingleCountEmissions = train.flatMap(_.map(_.swap)).groupByKey.mapValuesStrict(_.counts.count(_._2 == 1)).withDefaultValue(0)
+
     val trainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(
-        transitionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleSmoothingTransitionFreqCounter(0.5, "<END>", new SimpleCondFreqCounter()) },
-        emissionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleSmoothingCondFreqCounter(0.5, new SimpleCondFreqCounter[String, String]()) },
+        transitionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleSmoothingTransitionFreqCounter(1.0, "<END>", numSingleCountTransitions, new SimpleCondFreqCounter()) },
+        emissionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleSmoothingEmissionFreqCounter(1.0, "<END>", "<END>", numSingleCountEmissions, new SimpleCondFreqCounter[String, String]()) },
         "<END>", "<END>",
         new SimpleTagDictFactory())
     val tagger = trainer.trainSupervised(train)

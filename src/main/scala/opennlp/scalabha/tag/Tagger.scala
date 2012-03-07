@@ -43,6 +43,15 @@ trait SupervisedTaggerTrainer[Sym, Tag] {
    */
   def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag]
 
+  /**
+   * Train a Tagger directly from labeled data.
+   *
+   * @param taggedTrainSequences	labeled sequences to use for training the model
+   * @param tagDict					a tag dictionary
+   * @return						a trained Tagger
+   */
+  def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]], tagDict: Map[Sym, Set[Tag]]): Tagger[Sym, Tag]
+
 }
 
 /**

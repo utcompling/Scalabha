@@ -37,7 +37,6 @@ class HmmTaggerTrainerTests {
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001,
-        tagDictContribToDist = 0.1,
         new SimpleTagDictFactory())
     val tagDict = new SimpleTagDictFactory().make(trainLab ++ testLab)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._1)))
@@ -75,7 +74,6 @@ class HmmTaggerTrainerTests {
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001,
-        tagDictContribToDist = 0.1,
         new SimpleTagDictFactory())
     val tagDict = new SimpleTagDictFactory().make(trainLab ++ testLab)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._1)))
@@ -136,18 +134,22 @@ class HmmTaggerTrainerTests {
     val testRaw = AsRawFile("data/postag/english/entest")
     val gold = TaggedFile("data/postag/english/entest")
 
+    val tagDict = new SimpleTagDictFactory().make(trainLab)
+    val numSingleCountTransitions = Map[String, Int]().withDefaultValue(0)
+    val numSingleCountEmissions = tagDict.flatMap(_._2).counts.withDefaultValue(0)
+
     val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
       new HmmTaggerTrainer(
         initialTransitionCounterFactory =
           new CondFreqCounterFactory[String, String] {
             def get() =
-              new SimpleSmoothingTransitionFreqCounter(0.5, "<END>",
+              new SimpleSmoothingTransitionFreqCounter(1.0, "<END>", numSingleCountTransitions,
                 new SimpleCondFreqCounter())
           },
         initialEmissionCounterFactory =
           new CondFreqCounterFactory[String, String] {
             def get() =
-              new SimpleSmoothingEmissionFreqCounter(0.5, "<END>", "<END>",
+              new SimpleSmoothingEmissionFreqCounter(1.0, "<END>", "<END>", numSingleCountEmissions,
                 new SimpleCondFreqCounter[String, String]())
           },
         estimatedTransitionCounterFactory =
@@ -163,9 +165,7 @@ class HmmTaggerTrainerTests {
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001,
-        tagDictContribToDist = 0.1,
-        new SimpleTagDictFactory())
-    val tagDict = new SimpleTagDictFactory().make(trainLab)
+        null)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainRaw)
     val output = unsupervisedTagger.tag(testRaw)
     val results = new TaggerEvaluator().evaluate(output, gold, unsupervisedTagger.asInstanceOf[HmmTagger[String, String]].tagDict)
@@ -205,7 +205,7 @@ class HmmTaggerTrainerTests {
 object HmmTaggerTrainerTests {
 
   @BeforeClass def turnOffLogging() {
-    Logger.getRootLogger.setLevel(Level.INFO)
+    Logger.getRootLogger.setLevel(Level.DEBUG)
   }
 
 }

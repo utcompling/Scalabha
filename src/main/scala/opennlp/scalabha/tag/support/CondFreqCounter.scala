@@ -4,6 +4,7 @@ import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.Pattern
 import opennlp.scalabha.util.Probability
 import opennlp.scalabha.util.Probability._
+import org.apache.commons.logging.LogFactory
 
 /**
  * A builder for conditional frequency distributions.  Stores counts (in a mutable
@@ -55,28 +56,6 @@ abstract class CondFreqCounter[A, B] {
 
   final def toFreqDist: A => B => Probability = {
     CondFreqDist(resultCounts())
-  }
-}
-
-object CondFreqCounter {
-  /**
-   * Easily construct structured counter.
-   *
-   * apply("smooth" -> lambda, "const" -> grammar) => will smooth constrained counts
-   * apply("const" -> grammar, "smooth" -> lambda) => will constrain smoothed counts
-   */
-  def apply[A, B](options: (String, Any)*) = {
-    options.foldRight(new SimpleCondFreqCounter[A, B](): CondFreqCounter[A, B]) {
-      case ((k, v), delegate) =>
-        if (k.startsWith("smooth")) v match {
-          case Pattern.Double(lambda) => new SimpleSmoothingCondFreqCounter(lambda, delegate)
-        }
-        else if (k.startsWith("const")) v match {
-          case (grammar: Map[A, Set[B]], strict: Boolean) => ConstrainingCondFreqCounter(grammar, strict, delegate)
-          case (grammar: Option[Map[A, Set[B]]], strict: Boolean) => ConstrainingCondFreqCounter(grammar, strict, delegate)
-        }
-        else throw new MatchError("could not match '%s'".format(k))
-    }
   }
 }
 
@@ -179,9 +158,12 @@ class ScalingCondFreqCounter[A, B](lambda: Double, delegate: CondFreqCounter[A, 
  *
  * This class applies a very simple add-one smoothing procedure to the counts.
  *
- * @param lambda	smoothing parameter
+ * @param lambda				smoothing parameter
+ * @param numSingleCountItems	number of single-count Bs corresponding to each A.
+ *                              More single-count items means more smoothing
  */
-class SimpleSmoothingCondFreqCounter[A, B](lambda: Double, delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
+class SimpleSmoothingCondFreqCounter[A, B](lambda: Double, numSingleCountItems: A => Int, delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
+  private val LOG = LogFactory.getLog("opennlp.scalabha.tag.support.SimpleSmoothingCondFreqCounter")
 
   protected def getDelegateResultCounts() = delegate.resultCounts
 
@@ -197,15 +179,23 @@ class SimpleSmoothingCondFreqCounter[A, B](lambda: Double, delegate: CondFreqCou
       .withDefaultValue(1.0 / smoothedBackoffTotal) // for "unseen" Bs, assume C(B) = 1
 
     val smoothedResultCounts =
-      delegateResultCounts.mapValuesStrict {
-        case DefaultedFreqCounts(aCounts, aTotalAdd, aDefault) =>
-          val singleCountItems = aCounts.toMap.count(_._2 <= 1.00000000001) // Count Bs occurring <= 1 time
-          val smoothedLambda = lambda + singleCountItems
+      delegateResultCounts.map {
+        case (a, DefaultedFreqCounts(aCounts, aTotalAdd, aDefault)) =>
+          val smoothedLambda = lambda * (1 + numSingleCountItems(a))
           val smoothedBackoff = FreqCounts(backoffDist.mapValuesStrict(_ * smoothedLambda))
           val smoothedCounts = smoothedBackoff ++ aCounts
           val totalAddition = 0.0
           val defaultCount = smoothedLambda / smoothedBackoffTotal
-          DefaultedFreqCounts(smoothedCounts, aTotalAdd + totalAddition, aDefault + defaultCount)
+
+          if (LOG.isDebugEnabled && Set("N", "I").contains(a.asInstanceOf[String])) {
+            LOG.debug(a + ":")
+            LOG.debug("    smoothedLambda = " + smoothedLambda)
+            LOG.debug("    smoothedBackoff = " + smoothedBackoff.toMap.asInstanceOf[Map[String,String]].toList.sorted.take(15))
+            LOG.debug("    smoothedCounts = " + smoothedCounts.toMap.asInstanceOf[Map[String,String]].toList.sorted.take(15))
+            LOG.debug("    defaultCount = " + defaultCount)
+          }
+
+          (a, DefaultedFreqCounts(smoothedCounts, aTotalAdd + totalAddition, aDefault + defaultCount))
       }
     val totalAddition = 1.0
     val defaultCount = lambda / smoothedBackoffTotal
@@ -248,17 +238,4 @@ class AddDeltaSmoothingCondFreqCounter[A, B](delta: Double, delegate: CondFreqCo
 abstract class CondFreqCounterFactory[A, B] {
   def get(): CondFreqCounter[A, B]
   def get[N: Numeric](initial: CondFreqCounts[A, B, N]): CondFreqCounter[A, B] = get() ++= initial
-}
-
-object CondFreqCounterFactory {
-  /**
-   * Easily construct structured counter factory.
-   *
-   * apply("smooth" -> lambda, "const" -> grammar) => will smooth constrained counts
-   * apply("const" -> grammar, "smooth" -> lambda) => will constrain smoothed counts
-   */
-  def apply[A, B](options: (String, Any)*) =
-    new CondFreqCounterFactory[A, B] {
-      def get() = CondFreqCounter(options: _*)
-    }
 }
