@@ -13,6 +13,22 @@ import scala.collection.mutable
 object CollectionUtils {
 
   //////////////////////////////////////////////////////
+  // toTuple2: (T,T)
+  // toTuple3: (T,T,T)
+  // toTuple4: (T,T,T,T)
+  // toTuple5: (T,T,T,T,T)
+  //   - Convert this sequence to a tuple
+  //////////////////////////////////////////////////////
+
+  class Enrich_toTuple_Seq[A](elements: Seq[A]) {
+    def toTuple2 = elements match { case Seq(a, b) => (a, b) }
+    def toTuple3 = elements match { case Seq(a, b, c) => (a, b, c) }
+    def toTuple4 = elements match { case Seq(a, b, c, d) => (a, b, c, d) }
+    def toTuple5 = elements match { case Seq(a, b, c, d, e) => (a, b, c, d, e) }
+  }
+  implicit def enriched_toTuple_Seq[A](elements: Seq[A]) = new Enrich_toTuple_Seq(elements)
+
+  //////////////////////////////////////////////////////
   // countCompare(p: A => Boolean, count: Int): Int
   //   - Compares the number of items satisfying a predicate to a test value.
   //   - Functionally equivalent to (but more efficient than):
@@ -238,7 +254,7 @@ object CollectionUtils {
      * Slide over this collection to produce pairs.
      */
     def sliding2[B >: A](): Iterator[(B, B)] =
-      self.sliding(2).map { case Seq(a, b) => (a, b) }
+      self.sliding(2).map(_.toTuple2)
   }
   implicit def enriched_sliding2_Iterator[A](self: Iterator[A]) = new Enriched_sliding2_Iterator(self)
 
@@ -556,22 +572,6 @@ object CollectionUtils {
     }
   }
   implicit def enrich_avg_GenTraversableOnce[A](self: GenTraversableOnce[A]) = new Enrich_avg_GenTraversableOnce(self)
-
-  //////////////////////////////////////////////////////
-  // toTuple2: (T,T)
-  // toTuple3: (T,T,T)
-  // toTuple4: (T,T,T,T)
-  // toTuple5: (T,T,T,T,T)
-  //   - Convert this sequence to a tuple
-  //////////////////////////////////////////////////////
-
-  class Enrich_toTuple_Seq[A](elements: Seq[A]) {
-    def toTuple2 = elements match { case Seq(a, b) => (a, b) }
-    def toTuple3 = elements match { case Seq(a, b, c) => (a, b, c) }
-    def toTuple4 = elements match { case Seq(a, b, c, d) => (a, b, c, d) }
-    def toTuple5 = elements match { case Seq(a, b, c, d, e) => (a, b, c, d, e) }
-  }
-  implicit def enriched_toTuple_Seq[A](elements: Seq[A]) = new Enrich_toTuple_Seq(elements)
 
   //  class ReversableIterableMap[A, B](map: Map[A, GenTraversableOnce[B]]) {
   //    def reverse(): Map[B, GenTraversableOnce[A]] =

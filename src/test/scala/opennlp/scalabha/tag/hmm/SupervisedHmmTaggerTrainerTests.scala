@@ -21,7 +21,7 @@ class SupervisedHmmTaggerTrainerTests {
       "the/D dog/N walks/V ./.",
       "the/D cat/N walks/V ./.",
       "a/D dog/N barks/V ./.")
-      .map(_.split(" ").map(_.split("/")).map { case Array(s, t) => (s, t) }.toIndexedSeq)
+      .map(_.split(" ").map(_.split("/").toSeq.toTuple2).toIndexedSeq)
 
     val trainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(
@@ -40,7 +40,7 @@ class SupervisedHmmTaggerTrainerTests {
       "the/D dog/N walks/V ./.",
       "the/D cat/N walks/V ./.",
       "a/D dog/N barks/V ./.")
-      .map(_.split(" ").map(_.split("/")).map { case Array(s, t) => (s, t) }.toIndexedSeq)
+      .map(_.split(" ").map(_.split("/").toSeq.toTuple2).toIndexedSeq)
 
     val trainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(

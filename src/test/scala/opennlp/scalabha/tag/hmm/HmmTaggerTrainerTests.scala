@@ -178,7 +178,7 @@ class HmmTaggerTrainerTests {
         .map(_.trim)
         .split("###/###")
         .filter(_.nonEmpty)
-        .map(_.map(_.split("/").toSeq match { case Seq(w, t) => (w, t) }).toIndexedSeq)
+        .map(_.map(_.split("/").toSeq.toTuple2).toIndexedSeq)
   }
 
   object AsRawFile {
