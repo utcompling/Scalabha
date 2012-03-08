@@ -5,10 +5,12 @@ package opennlp.scalabha.util
  * underlying logarithmic representation is completely hidden from the calling
  * code.
  *
- * This class exists to all for the use of obvious operators (* for
+ * This class exists to allow for the use of obvious operators (* for
  * multiplication instead of + on logarithms) and to prevent coding mistakes
  * resulting from the inadvertent mixing of logarithmic and non-logarithmic
- * Double representations of probabilities.
+ * Double representations of probabilities.  Additionally, it is possible to 
+ * use the `sum` and `product` collection methods on collections of 
+ * Probabilities, and get the expected results.
  *
  * All to* methods return the (non-logarithmic) probability stored.  The only
  * way to access the actual logarithmic value is by the 'underlying' field.
