@@ -56,28 +56,6 @@ abstract class FreqCounter[B] {
   }
 }
 
-object FreqCounter {
-  /**
-   * Easily construct structured counter.
-   *
-   * apply("smooth" -> lambda, "const" -> grammar) => will smooth constrained counts
-   * apply("const" -> grammar, "smooth" -> lambda) => will constrain smoothed counts
-   */
-  def apply[B](options: (String, Any)*) = {
-    options.foldRight(new SimpleFreqCounter[B](): FreqCounter[B]) {
-      case ((k, v), delegate) =>
-        if (k.startsWith("smooth")) v match {
-          case Double(lambda) => new SimpleSmoothingFreqCounter(lambda, delegate)
-        }
-        else if (k.startsWith("const")) v match {
-          case (grammar: Set[B], strict: Boolean) => ConstrainingFreqCounter(grammar, strict, delegate)
-          case (grammar: Option[Set[B]], strict: Boolean) => ConstrainingFreqCounter(grammar, strict, delegate)
-        }
-        else throw new MatchError("could not match '%s'".format(k))
-    }
-  }
-}
-
 //////////////////////////////////////
 // Base Implementation
 //////////////////////////////////////
@@ -116,51 +94,28 @@ abstract class DelegatingFreqCounter[B](delegate: FreqCounter[B]) extends FreqCo
  * validEntries.
  *
  * @param validEntries	zero out entries not found in this set
- * @param strict	if true, default information will be zeroed as well
  * @param delegate	the delegate counter upon which the transformation is performed
  */
-class ConstrainingFreqCounter[B](validEntries: Set[B], strict: Boolean, delegate: FreqCounter[B]) extends DelegatingFreqCounter[B](delegate) {
+class ConstrainingFreqCounter[B](validEntries: Set[B], delegate: FreqCounter[B]) extends DelegatingFreqCounter[B](delegate) {
   override def resultCounts() = {
     val DefaultedFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts
-    val totalAddition = if (strict) 0 else delegateTotalAddition
-    val defaultCount = if (strict) 0 else delegateDefaultCount
-    DefaultedFreqCounts(delegateResultCounts.toMap.filterKeys(validEntries), totalAddition, defaultCount)
+    val delegateResultMap = delegateResultCounts.toMap
+    DefaultedFreqCounts(validEntries.mapTo(b => delegateResultMap.getOrElse(b, delegateDefaultCount)).toMap, 0.0, 0.0)
   }
 }
 
 object ConstrainingFreqCounter {
-  def apply[B](validEntries: Set[B], strict: Boolean, delegate: FreqCounter[B]) =
-    new ConstrainingFreqCounter(validEntries, strict, delegate)
+  def apply[B](validEntries: Set[B], delegate: FreqCounter[B]) =
+    new ConstrainingFreqCounter(validEntries, delegate)
 
   /**
    * Accept validEntries as an Option.  If None: don't bother wrapping.
    */
-  def apply[B](validEntries: Option[Set[B]], strict: Boolean, delegate: FreqCounter[B]) =
+  def apply[B](validEntries: Option[Set[B]], delegate: FreqCounter[B]) =
     validEntries match {
-      case Some(validEntries) => new ConstrainingFreqCounter(validEntries, strict, delegate)
+      case Some(validEntries) => new ConstrainingFreqCounter(validEntries, delegate)
       case None => delegate
     }
-}
-
-//////////////////////////////////////
-// Smoothing Implementation
-//////////////////////////////////////
-
-/**
- * NOT YET IMPLEMENTED
- *
- * FreqCounter decorator that smoothes counts.
- *
- * Note: This class will always return counts of type Double, regardless of
- * the type of counts passed in.  This is because smoothing results in
- * fractional counts.
- *
- * @param lambda	smoothing parameter
- */
-class SimpleSmoothingFreqCounter[B](lambda: Double, delegate: FreqCounter[B]) extends DelegatingFreqCounter[B](delegate) {
-  override def resultCounts() = {
-    sys.error("not implemented") //TODO:
-  }
 }
 
 //////////////////////////////////////
@@ -181,17 +136,4 @@ abstract class FreqCounterFactory[B] {
   def get(): FreqCounter[B]
   final def get(initial: TraversableOnce[B]): FreqCounter[B] = get() ++= initial
   final def get(initial: FreqCounts[B, Double]): FreqCounter[B] = get() ++= initial
-}
-
-object FreqCounterFactory {
-  /**
-   * Easily construct structured counter factory.
-   *
-   * apply("smooth" -> lambda, "const" -> grammar) => will smooth constrained counts
-   * apply("const" -> grammar, "smooth" -> lambda) => will constrain smoothed counts
-   */
-  def apply[B](options: (String, Any)*) =
-    new FreqCounterFactory[B] {
-      def get() = FreqCounter(options: _*)
-    }
 }

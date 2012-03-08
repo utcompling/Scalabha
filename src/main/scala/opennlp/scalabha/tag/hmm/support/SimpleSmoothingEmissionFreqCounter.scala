@@ -10,8 +10,8 @@ import opennlp.scalabha.tag.support._
  * @param lambda			smoothing parameter
  * @param countsForBackoff	counts to be used to compute backoff information
  */
-class SimpleSmoothingEmissionFreqCounter[Tag, Sym](lambda: Double, startEndSymbol: Sym, startEndTag: Tag, countsForBackoff: CondFreqCounts[Tag, Sym, Int], delegate: CondFreqCounter[Tag, Sym])
-  extends SimpleSmoothingCondFreqCounter[Tag, Sym](lambda, countsForBackoff, delegate) {
+class SimpleSmoothingEmissionFreqCounter[Tag, Sym](lambda: Double, startEndSymbol: Sym, startEndTag: Tag, backoffCounts: FreqCounts[Sym, Int], numSingleCountItems: Map[Tag, Int], delegate: CondFreqCounter[Tag, Sym])
+  extends SimpleSmoothingCondFreqCounter[Tag, Sym](lambda, backoffCounts, numSingleCountItems, delegate) {
 
   override protected def getDelegateResultCounts() =
     removeStartEnds(super.getDelegateResultCounts)

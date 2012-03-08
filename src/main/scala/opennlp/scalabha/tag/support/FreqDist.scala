@@ -120,13 +120,19 @@ object CondFreqDist {
     val (dists: List[(A, B => Probability)], total) =
       counts.foldLeft(List[(A, B => Probability)](), totalAddition) {
         case ((dists, total), (a, DefaultedFreqCounts(aCounts, aTotalAddition, aDefaultCount))) =>
-          val aTotal = aCounts.toMap.values.sum + aTotalAddition
+          println("tag = " + a)
+          println("    aCounts = " + aCounts.toMap.size)
+          val aTotal = aCounts.toMap.values.sum + aTotalAddition.toDouble
           val aDistDefaulted =
             if (aTotal == 0)
               FreqDist.empty
-            else
-              aCounts.toMap.mapValuesStrict(count => (count / aTotal).toProbability)
-                .withDefaultValue((aDefaultCount / aTotal).toProbability)
+            else {
+              val x =
+                aCounts.toMap.mapValuesStrict(count => (count.toDouble / aTotal).toProbability)
+                  .withDefaultValue((aDefaultCount.toDouble / aTotal).toProbability)
+              println("    x = " + x.toMap.asInstanceOf[Map[String, String]].toList.take(10))
+              x
+            }
           ((a, aDistDefaulted) :: dists, total + aTotal)
       }
     if (total == 0)
