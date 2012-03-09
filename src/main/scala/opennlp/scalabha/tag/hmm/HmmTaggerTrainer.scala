@@ -125,24 +125,28 @@ class HmmTaggerTrainer[Sym, Tag](
     val tagDictWithEnds = tagDict + (startEndSymbol -> Set(startEndTag))
 
     // Create the initial distributions
+    LOG.debug("Make initialTransitions")
     val initialTransitions = initialTransitionCounterFactory.get(initialTransitionCounts).toFreqDist
+    LOG.debug("Make initialEmissions")
     val initialEmissions = initialEmissionCounterFactory.get(initialEmissionCounts).toFreqDist
 
     if (LOG.isDebugEnabled) {
       initialEmissions match {
         case ie: Map[String, Map[String, Probability]] =>
           if (ie contains "N") {
-            LOG.debug("initialEmissions(N)(default) = " + initialEmissions("N".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]))
-            LOG.debug("                   (man)     = " + initialEmissions("N".asInstanceOf[Tag])("man".asInstanceOf[Sym]))
-            LOG.debug("initialEmissions(I)(default) = " + initialEmissions("I".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]))
-            LOG.debug("                   (man)     = " + initialEmissions("I".asInstanceOf[Tag])("man".asInstanceOf[Sym]))
+            LOG.debug("initialEmissions(N)(default) = " + initialEmissions("N".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).underlying)
+            LOG.debug("                   (man)     = " + initialEmissions("N".asInstanceOf[Tag])("man".asInstanceOf[Sym]).underlying)
+            LOG.debug("initialEmissions(I)(default) = " + initialEmissions("I".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).underlying)
+            LOG.debug("                   (man)     = " + initialEmissions("I".asInstanceOf[Tag])("man".asInstanceOf[Sym]).underlying)
           }
           else {
-            LOG.debug("initialEmissions(NN)(default) = " + initialEmissions("NN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]))
-            LOG.debug("                    (man)     = " + initialEmissions("NN".asInstanceOf[Tag])("man".asInstanceOf[Sym]))
-            LOG.debug("initialEmissions(IN)(default) = " + initialEmissions("IN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]))
-            LOG.debug("                    (man)     = " + initialEmissions("IN".asInstanceOf[Tag])("man".asInstanceOf[Sym]))
+            LOG.debug("initialEmissions(NN)(default) = " + initialEmissions("NN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).underlying)
+            LOG.debug("                    (man)     = " + initialEmissions("NN".asInstanceOf[Tag])("man".asInstanceOf[Sym]).underlying)
+            LOG.debug("initialEmissions(IN)(default) = " + initialEmissions("IN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).underlying)
+            LOG.debug("                    (man)     = " + initialEmissions("IN".asInstanceOf[Tag])("man".asInstanceOf[Sym]).underlying)
           }
+        case _ =>
+          LOG.debug("Empty FreqDist")
       }
     }
 
@@ -213,7 +217,9 @@ class HmmTaggerTrainer[Sym, Tag](
     if ((averageLogProb - prevAvgLogProb).abs < minAvgLogProbChangeForEM)
       LOG.info("DONE: Change in average log probability is less than " + minAvgLogProbChangeForEM)
     if (averageLogProb < prevAvgLogProb)
-      LOG.info("DIVERGED: log probability decreased!!")
+      throw new RuntimeException("DIVERGED: log probability decreased!!")
+    if (averageLogProb == Double.NegativeInfinity)
+      throw new RuntimeException("averageLogProb == -Infinity")
 
     (transitions, emissions)
   }

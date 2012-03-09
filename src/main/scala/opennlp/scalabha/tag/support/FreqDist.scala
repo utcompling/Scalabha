@@ -3,6 +3,8 @@ package opennlp.scalabha.tag.support
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.Probability
 import opennlp.scalabha.util.Probability._
+import org.apache.commons.logging.LogFactory
+import opennlp.scalabha.tag.hmm.HmmTaggerTrainer
 
 /**
  * Utilities for frequency distributions: functions to probabilities: P(B).
@@ -66,6 +68,7 @@ object FreqDist {
  * to probabilities: P(B|A).
  */
 object CondFreqDist {
+  private val LOG = LogFactory.getLog(CondFreqDist.getClass)
 
   /**
    * Return an "empty" frequency distribution: a function that maps
@@ -120,19 +123,27 @@ object CondFreqDist {
     val (dists: List[(A, B => Probability)], total) =
       counts.foldLeft(List[(A, B => Probability)](), totalAddition) {
         case ((dists, total), (a, DefaultedFreqCounts(aCounts, aTotalAddition, aDefaultCount))) =>
-          println("tag = " + a)
-          println("    aCounts = " + aCounts.toMap.size)
-          val aTotal = aCounts.toMap.values.sum + aTotalAddition.toDouble
+          val aTotal = aCounts.toMap.values.sum + aTotalAddition
           val aDistDefaulted =
             if (aTotal == 0)
               FreqDist.empty
-            else {
-              val x =
-                aCounts.toMap.mapValuesStrict(count => (count.toDouble / aTotal).toProbability)
-                  .withDefaultValue((aDefaultCount.toDouble / aTotal).toProbability)
-              println("    x = " + x.toMap.asInstanceOf[Map[String, String]].toList.take(10))
-              x
+            else
+              aCounts.toMap.mapValuesStrict(count => (count / aTotal).toProbability)
+                .withDefaultValue((aDefaultCount / aTotal).toProbability)
+
+          if (LOG.isDebugEnabled && Set("NN", "IN", "N", "I").contains(a.asInstanceOf[String])) {
+            LOG.debug("tag = " + a)
+            LOG.debug("    aCounts = " + aCounts.toMap.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
+            LOG.debug("    aDefaultCount = " + aDefaultCount)
+            LOG.debug("    aTotal = " + aTotal)
+            aDistDefaulted match {
+              case x: Map[String, Probability] =>
+                LOG.debug("    aDistDefaulted = " + x.toList.sorted.takeRight(10).map { case (b, p) => "%s -> %.2f".format(b, p.underlying) })
+              case _ =>
+                LOG.debug("    empty FreqDist")
             }
+          }
+
           ((a, aDistDefaulted) :: dists, total + aTotal)
       }
     if (total == 0)

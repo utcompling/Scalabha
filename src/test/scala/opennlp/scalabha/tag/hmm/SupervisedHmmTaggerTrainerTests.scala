@@ -51,16 +51,16 @@ class SupervisedHmmTaggerTrainerTests {
           def get() =
             //TODO: data = tagBigrams
             new SimpleSmoothingTransitionFreqCounter(1.0, "<END>",
-              FreqCounts(tagBigrams.map(_._2).counts),
-              tagBigrams.groupByKey.mapValuesStrict(_.counts.count(_._2 == 1)),
+              Map(),
+              List(),
               new SimpleCondFreqCounter())
         },
         emissionCounterFactory = new CondFreqCounterFactory[String, String] {
           def get() =
             // data = endedTrain.flatten.map(_.swap)
             new SimpleSmoothingEmissionFreqCounter(1.0, "<END>", "<END>",
-              FreqCounts(endedTrain.flatten.map(_.swap).map(_._2).counts),
-              endedTrain.flatten.map(_.swap).groupByKey.mapValuesStrict(_.counts.count(_._2 == 1)),
+              Map(),
+              List(),
               new SimpleCondFreqCounter())
         },
         "<END>", "<END>",
@@ -141,16 +141,16 @@ class SupervisedHmmTaggerTrainerTests {
           def get() =
             //TODO: data = tagBigrams
             new SimpleSmoothingTransitionFreqCounter(1.0, "<END>",
-              FreqCounts(tagBigrams.map(_._2).counts),
-              tagBigrams.groupByKey.mapValuesStrict(_.counts.count(_._2 == 1)),
+              Map(),
+              List(),
               new SimpleCondFreqCounter())
         },
         emissionCounterFactory = new CondFreqCounterFactory[String, String] {
           def get() =
             // data = endedTrain.flatten.map(_.swap)
             new SimpleSmoothingEmissionFreqCounter(1.0, "<END>", "<END>",
-              FreqCounts(endedTrain.flatten.map(_.swap).map(_._2).counts),
-              endedTrain.flatten.map(_.swap).groupByKey.mapValuesStrict(_.counts.count(_._2 == 1)),
+              Map(),
+              List(),
               new SimpleCondFreqCounter())
         },
         "<END>", "<END>",
