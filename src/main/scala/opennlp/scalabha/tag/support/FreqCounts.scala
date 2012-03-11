@@ -32,6 +32,9 @@ object FreqCounts {
  * Convenience wrapper of a map from item pairs to their counts.  Its primary
  * function is to make adding counts easier.  The "++" operator adds the
  * counts for each respective entry (unlike Map's standard behavior).
+ *
+ * @tparam A  the conditioning item being counted; P(B|A).
+ * @tparam B  the conditioned item being counted; P(B|A).
  */
 class CondFreqCounts[A, B, N: Numeric](private val self: Map[A, FreqCounts[B, N]]) {
   def ++(that: CondFreqCounts[A, B, N]) =
