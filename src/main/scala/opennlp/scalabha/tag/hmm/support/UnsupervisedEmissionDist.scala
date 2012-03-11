@@ -102,19 +102,37 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
 }
 
 /**
- * Hack the default for each tag by making it 1 / |TD(tag)|
+ * Hack the default for each tag by making it 1 / (V - |TD(tag)|)
  */
 class DefaultHackingUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Tag]], startEndSymbol: Sym, startEndTag: Tag, delegate: UnsupervisedEmissionDistFactory[Tag, Sym])
   extends UnsupervisedEmissionDistFactory[Tag, Sym] {
+  protected val LOG = LogFactory.getLog(classOf[DefaultHackingUnsupervisedEmissionDistFactory[Tag, Sym]])
 
   override def make(): Tag => Sym => Probability = {
     val dist = delegate.make()
     val distMap = dist.asInstanceOf[Map[Tag, Map[Sym, Probability]]]
     val totalNumSymbols = (tagDict.keySet - startEndSymbol).size
-    distMap.mapValuesStrict {
-      symbols =>
+    distMap.map {
+      case (tag, symbols) =>
         val numInvalidSymbols = totalNumSymbols - symbols.size
-        symbols.withDefaultValue(Probability(1.0 / numInvalidSymbols))
+        LOG.debug("%s: numInvalidSymbols = %d".format(tag, numInvalidSymbols))
+        tag -> symbols.withDefaultValue(Probability(scale(1.0 / numInvalidSymbols)))
     }.withDefaultValue(FreqDist.empty)
+  }
+
+  protected def scale(d: Double): Double = {
+    d
+  }
+}
+
+/**
+ * Hack the default for each tag by making it 1 / (V - |TD(tag)|)
+ */
+class ExpDefaultHackingUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Tag]], startEndSymbol: Sym, startEndTag: Tag, delegate: UnsupervisedEmissionDistFactory[Tag, Sym])
+  extends DefaultHackingUnsupervisedEmissionDistFactory[Tag, Sym](tagDict, startEndSymbol, startEndTag, delegate) {
+  override protected val LOG = LogFactory.getLog(classOf[ExpDefaultHackingUnsupervisedEmissionDistFactory[Tag, Sym]])
+
+  override protected def scale(d: Double): Double = {
+    math.exp(d)
   }
 }
