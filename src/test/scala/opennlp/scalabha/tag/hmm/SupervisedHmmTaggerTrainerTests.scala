@@ -16,7 +16,7 @@ import org.apache.log4j.Level
 class SupervisedHmmTaggerTrainerTests {
 
   @Test
-  def supervised_training_tiny_noSmoothing() {
+  def tiny_noSmoothing() {
     val train = List(
       "the/D dog/N walks/V ./.",
       "the/D cat/N walks/V ./.",
@@ -35,7 +35,7 @@ class SupervisedHmmTaggerTrainerTests {
   }
 
   @Test
-  def supervised_training_tiny_smoothed() {
+  def tiny_smoothed() {
     val train = List(
       "the/D dog/N walks/V ./.",
       "the/D cat/N walks/V ./.",
@@ -67,7 +67,7 @@ class SupervisedHmmTaggerTrainerTests {
   }
 
   @Test
-  def supervised_training_ic_noSmoothing() {
+  def ic_noSmoothing() {
     val train = TaggedFile("data/postag/ic/ictrain.txt")
 
     val trainer: SupervisedTaggerTrainer[String, String] =
@@ -94,7 +94,7 @@ class SupervisedHmmTaggerTrainerTests {
   }
 
   @Test
-  def supervised_training_en_noSmoothing() {
+  def en_noSmoothing() {
     val train = TaggedFile("data/postag/english/entrain")
 
     val trainer: SupervisedTaggerTrainer[String, String] =
@@ -124,7 +124,7 @@ class SupervisedHmmTaggerTrainerTests {
   }
 
   @Test
-  def supervised_training_en_eisnerSmoothing() {
+  def en_eisnerSmoothing() {
     val train = TaggedFile("data/postag/english/entrain")
 
     val endedTrain = train.map(s => (("<END>", "<END>") +: s :+ ("<END>", "<END>")))

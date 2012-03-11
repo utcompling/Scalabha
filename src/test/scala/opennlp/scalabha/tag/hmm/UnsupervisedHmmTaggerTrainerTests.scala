@@ -17,7 +17,7 @@ import org.apache.log4j.BasicConfigurator
 class HmmTaggerTrainerTests {
 
   @Test
-  def unsupervised_training_ic_fullTagDict_noSmoothing() {
+  def ic_fullTagDict_noSmoothing() {
     val trainLab = TaggedFile("data/postag/ic/ictrain.txt")
     val testLab = TaggedFile("data/postag/ic/ictest.txt")
 
@@ -51,7 +51,7 @@ class HmmTaggerTrainerTests {
   }
 
   @Test
-  def unsupervised_training_en_fullTagDict_noSmoothing() {
+  def en_fullTagDict_noSmoothing() {
     val trainLab = TaggedFile("data/postag/english/entrain")
     val testLab = TaggedFile("data/postag/english/entest")
 
@@ -88,7 +88,7 @@ class HmmTaggerTrainerTests {
   }
 
   @Test
-  def unsupervised_training_en_testInTagDict() {
+  def en_testInTagDict() {
     val trainLab = TaggedFile("data/postag/english/entrain") ++ TaggedFile("data/postag/english/entest")
     val results = runUnsupervisedTrainingTest(trainLab)
     assertResultsEqual("""
@@ -106,7 +106,7 @@ class HmmTaggerTrainerTests {
   }
 
   @Test
-  def unsupervised_training_en_largeTagDict() {
+  def en_largeTagDict() {
     val trainLab = TaggedFile("data/postag/english/entrain")
     val results = runUnsupervisedTrainingTest(trainLab)
     assertResultsEqual("""
@@ -186,8 +186,8 @@ class HmmTaggerTrainerTests {
 object HmmTaggerTrainerTests {
 
   @BeforeClass def turnOffLogging() {
-    //Logger.getRootLogger.setLevel(Level.DEBUG)
-    Logger.getRootLogger.setLevel(Level.OFF)
+    Logger.getRootLogger.setLevel(Level.DEBUG)
+    //Logger.getRootLogger.setLevel(Level.OFF)
   }
 
 }

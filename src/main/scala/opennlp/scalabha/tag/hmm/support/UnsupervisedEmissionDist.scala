@@ -72,24 +72,28 @@ class PartialCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Se
 
 /**
  * Count occurrences of each word in the raw data and spread them evenly
- * among the each tag to which the word is associated in the tag dictionary.
+ * among the tags to which the word is associated in the tag dictionary.
+ * To smooth, add one to each count, and assume count of one for words in
+ * tag dictionary not seen in raw data.
+ *
+ * So, if a word w appears C(w) times in the raw corpus, and is seen with
+ * |TD(w)| tags in the tag dictionary, then assume
+ * C(t,w) = (C(w) + 1) / |TD(w)|.
+ *
  * Known words not associated with the tag in the tag dictionary are given
  * zero counts.  Unseen words are assumed to have a 'default' count of 1 for
  * each tag.
- *
- * So, if a word w appears C(w) times in the raw corpus, and is seen with
- * |TD(w)| tags in the tag dictionary, then assume C(t,w) = C(w) / |TD(w)|.
  */
 class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Tag]], rawData: Iterable[Iterable[Sym]], lambda: Double, startEndSymbol: Sym, startEndTag: Tag)
   extends UnsupervisedEmissionDistFactory[Tag, Sym] {
 
   override def make() = {
-    val symbolCounts = rawData.flatten.counts - startEndSymbol
+    val symbolCounts = (rawData.flatten.counts - startEndSymbol).withDefaultValue(0)
     val symbolsForTag = (tagDict.flattenOver.map(_.swap).groupByKey - startEndTag).mapValuesStrict(_ - startEndSymbol)
     val counts =
       symbolsForTag.mapValuesStrict {
         symbols =>
-          DefaultedFreqCounts(symbols.mapTo(s => symbolCounts(s) / tagDict(s).size.toDouble).toMap, 1.0, 1.0)
+          DefaultedFreqCounts(symbols.mapTo(s => (symbolCounts(s) + 1) / tagDict(s).size.toDouble).toMap, 1.0, 1.0)
       } + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 2.0), 0.0, 0.0))
     CondFreqDist(DefaultedCondFreqCounts(counts, 0.0, 0.0))
   }
