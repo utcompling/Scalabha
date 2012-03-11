@@ -50,8 +50,8 @@ class SupervisedHmmTaggerTrainer[Sym, Tag](
    */
   override def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]], tagDict: Map[Sym, Set[Tag]]): Tagger[Sym, Tag] = {
     val (transitionCounts, emissionCounts) = getCountsFromTagged(taggedTrainSequences)
-    val transitionDist = transitionCounterFactory.get(transitionCounts).toFreqDist
-    val emissionDist = emissionCounterFactory.get(emissionCounts).toFreqDist
+    val transitionDist = transitionCounterFactory.get(transitionCounts.toDouble).toFreqDist
+    val emissionDist = emissionCounterFactory.get(emissionCounts.toDouble).toFreqDist
     new HmmTagger(transitionDist, emissionDist, tagDict, startEndSymbol, startEndTag)
   }
 
@@ -60,19 +60,17 @@ class SupervisedHmmTaggerTrainer[Sym, Tag](
    *
    * @param taggedTrainSequences	labeled sequences from which to extract counts
    */
-  protected def getCountsFromTagged(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
+  protected def getCountsFromTagged(taggedSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
     // Separate symbols from tags.  Add start/final symbols and tags to each sequence
-    val (symSequences, tagSequences) = taggedTrainSequences.map(
-      seq => ((startEndSymbol -> startEndTag) +: seq :+ (startEndSymbol -> startEndTag))
-        .unzip).unzip
+    val endedSequences = taggedSequences.map(((startEndSymbol -> startEndTag) +: _ :+ (startEndSymbol -> startEndTag)))
 
     // Get the tag transitions, including start/final tags
-    val tagPairs = tagSequences.map(_.sliding2).flatten
-    val transitionCounts = tagPairs.groupByKey.mapValuesStrict(_.counts.mapValuesStrict(_.toDouble))
+    val tagPairs = endedSequences.map(_.map(_._2).sliding2).flatten
+    val transitionCounts = tagPairs.groupByKey.mapValuesStrict(_.counts)
 
     // Get the word/tag pairs (emissions)
-    val tagSymbolPairs = (tagSequences.flatten zipEqual symSequences.flatten)
-    val emissionCounts = tagSymbolPairs.groupByKey.mapValuesStrict(_.counts.mapValuesStrict(_.toDouble))
+    val tagSymbolPairs = endedSequences.flatMap(_.map(_.swap))
+    val emissionCounts = tagSymbolPairs.groupByKey.mapValuesStrict(_.counts)
 
     (CondFreqCounts(transitionCounts), CondFreqCounts(emissionCounts))
   }

@@ -4,7 +4,6 @@ import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.Probability
 import opennlp.scalabha.util.Probability._
 import org.apache.commons.logging.LogFactory
-import opennlp.scalabha.tag.hmm.HmmTaggerTrainer
 
 /**
  * Utilities for frequency distributions: functions to probabilities: P(B).

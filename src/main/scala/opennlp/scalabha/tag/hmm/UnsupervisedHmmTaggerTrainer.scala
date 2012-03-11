@@ -17,32 +17,24 @@ import opennlp.scalabha.util.Probability
  * @tparam Sym	visible symbols in the sequences
  * @tparam Tag	tags applied to symbols
  *
- * @param initialTransitionCounterFactory		factory for generating builders that count tag occurrences and compute distributions for input to EM
- * @param initialEmissionCounterFactory			factory for generating builders that count symbol occurrences and compute distributions for input to EM
- * @param initialUnsupervisedEmissionDist		
+ * @param initialUnsupervisedEmissionDist
  * @param estimatedTransitionCounterFactory		factory for generating builders that count tag occurrences and compute distributions during EM
  * @param estimatedEmissionCounterFactory		factory for generating builders that count symbol occurrences and compute distributions during EM
  * @param startEndSymbol						a unique start/end symbol used internally to mark the beginning and end of a sentence
  * @param startEndTag							a unique start/end tag used internally to mark the beginning and end of a sentence
  * @param maxIterations							maximum number of iterations to be run during EM
  * @param minAvgLogProbChangeForEM				stop iterating EM if change in average log probability is less than this threshold
- * @param tagDictContribToDist					this much of a count will be contributed to calculating the initial frequency distributions
  */
-class HmmTaggerTrainer[Sym, Tag](
-  initialTransitionCounterFactory: CondFreqCounterFactory[Tag, Tag],
-  initialEmissionCounterFactory: CondFreqCounterFactory[Tag, Sym],
+class UnsupervisedHmmTaggerTrainer[Sym, Tag](
   initialUnsupervisedEmissionDist: Tag => Sym => Probability,
-  estimatedTransitionCounterFactory: CondFreqCounterFactory[Tag, Tag],
-  estimatedEmissionCounterFactory: CondFreqCounterFactory[Tag, Sym],
-  startEndSymbol: Sym,
-  startEndTag: Tag,
-  maxIterations: Int = 50,
-  minAvgLogProbChangeForEM: Double = 0.00001)
-  extends SupervisedHmmTaggerTrainer[Sym, Tag](initialTransitionCounterFactory, initialEmissionCounterFactory, startEndSymbol, startEndTag)
-  with UnsupervisedTaggerTrainer[Sym, Tag]
-  with SemisupervisedTaggerTrainer[Sym, Tag] {
-
-  protected val LOG = LogFactory.getLog(HmmTaggerTrainer.getClass)
+  override protected val estimatedTransitionCounterFactory: CondFreqCounterFactory[Tag, Tag],
+  override protected val estimatedEmissionCounterFactory: CondFreqCounterFactory[Tag, Sym],
+  override protected val startEndSymbol: Sym,
+  override protected val startEndTag: Tag,
+  override protected val maxIterations: Int = 50,
+  override protected val minAvgLogProbChangeForEM: Double = 0.00001)
+  extends AbstractEmHmmTaggerTrainer[Sym, Tag]
+  with UnsupervisedTaggerTrainer[Sym, Tag] {
 
   /**
    * Train a Hidden Markov Model tagger only on unlabeled data using the
@@ -79,6 +71,38 @@ class HmmTaggerTrainer[Sym, Tag](
     new HmmTagger(transitions, emissions, tagDictWithEnds, startEndSymbol, startEndTag)
   }
 
+}
+
+/**
+ * Factory for training a Hidden Markov Model tagger from a combination of
+ * labeled data and unlabeled data using the Expectation-Maximization (EM)
+ * algorithm.
+ *
+ * @tparam Sym	visible symbols in the sequences
+ * @tparam Tag	tags applied to symbols
+ *
+ * @param initialTransitionCounterFactory		factory for generating builders that count tag occurrences and compute distributions for input to EM
+ * @param initialEmissionCounterFactory			factory for generating builders that count symbol occurrences and compute distributions for input to EM
+ * @param estimatedTransitionCounterFactory		factory for generating builders that count tag occurrences and compute distributions during EM
+ * @param estimatedEmissionCounterFactory		factory for generating builders that count symbol occurrences and compute distributions during EM
+ * @param startEndSymbol						a unique start/end symbol used internally to mark the beginning and end of a sentence
+ * @param startEndTag							a unique start/end tag used internally to mark the beginning and end of a sentence
+ * @param maxIterations							maximum number of iterations to be run during EM
+ * @param minAvgLogProbChangeForEM				stop iterating EM if change in average log probability is less than this threshold
+ */
+abstract class SemisupervisedHmmTaggerTrainer[Sym, Tag](
+  initialTransitionCounterFactory: CondFreqCounterFactory[Tag, Tag],
+  initialEmissionCounterFactory: CondFreqCounterFactory[Tag, Sym],
+  override protected val estimatedTransitionCounterFactory: CondFreqCounterFactory[Tag, Tag],
+  override protected val estimatedEmissionCounterFactory: CondFreqCounterFactory[Tag, Sym],
+  override protected val startEndSymbol: Sym,
+  override protected val startEndTag: Tag,
+  override protected val maxIterations: Int = 50,
+  override protected val minAvgLogProbChangeForEM: Double = 0.00001)
+  extends SupervisedHmmTaggerTrainer[Sym, Tag](initialTransitionCounterFactory, initialEmissionCounterFactory, startEndSymbol, startEndTag)
+  with AbstractEmHmmTaggerTrainer[Sym, Tag]
+  with SemisupervisedTaggerTrainer[Sym, Tag] {
+
   /**
    * Train a Hidden Markov Model tagger from a combination of labeled data and
    * unlabeled data using the Expectation-Maximization (EM) algorithm.  Use
@@ -108,12 +132,39 @@ class HmmTaggerTrainer[Sym, Tag](
     val (transitions, emissions) =
       reestimateProbabilityDistributions(
         tagDictWithEnds, rawTrainSequences,
-        initialTransitionCounts, initialEmissionCounts,
+        initialTransitionCounts.toDouble, initialEmissionCounts.toDouble,
         initialTransitions, initialEmissions)
 
     // Construct the HMM tagger from the estimated probabilities
     new HmmTagger(transitions, emissions, tagDictWithEnds, startEndSymbol, startEndTag)
   }
+
+}
+
+/**
+ * Factory for training a Hidden Markov Model tagger from a combination of
+ * labeled data and unlabeled data using the Expectation-Maximization (EM)
+ * algorithm.
+ *
+ * @tparam Sym	visible symbols in the sequences
+ * @tparam Tag	tags applied to symbols
+ *
+ * @param estimatedTransitionCounterFactory		factory for generating builders that count tag occurrences and compute distributions during EM
+ * @param estimatedEmissionCounterFactory		factory for generating builders that count symbol occurrences and compute distributions during EM
+ * @param startEndSymbol						a unique start/end symbol used internally to mark the beginning and end of a sentence
+ * @param startEndTag							a unique start/end tag used internally to mark the beginning and end of a sentence
+ * @param maxIterations							maximum number of iterations to be run during EM
+ * @param minAvgLogProbChangeForEM				stop iterating EM if change in average log probability is less than this threshold
+ */
+trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
+  protected val estimatedTransitionCounterFactory: CondFreqCounterFactory[Tag, Tag]
+  protected val estimatedEmissionCounterFactory: CondFreqCounterFactory[Tag, Sym]
+  protected val startEndSymbol: Sym
+  protected val startEndTag: Tag
+  protected val maxIterations: Int = 50
+  protected val minAvgLogProbChangeForEM: Double = 0.00001
+
+  protected val LOG = LogFactory.getLog(classOf[AbstractEmHmmTaggerTrainer[Sym, Tag]])
 
   /**
    * Re-estimate probability distributions using EM.  Estimate counts for

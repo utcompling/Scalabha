@@ -40,6 +40,7 @@ class CondFreqCounts[A, B, N: Numeric](private val self: Map[A, FreqCounts[B, N]
   def map[C](f: ((A, FreqCounts[B, N])) => C) = iterator.map(f)
   def values = iterator.map(_._2)
   def toMap = self.mapValuesStrict(_.toMap)
+  def toDouble = CondFreqCounts(self.mapValuesStrict(_.toMap.mapValuesStrict(implicitly[Numeric[N]].toDouble(_))))
   override def toString = "CondFreqCounts(%s)".format(self.mapValues(_.toMap))
 }
 
