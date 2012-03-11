@@ -23,6 +23,12 @@ trait NaiveBayesClassifier[L,T] extends Classifier[L,T] {
     })
 }
 
+/**
+ * Implementation of the naive Bayes classifier which can be updated
+ * online with new training examples; this is not a mutable structure
+ * per se, but can create an updated classifier given a new training
+ * example
+ */
 class OnlineNaiveBayesClassifier[L,T](
     val docCount:Double,
     val labelDocCount:Map[L,Double],
@@ -34,8 +40,9 @@ extends NaiveBayesClassifier[L,T] {
 
   val labelTokenSum = {
     val builder = Map.newBuilder[L,Double]
-    labels.foreach({label =>
-      builder += ((label, vocabulary.map(labelFeatureCount(label,_)).sum))
+    labels.foreach(label => {
+      val count:T => Double = v => labelFeatureCount.getOrElse((label,v), 0.)
+      builder += ((label, vocabulary.map(count).sum))
     })
     builder.result
   }
@@ -47,14 +54,22 @@ extends NaiveBayesClassifier[L,T] {
                 (labelTokenSum(label) + (addN * vocabulary.size)))
 
   import OnlineNaiveBayesClassifier._
-  def update(label:L, document:Document[T]) = 
+  def update(label:L, document:Document[T]) = {
+    val newLDC = 
+      labelDocCount + ((label, labelDocCount.getOrElse(label, 0.) + 1.))
+    var newLFC = labelFeatureCount
+    document.allFeatures.foreach(
+      feature => {
+        val k = (label, feature)
+        newLFC = newLFC + ((k, newLFC.getOrElse(k, 0.) + 1.))
+      })
     new OnlineNaiveBayesClassifier(docCount + 1,
-                                   labelDocCount + ((label, 1)),
-                                   labelFeatureCount ++
-                                     docFeaturesCount(label, document),
+                                   newLDC,
+                                   newLFC,
                                    vocabulary ++ document.allFeatures.toSet,
                                    labels + label,
                                    addN)
+  }
 }
 
 object OnlineNaiveBayesClassifier {
@@ -75,10 +90,14 @@ object OnlineNaiveBayesClassifier {
 
 class OnlineNaiveBayesClassifierTrainer[L,T](val addN:Double) 
 extends ClassifierTrainer[L,T] {
-  def train(documents:Iterable[(L,Document[T])]) = {
+  def train(documents:Iterator[(L,Document[T])]) = {
     var current = OnlineNaiveBayesClassifier.empty[L,T](addN)
     for ((label, document) <- documents)
       current = current.update(label, document)
     current
   }
+}
+
+object OnlineNaiveBayesClassifierTrainer {
+  def apply[L,T](n:Int) = new OnlineNaiveBayesClassifierTrainer[L,T](n)
 }

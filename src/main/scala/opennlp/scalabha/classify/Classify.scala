@@ -49,7 +49,7 @@ trait Classifier[L,T] {
  * @tparam T the class of value used for the features
  */
 trait ClassifierTrainer[L,T] {
-  def train(documents:Iterable[(L,Document[T])]):Classifier[L,T]
+  def train(documents:Iterator[(L,Document[T])]):Classifier[L,T]
 }
 
 /**
@@ -59,6 +59,6 @@ trait ClassifierTrainer[L,T] {
  * @tparam T the class of value used for the features
  */
 trait SoftClassifierTrainer[L,T] {
-  def train(documents:Iterable[(Iterable[(L,Probability)],Document[T])])
+  def train(documents:Iterable[(Iterable[(L,Probability)],_ <: Document[T])])
   :Classifier[L,T]
 }
