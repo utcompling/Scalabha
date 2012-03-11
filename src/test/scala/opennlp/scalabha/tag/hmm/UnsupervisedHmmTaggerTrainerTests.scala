@@ -14,7 +14,7 @@ import org.apache.log4j.Level
 import org.apache.log4j.PropertyConfigurator
 import org.apache.log4j.BasicConfigurator
 
-class HmmTaggerTrainerTests {
+class UnsupervisedHmmTaggerTrainerTests {
 
   @Test
   def ic_fullTagDict_noSmoothing() {
@@ -131,9 +131,9 @@ class HmmTaggerTrainerTests {
     val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
       new UnsupervisedHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
-          //new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, lambda = 1.0, "<END>", "<END>").make(),
-          //new OneCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>").make(),
-          new PartialCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>").make(),
+        //new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, lambda = 1.0, "<END>", "<END>").make(),
+        //new OneCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>").make(),
+        new PartialCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>").make(),
         estimatedTransitionCounterFactory = new CondFreqCounterFactory[String, String] {
           def get() =
             new EisnerSmoothingCondFreqCounter[String, String](lambda = 1.0,

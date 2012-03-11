@@ -57,6 +57,12 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
     val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(CondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.0).toMap).toMap)))
     val initialEmissions = initialUnsupervisedEmissionDist
 
+    LOG.debug("    initialUnsupervisedEmissionDist")
+    for (t <- List("NN", "N", "DT", "D").map(_.asInstanceOf[Tag]))
+      for (w <- List("the", "company", "zzzzzzz").map(_.asInstanceOf[Sym]))
+        if (initialUnsupervisedEmissionDist(t)(w) != Probability.zero)
+          LOG.debug("        p(%s|%s) = %.2f (%.2f)".format(w, t, initialUnsupervisedEmissionDist(t)(w).toDouble, initialUnsupervisedEmissionDist(t)(w).underlying))
+
     // Do not assume any known counts -- use only EM-estimated counts
     val initialTransitionCounts = CondFreqCounts[Tag, Tag, Double]()
     val initialEmissionCounts = CondFreqCounts[Tag, Sym, Double]()
@@ -238,9 +244,9 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     if ((averageLogProb - prevAvgLogProb).abs < minAvgLogProbChangeForEM)
       LOG.info("DONE: Change in average log probability is less than " + minAvgLogProbChangeForEM)
     if (averageLogProb < prevAvgLogProb)
-      throw new RuntimeException("DIVERGED: log probability decreased!!")
+      LOG.info("DIVERGED: log probability decreased on iteration %d".format(iteration))
     if (averageLogProb == Double.NegativeInfinity)
-      throw new RuntimeException("averageLogProb == -Infinity")
+      throw new RuntimeException("averageLogProb == -Infinity on iteration %d".format(iteration))
 
     (transitions, emissions)
   }
