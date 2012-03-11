@@ -102,7 +102,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
 }
 
 /**
- * Hack the default for each tag by making it 1 / (V - |TD(tag)|)
+ * Hack the default probability for each tag by making it |TD(tag)| / V
  */
 class DefaultHackingUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Tag]], startEndSymbol: Sym, startEndTag: Tag, delegate: UnsupervisedEmissionDistFactory[Tag, Sym])
   extends UnsupervisedEmissionDistFactory[Tag, Sym] {
@@ -121,4 +121,3 @@ class DefaultHackingUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, 
   }
 
 }
-
