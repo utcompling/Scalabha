@@ -221,14 +221,19 @@ class EisnerSmoothingCondFreqCounter[A, B](lambda: Double, backoffFreqCounterFac
             LOG.debug("    smoothedCounts  = " + smoothedCounts.toMap.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
             LOG.debug("    defaultCount = " + defaultCount)
 
-            for (w <- List("the", "company").map(_.asInstanceOf[B])) {
-              LOG.debug("c(%s,%s) + sing(%s) * p_back(%s) = %.2f + %.2f * %.2f = %.2f"
-                .format(
-                  a, w, a, w,
-                  aCounts.toMap.getOrElse(w, 0.0), smoothedLambda, backoffDist(w),
-                  smoothedCounts.toMap(w)))
+            LOG.debug("")
+
+            if (backoffDist contains "the".asInstanceOf[B]) {
+              for (w <- List("the", "company").map(_.asInstanceOf[B])) {
+                LOG.debug("    c(%s,%s) + sing(%s) * p_back(%s) = %.2f + %.2f * %.2f = %.2f"
+                  .format(
+                    a, w, a, w,
+                    aCounts.toMap.getOrElse(w, 0.0), smoothedLambda, backoffDist(w),
+                    smoothedCounts.toMap(w)))
+              }
+              LOG.debug("    defaultCount = " + defaultCount)
+              LOG.debug("")
             }
-            LOG.debug("defaultCount = " + defaultCount)
           }
 
           (a, DefaultedFreqCounts(smoothedCounts, aTotalAdd + totalAddition, aDefault + defaultCount))

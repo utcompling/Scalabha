@@ -3,6 +3,7 @@ package opennlp.scalabha.tag.hmm.support
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.Probability
 import opennlp.scalabha.tag.support._
+import org.apache.commons.logging.LogFactory
 
 /**
  * Produce a conditional frequency distribution without labeled training data.
@@ -36,13 +37,13 @@ class OneCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Ta
       symbolsForTag.mapValuesStrict {
         symbols =>
           val numInvalidSymbols = (totalNumSymbols - symbols.size).toDouble
-          DefaultedFreqCounts(symbols.mapTo(s => countForSym(s, tagDict) * numInvalidSymbols).toMap, numInvalidSymbols, 1.0)
-      } + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 2.0), 0.0, 0.0))
+          DefaultedFreqCounts(symbols.mapTo(s => countForSym(s) * numInvalidSymbols).toMap, lambda * numInvalidSymbols, lambda)
+      } + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 2 * lambda), 0.0, 0.0))
     CondFreqDist(DefaultedCondFreqCounts(counts, 0.0, 0.0))
   }
 
-  protected def countForSym(sym: Sym, tagDict: Map[Sym, Set[Tag]]): Double = {
-    1
+  protected def countForSym(sym: Sym): Double = {
+    lambda
   }
 }
 
@@ -65,8 +66,8 @@ class OneCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Ta
 class PartialCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Tag]], lambda: Double, startEndSymbol: Sym, startEndTag: Tag)
   extends OneCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict, lambda, startEndSymbol, startEndTag) {
 
-  override protected def countForSym(sym: Sym, tagDict: Map[Sym, Set[Tag]]): Double = {
-    1.0 / tagDict(sym).size
+  override protected def countForSym(sym: Sym): Double = {
+    lambda / tagDict(sym).size
   }
 }
 
@@ -86,6 +87,7 @@ class PartialCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Se
  */
 class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Tag]], rawData: Iterable[Iterable[Sym]], lambda: Double, startEndSymbol: Sym, startEndTag: Tag)
   extends UnsupervisedEmissionDistFactory[Tag, Sym] {
+  protected val LOG = LogFactory.getLog(classOf[EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym]])
 
   override def make() = {
     val symbolCounts = (rawData.flatten.counts - startEndSymbol).withDefaultValue(0)
@@ -93,8 +95,8 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
     val counts =
       symbolsForTag.mapValuesStrict {
         symbols =>
-          DefaultedFreqCounts(symbols.mapTo(s => (symbolCounts(s) + 1) / tagDict(s).size.toDouble).toMap, 1.0, 1.0)
-      } + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 2.0), 0.0, 0.0))
+          DefaultedFreqCounts(symbols.mapTo(s => (symbolCounts(s) + lambda) / tagDict(s).size.toDouble).toMap, lambda, lambda)
+      } + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 2 * lambda), 0.0, 0.0))
     CondFreqDist(DefaultedCondFreqCounts(counts, 0.0, 0.0))
   }
 }

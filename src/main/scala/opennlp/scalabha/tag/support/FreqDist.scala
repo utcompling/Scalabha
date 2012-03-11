@@ -131,23 +131,28 @@ object CondFreqDist {
                 .withDefaultValue((aDefaultCount / aTotal).toProbability)
 
           if (LOG.isDebugEnabled && Set("NN", "DT", "N", "D").contains(a.asInstanceOf[String])) {
-            LOG.debug("tag = " + a)
-            LOG.debug("    aCounts = " + aCounts.toMap.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
-            LOG.debug("    aDefaultCount = " + aDefaultCount)
-            LOG.debug("    aTotal = " + aTotal)
+            LOG.debug("    tag = " + a)
+            LOG.debug("        aCounts = " + aCounts.toMap.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
+            LOG.debug("        aDefaultCount = " + aDefaultCount)
+            LOG.debug("        aTotal = " + aTotal)
             aDistDefaulted match {
               case x: Map[String, Probability] =>
-                LOG.debug("    aDistDefaulted = " + x.toList.sorted.takeRight(10).map { case (b, p) => "%s -> %.2f".format(b, p.underlying) })
+                LOG.debug("        aDistDefaulted = " + x.toList.sorted.takeRight(10).map { case (b, p) => "%s -> %.2f".format(b, p.underlying) })
               case _ =>
-                LOG.debug("    empty FreqDist")
+                LOG.debug("        empty FreqDist")
             }
 
-            for (w <- List("the", "company", "zzzzzzz").map(_.asInstanceOf[B])) {
-              LOG.debug("p(%s|%s) = c(%s,%s) / c(%s) = %.2f / %.2f = %.2f (%.2f)"
-                .format(
-                  w, a, a, w, a,
-                  aCounts.toMap.getOrElse(w, aDefaultCount), aTotal,
-                  aDistDefaulted(w).toDouble, aDistDefaulted(w).underlying))
+            LOG.debug("")
+
+            if (!aCounts.toMap.contains("N".asInstanceOf[B]) && !aCounts.toMap.contains("NN".asInstanceOf[B])) {
+              for (w <- List("the", "company", "zzzzzzz").map(_.asInstanceOf[B])) {
+                LOG.debug("        p(%s|%s) = c(%s,%s) / c(%s) = %.2f / %.2f = %.2f (%.2f)"
+                  .format(
+                    w, a, a, w, a,
+                    aCounts.toMap.getOrElse(w, aDefaultCount), aTotal,
+                    aDistDefaulted(w).toDouble, aDistDefaulted(w).underlying))
+              }
+              LOG.debug("")
             }
           }
 

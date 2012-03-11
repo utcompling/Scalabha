@@ -53,6 +53,7 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
 
     // Create the initial distributions
     val allTags = tagDictWithEnds.values.flatten.toSet
+    LOG.debug("make initialTransitions")
     val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(CondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.0).toMap).toMap)))
     val initialEmissions = initialUnsupervisedEmissionDist
 
@@ -184,19 +185,19 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
       initialEmissions match {
         case ie: Map[String, Map[String, Probability]] =>
           if (ie contains "N") {
-            LOG.debug("initialEmissions(N)(default) = " + initialEmissions("N".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).underlying)
-            LOG.debug("                   (man)     = " + initialEmissions("N".asInstanceOf[Tag])("man".asInstanceOf[Sym]).underlying)
-            LOG.debug("initialEmissions(I)(default) = " + initialEmissions("I".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).underlying)
-            LOG.debug("                   (man)     = " + initialEmissions("I".asInstanceOf[Tag])("man".asInstanceOf[Sym]).underlying)
+            LOG.debug("    initialEmissions(N)(default) = " + initialEmissions("N".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).underlying)
+            LOG.debug("                       (man)     = " + initialEmissions("N".asInstanceOf[Tag])("man".asInstanceOf[Sym]).underlying)
+            LOG.debug("    initialEmissions(I)(default) = " + initialEmissions("I".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).underlying)
+            LOG.debug("                       (man)     = " + initialEmissions("I".asInstanceOf[Tag])("man".asInstanceOf[Sym]).underlying)
           }
           else {
-            LOG.debug("initialEmissions(NN)(default) = " + initialEmissions("NN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).underlying)
-            LOG.debug("                    (man)     = " + initialEmissions("NN".asInstanceOf[Tag])("man".asInstanceOf[Sym]).underlying)
-            LOG.debug("initialEmissions(IN)(default) = " + initialEmissions("IN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).underlying)
-            LOG.debug("                    (man)     = " + initialEmissions("IN".asInstanceOf[Tag])("man".asInstanceOf[Sym]).underlying)
+            LOG.debug("    initialEmissions(NN)(default) = " + initialEmissions("NN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).underlying)
+            LOG.debug("                        (man)     = " + initialEmissions("NN".asInstanceOf[Tag])("man".asInstanceOf[Sym]).underlying)
+            LOG.debug("    initialEmissions(IN)(default) = " + initialEmissions("IN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).underlying)
+            LOG.debug("                        (man)     = " + initialEmissions("IN".asInstanceOf[Tag])("man".asInstanceOf[Sym]).underlying)
           }
         case _ =>
-          LOG.debug("Empty FreqDist")
+          LOG.debug("    Empty FreqDist")
       }
     }
 

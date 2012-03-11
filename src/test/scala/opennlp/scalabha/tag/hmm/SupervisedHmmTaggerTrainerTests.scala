@@ -46,14 +46,14 @@ class SupervisedHmmTaggerTrainerTests {
       new SupervisedHmmTaggerTrainer(
         transitionCounterFactory = new CondFreqCounterFactory[String, String] {
           def get() =
-            new EisnerSmoothingCondFreqCounter[String, String](1.0,
+            new EisnerSmoothingCondFreqCounter[String, String](lambda = 1.0,
               new FreqCounterFactory[String] { def get() = new ItemDroppingFreqCounter("<END>", new SimpleFreqCounter[String]()) },
               new SimpleCondFreqCounter())
         },
         emissionCounterFactory = new CondFreqCounterFactory[String, String] {
           def get() =
             new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
-              new EisnerSmoothingCondFreqCounter(1.0,
+              new EisnerSmoothingCondFreqCounter(lambda = 1.0,
                 new FreqCounterFactory[String] { def get() = new AddLambdaSmoothingFreqCounter(lambda = 1.0, new SimpleFreqCounter()) },
                 new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
                   new SimpleCondFreqCounter())))
@@ -127,21 +127,18 @@ class SupervisedHmmTaggerTrainerTests {
   def en_eisnerSmoothing() {
     val train = TaggedFile("data/postag/english/entrain")
 
-    val endedTrain = train.map(s => (("<END>", "<END>") +: s :+ ("<END>", "<END>")))
-    val tagBigrams = endedTrain.map(_.map(_._2).sliding2).flatten
-
     val trainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(
         transitionCounterFactory = new CondFreqCounterFactory[String, String] {
           def get() =
-            new EisnerSmoothingCondFreqCounter(1.0,
+            new EisnerSmoothingCondFreqCounter(lambda = 1.0,
               new FreqCounterFactory[String] { def get() = new ItemDroppingFreqCounter("<END>", new SimpleFreqCounter[String]()) },
               new SimpleCondFreqCounter())
         },
         emissionCounterFactory = new CondFreqCounterFactory[String, String] {
           def get() =
             new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
-              new EisnerSmoothingCondFreqCounter(1.0,
+              new EisnerSmoothingCondFreqCounter(lambda = 1.0,
                 new FreqCounterFactory[String] { def get() = new AddLambdaSmoothingFreqCounter(lambda = 1.0, new SimpleFreqCounter()) },
                 new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
                   new SimpleCondFreqCounter())))
@@ -192,7 +189,8 @@ class SupervisedHmmTaggerTrainerTests {
 object SupervisedHmmTaggerTrainerTests {
 
   @BeforeClass def turnOffLogging() {
-    Logger.getRootLogger.setLevel(Level.OFF)
+    //Logger.getRootLogger.setLevel(Level.OFF)
+    Logger.getRootLogger.setLevel(Level.DEBUG)
   }
 
 }
