@@ -98,11 +98,11 @@ abstract class DelegatingCondFreqCounter[A, B](delegate: CondFreqCounter[A, B]) 
  * @param validEntries	zero out entries not found in this set
  * @param delegate	the delegate counter upon which the transformation is performed
  */
-class ConstrainingCondFreqCounter[A, B](validBigrams: Map[A, Set[B]], delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
+class ConstrainingCondFreqCounter[A, B](validEntries: Map[A, Set[B]], delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
   override def resultCounts() = {
     val DefaultedCondFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts()
     val filteredResultCounts =
-      validBigrams.map {
+      validEntries.map {
         case (a, bs) =>
           delegateResultCounts.get(a) match {
             case Some(DefaultedFreqCounts(aCounts, aTotalAdd, aDefault)) =>
@@ -152,107 +152,90 @@ class ScalingCondFreqCounter[A, B](lambda: Double, delegate: CondFreqCounter[A, 
 }
 
 //////////////////////////////////////
-// Smoothing Implementation
+// Add-lambda smoothing implementation
 //////////////////////////////////////
 
 /**
- * CondFreqCounter decorator that smoothes counts.
+ * Basic add-lambda smoothing.  A value 'lambda' is added to each count and
+ * to the total count.  The 'lambda' value is also used as the default count
+ * for any unseen words.
  *
- * This class applies a very simple add-one smoothing procedure to the counts.
- *
- * @param lambda			smoothing parameter
- * @param countsForBackoff	counts to be used to compute backoff information
+ * @param lambda	smoothing parameter for add-lambda smoothing
  */
-class SimpleSmoothingCondFreqCounter[A, B](lambda: Double, tagDict: Map[B, Set[A]], backoffData: Iterable[Iterable[B]], delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
-  private val LOG = LogFactory.getLog(classOf[SimpleSmoothingCondFreqCounter[A, B]])
+class AddLambdaSmoothingCondFreqCounter[A, B](lambda: Double, delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
+  override def resultCounts() = {
+    val DefaultedCondFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts
+    DefaultedCondFreqCounts(
+      delegateResultCounts
+        .mapValuesStrict {
+          case DefaultedFreqCounts(c, t, d) => DefaultedFreqCounts(c.toMap.mapValuesStrict(_ + lambda), t + lambda, d + lambda)
+        },
+      delegateTotalAddition + lambda, delegateDefaultCount + lambda)
+  }
+}
 
-  protected def getDelegateResultCounts() = delegate.resultCounts
+//////////////////////////////////////
+// Eisner-Smoothing Implementation
+//////////////////////////////////////
 
-  // Compute fake counts based on tag dictionary information
-  val unsupervisedCounts =
-    CondFreqCounts(
-      tagDict.iterator
-        .flatMap { case (b, as) => as.map { a => (a, (b, 1.0 / as.size)) } }
-        .groupByKey.mapValuesStrict(_.groupByKey.mapValuesStrict(_.sum)))
-
-  // Compute backoff counts
-  val unsupervisedBackoffCounts = FreqCounts(backoffData.flatten.counts.mapValuesStrict(_.toDouble))
-
-  // Compute unsupervised number of single items
-  val unsupervisedNumSingleCountItemsScaleFactor = 0.2 // TODO: Adjust
-  val unsupervisedNumSingleCountItems =
-    FreqCounts(
-      tagDict.flattenOver.map(_.swap)
-        .groupByKey.mapValuesStrict(bs => (bs.size * unsupervisedNumSingleCountItemsScaleFactor).toInt))
-
-  //tagDict.flattenOver.map(_.swap).groupByKey.mapValuesStrict(_.size /*counts.count(_._2 == 1)*/ )
+/**
+ * CondFreqCounter decorator that smoothes counts using the number of
+ * single-count items to affect how much smoothing occurs; more single-count
+ * items means higher likelihood of out-of-vocabulary items, and thus, more
+ * smoothing should be allowed.
+ *
+ * This is taken from Jason Eisner's HMM homework.
+ *
+ * @param lambda					smoothing parameter for add-lambda smoothing
+ * @param backoffFreqCounterFactory	used to compute the backoff probability
+ */
+class EisnerSmoothingCondFreqCounter[A, B](lambda: Double, backoffFreqCounterFactory: FreqCounterFactory[B], delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
+  private val LOG = LogFactory.getLog(classOf[EisnerSmoothingCondFreqCounter[A, B]])
 
   override def resultCounts() = {
-    val delegateDefaultedResultCounts = getDelegateResultCounts()
+    val delegateDefaultedResultCounts = delegate.resultCounts()
     val DefaultedCondFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegateDefaultedResultCounts
 
-    val delegateBackoffCounts = delegateResultCounts.values.map(_.simpleCounts).foldLeft(FreqCounts[B, Double]())(_ ++ _)
-    val numSingleCountItems =
-      (unsupervisedNumSingleCountItems ++
-        FreqCounts(
-          delegateDefaultedResultCounts.simpleCounts.toMap
-            .mapValuesStrict(_.count(_._2 < 1.000000001)))).toMap
+    val numSingleCountItems = delegateResultCounts.mapValuesStrict(_.counts.toMap.count(_._2 < 2.0))
 
-    // Compute MLE of B values alone (with add-one smoothing) for backoff
-    val countsForBackoff = amendBackoffCounts(delegateBackoffCounts ++ unsupervisedBackoffCounts) // combine delegate and unsupervised
-    val smoothedBackoffCounts = countsForBackoff.toMap.mapValuesStrict(_.toDouble + 1) // add-one smoothing
-    val smoothedBackoffTotal = 1.0 + smoothedBackoffCounts.values.sum // add-one smoothing
-    val backoffDist = smoothedBackoffCounts.mapValuesStrict(_ / smoothedBackoffTotal) // P(B) = C(B) / Sum[C(x) for all x]
-      .withDefaultValue(1.0 / smoothedBackoffTotal) // for "unseen" Bs, assume C(B) = 1
+    // Compute backoff: probability of B regardless of A
+    val defaultedBackoffCounts = backoffFreqCounterFactory.get(delegateResultCounts.values.map(_.simpleCounts).foldLeft(FreqCounts[B, Double]())(_ ++ _)).resultCounts
+    val DefaultedFreqCounts(backoffCounts, backoffTotalAddition, backoffDefaultCount) = defaultedBackoffCounts
+    val backoffTotal = backoffCounts.toMap.values.sum + backoffTotalAddition
+    val backoffDist = backoffCounts.toMap.mapValuesStrict(_ / backoffTotal)
 
     val smoothedResultCounts =
-      (delegateDefaultedResultCounts ++ DefaultedCondFreqCounts(unsupervisedCounts)).counts.map {
+      delegateResultCounts.map {
         case (a, DefaultedFreqCounts(aCounts, aTotalAdd, aDefault)) =>
           val smoothedLambda = lambda * (1e-100 + numSingleCountItems.getOrElse(a, 0))
           val smoothedBackoff = FreqCounts(backoffDist.mapValuesStrict(_ * smoothedLambda))
           val smoothedCounts = smoothedBackoff ++ aCounts
-          val totalAddition = 0.0
-          val defaultCount = smoothedLambda / smoothedBackoffTotal
+          val totalAddition = 1.0
+          val defaultCount = smoothedLambda / backoffTotal
 
-          if (LOG.isDebugEnabled && Set("NN", "IN", "N", "I").contains(a.asInstanceOf[String])) {
+          if (LOG.isDebugEnabled && Set("NN", "DT", "N", "D").contains(a.asInstanceOf[String])) {
             LOG.debug(a + ":")
             LOG.debug("    aCounts = " + aCounts.toMap.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
             LOG.debug("    smoothedLambda = " + smoothedLambda)
             LOG.debug("    smoothedBackoff = " + smoothedBackoff.toMap.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
-            LOG.debug("    smoothedCounts = " + smoothedCounts.toMap.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
+            LOG.debug("    smoothedCounts  = " + smoothedCounts.toMap.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
             LOG.debug("    defaultCount = " + defaultCount)
+
+            for (w <- List("the", "company").map(_.asInstanceOf[B])) {
+              LOG.debug("c(%s,%s) + sing(%s) * p_back(%s) = %.2f + %.2f * %.2f = %.2f"
+                .format(
+                  a, w, a, w,
+                  aCounts.toMap.getOrElse(w, 0.0), smoothedLambda, backoffDist(w),
+                  smoothedCounts.toMap(w)))
+            }
+            LOG.debug("defaultCount = " + defaultCount)
           }
 
           (a, DefaultedFreqCounts(smoothedCounts, aTotalAdd + totalAddition, aDefault + defaultCount))
       }
     val totalAddition = 1.0
-    val defaultCount = lambda / smoothedBackoffTotal
+    val defaultCount = lambda / backoffTotal
     DefaultedCondFreqCounts(smoothedResultCounts, totalAddition + delegateTotalAddition, defaultCount + delegateDefaultCount)
-  }
-
-  protected def amendBackoffCounts(backoffCounts: FreqCounts[B, Double]) = backoffCounts
-}
-
-//object SimpleSmoothingCondFreqCounter {
-//  def apply[A, B](lambda: Double, backoffCounts: FreqCounts[B, Int], tagDict: Map[A, Set[B]], delegate: CondFreqCounter[A, B]) {
-//    val numSingleCountItems = tagDict
-//      new SimpleSmoothingCondFreqCounter(lambda, backoffCounts, numSingleCountItems, delegate)
-//  }
-//}
-
-//////////////////////////////////////
-// Add-delta smoothing implementation
-//////////////////////////////////////
-
-class AddDeltaSmoothingCondFreqCounter[A, B](delta: Double, delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
-  override def resultCounts() = {
-    val DefaultedCondFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts
-    DefaultedCondFreqCounts(
-      delegateResultCounts.toMap
-        .mapValuesStrict {
-          case DefaultedFreqCounts(c, t, d) => DefaultedFreqCounts(c.toMap.mapValuesStrict(_ + delta), t + delta, d + delta)
-        },
-      delegateTotalAddition + delta, delegateDefaultCount + delta)
   }
 }
 

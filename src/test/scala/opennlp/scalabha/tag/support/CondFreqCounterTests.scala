@@ -80,9 +80,9 @@ class CondFreqCounterTests {
   }
 
   @Test
-  def test_SmoothingCondFreqCounter() {
+  def test_AddLambdaSmoothingCondFreqCounter() {
     val lambda = 0.1
-    val x = new SimpleSmoothingCondFreqCounter[Char, Symbol](lambda, Map(), List(),
+    val x = new AddLambdaSmoothingCondFreqCounter[Char, Symbol](lambda,
       new SimpleCondFreqCounter[Char, Symbol])
     x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 1.0), 'B' -> Map('a -> 3.0)))
     x ++= CondFreqCounts(List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'C' -> 'c, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a).groupByKey.mapValuesStrict(_.counts.mapValuesStrict(_.toDouble)))
@@ -104,13 +104,13 @@ class CondFreqCounterTests {
   }
 
   @Test
-  def test_smooth_after_constrain() {
+  def test_addLambdaSmoothing_after_constrain() {
     val lambda = 0.1
     val constr = Map('A' -> Set('a, 'b), 'B' -> Set('a, 'b, 'c))
 
     val x =
-      new SimpleSmoothingCondFreqCounter[Char, Symbol](
-        lambda, Map(), List(),
+      new AddLambdaSmoothingCondFreqCounter[Char, Symbol](
+        lambda,
         new ConstrainingCondFreqCounter[Char, Symbol](
           constr,
           new SimpleCondFreqCounter[Char, Symbol]))
@@ -132,15 +132,15 @@ class CondFreqCounterTests {
   }
 
   @Test
-  def test_constrain_after_smooth() {
+  def test_constrain_after_addLambdaSmoothing() {
     val lambda = 0.1
     val constr = Map('A' -> Set('a, 'b), 'B' -> Set('a, 'b, 'c))
 
     val x =
       new ConstrainingCondFreqCounter[Char, Symbol](
         constr,
-        new SimpleSmoothingCondFreqCounter[Char, Symbol](
-          lambda, Map(), List(),
+        new AddLambdaSmoothingCondFreqCounter[Char, Symbol](
+          lambda,
           new SimpleCondFreqCounter[Char, Symbol]))
 
     x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 1.0), 'B' -> Map('a -> 3.0, 'c -> 1.0)))
@@ -163,15 +163,15 @@ class CondFreqCounterTests {
   }
 
   @Test
-  def test_constrain_after_smooth_after_constrain() {
+  def test_constrain_after_addLambdaSmoothing_after_constrain() {
     val lambda = 0.1
     val constr = Map('A' -> Set('a, 'b), 'B' -> Set('a, 'b, 'c))
 
     val x =
       new ConstrainingCondFreqCounter[Char, Symbol](
         constr,
-        new SimpleSmoothingCondFreqCounter[Char, Symbol](
-          lambda, Map(), List(),
+        new AddLambdaSmoothingCondFreqCounter[Char, Symbol](
+          lambda,
           new ConstrainingCondFreqCounter[Char, Symbol](
             constr,
             new SimpleCondFreqCounter[Char, Symbol])))

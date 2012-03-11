@@ -1,17 +1,13 @@
 package opennlp.scalabha.tag.hmm
 
 import org.apache.commons.logging.LogFactory
-import opennlp.scalabha.tag.support.CondFreqCounts
-import opennlp.scalabha.tag.support.TagDictFactory
-import opennlp.scalabha.tag.support.CondFreqCounterFactory
-import opennlp.scalabha.tag.Tagger
-import opennlp.scalabha.tag.UnsupervisedTaggerTrainer
+import opennlp.scalabha.tag.support._
+import opennlp.scalabha.tag._
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.Probability._
 import opennlp.scalabha.util.Pattern
 import opennlp.scalabha.util.Pattern.{ -> }
 import opennlp.scalabha.util.Probability
-import opennlp.scalabha.tag.support.SimpleTagDictFactory
 
 /**
  * Factory for training a Hidden Markov Model tagger from a combination of
@@ -23,27 +19,28 @@ import opennlp.scalabha.tag.support.SimpleTagDictFactory
  *
  * @param initialTransitionCounterFactory		factory for generating builders that count tag occurrences and compute distributions for input to EM
  * @param initialEmissionCounterFactory			factory for generating builders that count symbol occurrences and compute distributions for input to EM
+ * @param initialUnsupervisedEmissionDist		
  * @param estimatedTransitionCounterFactory		factory for generating builders that count tag occurrences and compute distributions during EM
  * @param estimatedEmissionCounterFactory		factory for generating builders that count symbol occurrences and compute distributions during EM
- * @param startEndSymbol			a unique start/end symbol used internally to mark the beginning and end of a sentence
- * @param startEndTag				a unique start/end tag used internally to mark the beginning and end of a sentence
- * @param maxIterations				maximum number of iterations to be run during EM
- * @param minAvgLogProbChangeForEM	stop iterating EM if change in average log probability is less than this threshold
- * @param tagDictContribToDist		this much of a count will be contributed to calculating the initial frequency distributions
- * @param tagDictFactory			factory for generating tag dictionary from labeled data
+ * @param startEndSymbol						a unique start/end symbol used internally to mark the beginning and end of a sentence
+ * @param startEndTag							a unique start/end tag used internally to mark the beginning and end of a sentence
+ * @param maxIterations							maximum number of iterations to be run during EM
+ * @param minAvgLogProbChangeForEM				stop iterating EM if change in average log probability is less than this threshold
+ * @param tagDictContribToDist					this much of a count will be contributed to calculating the initial frequency distributions
  */
 class HmmTaggerTrainer[Sym, Tag](
   initialTransitionCounterFactory: CondFreqCounterFactory[Tag, Tag],
   initialEmissionCounterFactory: CondFreqCounterFactory[Tag, Sym],
+  initialUnsupervisedEmissionDist: Tag => Sym => Probability,
   estimatedTransitionCounterFactory: CondFreqCounterFactory[Tag, Tag],
   estimatedEmissionCounterFactory: CondFreqCounterFactory[Tag, Sym],
   startEndSymbol: Sym,
   startEndTag: Tag,
   maxIterations: Int = 50,
-  minAvgLogProbChangeForEM: Double = 0.00001,
-  tagDictFactory: TagDictFactory[Sym, Tag] = new SimpleTagDictFactory[Sym, Tag]())
-  extends SupervisedHmmTaggerTrainer[Sym, Tag](initialTransitionCounterFactory, initialEmissionCounterFactory, startEndSymbol, startEndTag, tagDictFactory)
-  with UnsupervisedTaggerTrainer[Sym, Tag] {
+  minAvgLogProbChangeForEM: Double = 0.00001)
+  extends SupervisedHmmTaggerTrainer[Sym, Tag](initialTransitionCounterFactory, initialEmissionCounterFactory, startEndSymbol, startEndTag)
+  with UnsupervisedTaggerTrainer[Sym, Tag]
+  with SemisupervisedTaggerTrainer[Sym, Tag] {
 
   protected val LOG = LogFactory.getLog(HmmTaggerTrainer.getClass)
 
@@ -55,33 +52,31 @@ class HmmTaggerTrainer[Sym, Tag](
    * @param rawTrainSequences		unlabeled sequences to be used as unsupervised training data
    * @return						a trained tagger
    */
-  def trainUnsupervised(tagDict: Map[Sym, Set[Tag]], rawTrainSequences: Iterable[IndexedSeq[Sym]]): Tagger[Sym, Tag] = {
+  override def trainUnsupervised(tagDict: Map[Sym, Set[Tag]], rawTrainSequences: Iterable[IndexedSeq[Sym]]): Tagger[Sym, Tag] = {
     LOG.info("Beginning unsupervised training")
     LOG.info("Tag dict: %d symbols, %.3f avg tags/symbol".format(tagDict.size, tagDict.values.map(_.size.toDouble).avg))
+
+    // Correct tag dictionary for start/final symbols
+    val tagDictWithEnds = tagDict + (startEndSymbol -> Set(startEndTag))
+
+    // Create the initial distributions
+    val allTags = tagDictWithEnds.values.flatten.toSet
+    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(CondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.0).toMap).toMap)))
+    val initialEmissions = initialUnsupervisedEmissionDist
 
     // Do not assume any known counts -- use only EM-estimated counts
     val initialTransitionCounts = CondFreqCounts[Tag, Tag, Double]()
     val initialEmissionCounts = CondFreqCounts[Tag, Sym, Double]()
 
-    trainFromInitialHmm(tagDict, rawTrainSequences,
-      initialTransitionCounts, initialEmissionCounts)
-  }
+    // Re-estimate probability distributions using EM
+    val (transitions, emissions) =
+      reestimateProbabilityDistributions(
+        tagDictWithEnds, rawTrainSequences,
+        initialTransitionCounts, initialEmissionCounts,
+        initialTransitions, initialEmissions)
 
-  /**
-   * Train a Hidden Markov Model tagger from a combination of labeled data and
-   * unlabeled data using the Expectation-Maximization (EM) algorithm.  Use the
-   * tagDictFactory to create the tag dictionary from the labeled data.
-   *
-   * @param rawTrainSequences		unlabeled sequences to be used as unsupervised training data
-   * @param taggedTrainSequences	labeled sequences to be used as supervised training data
-   * @return						a trained tagger
-   */
-  override def trainSemisupervised(rawTrainSents: Iterable[IndexedSeq[Sym]], taggedTrainSents: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag] = {
-    // Make tag dictionary and correct for start/final symbols
-    val tagDict = tagDictFactory.make(taggedTrainSents)
-
-    // Train using this tag dictionary
-    trainSemisupervised(tagDict, rawTrainSents, taggedTrainSents)
+    // Construct the HMM tagger from the estimated probabilities
+    new HmmTagger(transitions, emissions, tagDictWithEnds, startEndSymbol, startEndTag)
   }
 
   /**
@@ -102,33 +97,37 @@ class HmmTaggerTrainer[Sym, Tag](
     // Get initial counts and probability distributions from the labeled data alone
     val (initialTransitionCounts, initialEmissionCounts) = getCountsFromTagged(taggedTrainSequences)
 
-    trainFromInitialHmm(tagDict, rawTrainSequences, initialTransitionCounts, initialEmissionCounts)
-  }
-
-  /**
-   * Start EM from an initial set of transition and emission probability
-   * distributions.
-   *
-   * @param tagDict						a mapping from symbols to their possible tags
-   * @param rawTrainSequences			unlabeled sequences to be used as unsupervised training data
-   * @param initialTransitionCounter	the transition counts to be added to each iteration of EM
-   * @param initialEmissionCounter		the emission counts to be added to each iteration of EM
-   * @return							a trained tagger
-   */
-  def trainFromInitialHmm(
-    tagDict: Map[Sym, Set[Tag]],
-    rawTrainSequences: Iterable[IndexedSeq[Sym]],
-    initialTransitionCounts: CondFreqCounts[Tag, Tag, Double],
-    initialEmissionCounts: CondFreqCounts[Tag, Sym, Double]) = {
-
     // Correct tag dictionary for start/final symbols
     val tagDictWithEnds = tagDict + (startEndSymbol -> Set(startEndTag))
 
     // Create the initial distributions
-    LOG.debug("Make initialTransitions")
     val initialTransitions = initialTransitionCounterFactory.get(initialTransitionCounts).toFreqDist
-    LOG.debug("Make initialEmissions")
     val initialEmissions = initialEmissionCounterFactory.get(initialEmissionCounts).toFreqDist
+
+    // Re-estimate probability distributions using EM
+    val (transitions, emissions) =
+      reestimateProbabilityDistributions(
+        tagDictWithEnds, rawTrainSequences,
+        initialTransitionCounts, initialEmissionCounts,
+        initialTransitions, initialEmissions)
+
+    // Construct the HMM tagger from the estimated probabilities
+    new HmmTagger(transitions, emissions, tagDictWithEnds, startEndSymbol, startEndTag)
+  }
+
+  /**
+   * Re-estimate probability distributions using EM.  Estimate counts for
+   * each sequence in rawTrainSequences using the forward/backward procedure.
+   * Calculate probability distributions from these counts.  Repeat until
+   * convergence.
+   */
+  protected def reestimateProbabilityDistributions(
+    tagDict: Map[Sym, Set[Tag]],
+    rawTrainSequences: Iterable[IndexedSeq[Sym]],
+    initialTransitionCounts: CondFreqCounts[Tag, Tag, Double],
+    initialEmissionCounts: CondFreqCounts[Tag, Sym, Double],
+    initialTransitions: Tag => Tag => Probability,
+    initialEmissions: Tag => Sym => Probability) = {
 
     if (LOG.isDebugEnabled) {
       initialEmissions match {
@@ -149,36 +148,6 @@ class HmmTaggerTrainer[Sym, Tag](
           LOG.debug("Empty FreqDist")
       }
     }
-
-    // Re-estimate probability distributions using EM
-    val (transitions, emissions) = reestimateProbabilityDistributions(
-      tagDictWithEnds, rawTrainSequences,
-      initialTransitionCounts, initialEmissionCounts,
-      initialTransitions, initialEmissions)
-
-    //    LOG.debug(">>> tagDict(a) = " + tagDict("a".asInstanceOf[Sym]))
-    //    LOG.debug(">>> emissions(DT)(a) = " + emissions("DT".asInstanceOf[Tag])("a".asInstanceOf[Sym]))
-    //    LOG.debug(">>>     emissions(DT) = " + emissions("DT".asInstanceOf[Tag]).asInstanceOf[Map[String, Probability]].filter(_._2.toDouble >= 0.01).toList.sortBy(-_._2.toDouble).mapValuesStrict(p => "%.2f".format(p.toDouble)))
-    //    LOG.debug(">>> emissions(FW)(a) = " + emissions("FW".asInstanceOf[Tag])("a".asInstanceOf[Sym]))
-    //    LOG.debug(">>> emissions(SYM)(a) = " + emissions("SYM".asInstanceOf[Tag])("a".asInstanceOf[Sym]))
-
-    // Construct the HMM tagger from the estimated probabilities
-    new HmmTagger(transitions, emissions, tagDictWithEnds, startEndSymbol, startEndTag)
-  }
-
-  /**
-   * Re-estimate probability distributions using EM.  Estimate counts for
-   * each sequence in rawTrainSequences using the forward/backward procedure.
-   * Calculate probability distributions from these counts.  Repeat until
-   * convergence.
-   */
-  protected def reestimateProbabilityDistributions(
-    tagDict: Map[Sym, Set[Tag]],
-    rawTrainSequences: Iterable[IndexedSeq[Sym]],
-    initialTransitionCounts: CondFreqCounts[Tag, Tag, Double],
-    initialEmissionCounts: CondFreqCounts[Tag, Sym, Double],
-    initialTransitions: Tag => Tag => Probability,
-    initialEmissions: Tag => Sym => Probability) = {
 
     // initial transition and emission probability distributions to be 
     // re-estimated using EM.  

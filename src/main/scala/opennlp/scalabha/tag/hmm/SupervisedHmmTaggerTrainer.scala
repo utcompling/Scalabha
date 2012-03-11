@@ -25,34 +25,15 @@ import scala.collection.mutable.ListBuffer
  * @param emissionCounterFactory	factory for generating builders that count symbol occurrences and compute distributions
  * @param startEndSymbol			a unique start/end symbol used internally to mark the beginning and end of a sentence
  * @param startEndTag				a unique start/end tag used internally to mark the beginning and end of a sentence
- * @param tagDictFactory			factory for generating tag dictionary from labeled data
  */
 class SupervisedHmmTaggerTrainer[Sym, Tag](
   transitionCounterFactory: CondFreqCounterFactory[Tag, Tag],
   emissionCounterFactory: CondFreqCounterFactory[Tag, Sym],
   startEndSymbol: Sym,
-  startEndTag: Tag,
-  tagDictFactory: TagDictFactory[Sym, Tag] = new SimpleTagDictFactory[Sym, Tag]())
+  startEndTag: Tag)
   extends SupervisedTaggerTrainer[Sym, Tag] {
 
-  private val LOG = LogFactory.getLog(SupervisedHmmTaggerTrainer.getClass);
-
-  /**
-   * Train a Hidden Markov Model tagger directly from labeled data.
-   *
-   * Main features:
-   * <ul>
-   *   <li> Constructs a tag dictionary directly from labeled data using tagDictFactory.
-   *   <li> Uses transition and emission counters to compute distributions based on labeled data.
-   * </ul>
-   *
-   * @param taggedTrainSequences	labeled sequences to use for training the model
-   * @return						a trained tagger
-   */
-  override def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag] = {
-    val tagDict = tagDictFactory.make(taggedTrainSequences)
-    trainSupervised(taggedTrainSequences, tagDict)
-  }
+  private val LOG = LogFactory.getLog(classOf[SupervisedHmmTaggerTrainer[Sym, Tag]]);
 
   /**
    * Train a Hidden Markov Model tagger directly from labeled data.
@@ -76,6 +57,8 @@ class SupervisedHmmTaggerTrainer[Sym, Tag](
 
   /**
    * Get transition and emission counts from labeled data
+   *
+   * @param taggedTrainSequences	labeled sequences from which to extract counts
    */
   protected def getCountsFromTagged(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
     // Separate symbols from tags.  Add start/final symbols and tags to each sequence

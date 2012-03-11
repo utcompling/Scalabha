@@ -118,6 +118,39 @@ object ConstrainingFreqCounter {
     }
 }
 
+/**
+ * FreqCounter decorator that drops a specific item from the count
+ *
+ * @param item	the item to drop from the counts
+ */
+class ItemDroppingFreqCounter[B](items: Iterable[B], delegate: FreqCounter[B]) extends DelegatingFreqCounter[B](delegate) {
+  def this(item: B, delegate: FreqCounter[B]) =
+    this(List(item), delegate)
+
+  override def resultCounts() = {
+    val DefaultedFreqCounts(counts, totalAddition, defaultCount) = delegate.resultCounts()
+    DefaultedFreqCounts(counts -- items, totalAddition, defaultCount)
+  }
+}
+
+//////////////////////////////////////
+// Add-lambda smoothing implementation
+//////////////////////////////////////
+
+/**
+ * Basic add-lambda smoothing.  A value 'lambda' is added to each count and
+ * to the total count.  The 'lambda' value is also used as the default count
+ * for any unseen words.
+ *
+ * @param lambda	smoothing parameter for add-lambda smoothing
+ */
+class AddLambdaSmoothingFreqCounter[B](lambda: Double, delegate: FreqCounter[B]) extends DelegatingFreqCounter[B](delegate) {
+  override def resultCounts() = {
+    val DefaultedFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts
+    DefaultedFreqCounts(delegateResultCounts.toMap.mapValuesStrict(_ + lambda), delegateTotalAddition + lambda, delegateDefaultCount + lambda)
+  }
+}
+
 //////////////////////////////////////
 // Factory
 //////////////////////////////////////

@@ -39,14 +39,6 @@ trait SupervisedTaggerTrainer[Sym, Tag] {
    * Train a Tagger directly from labeled data.
    *
    * @param taggedTrainSequences	labeled sequences to use for training the model
-   * @return						a trained Tagger
-   */
-  def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag]
-
-  /**
-   * Train a Tagger directly from labeled data.
-   *
-   * @param taggedTrainSequences	labeled sequences to use for training the model
    * @param tagDict					a tag dictionary
    * @return						a trained Tagger
    */
@@ -72,16 +64,15 @@ trait UnsupervisedTaggerTrainer[Sym, Tag] {
    */
   def trainUnsupervised(tagDict: Map[Sym, Set[Tag]], rawTrainSequences: Iterable[IndexedSeq[Sym]]): Tagger[Sym, Tag]
 
-  /**
-   * Train a Tagger from a combination of labeled data and unlabeled data
-   * using the Expectation-Maximization (EM) algorithm.  Create a tag
-   * dictionary from the labeled data.
-   *
-   * @param rawTrainSequences		unlabeled sequences to be used as unsupervised training data
-   * @param taggedTrainSequences	labeled sequences to be used as supervised training data
-   * @return						a trained tagger
-   */
-  def trainSemisupervised(rawTrainSequences: Iterable[IndexedSeq[Sym]], taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag]
+}
+
+/**
+ * Factory for training a Tagger from a combination from unlabeled data.
+ *
+ * @tparam Sym	visible symbols in the sequences
+ * @tparam Tag	tags applied to symbols
+ */
+trait SemisupervisedTaggerTrainer[Sym, Tag] {
 
   /**
    * Train a Tagger from a combination of labeled data and unlabeled data

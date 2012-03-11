@@ -131,7 +131,7 @@ object CondFreqDist {
               aCounts.toMap.mapValuesStrict(count => (count / aTotal).toProbability)
                 .withDefaultValue((aDefaultCount / aTotal).toProbability)
 
-          if (LOG.isDebugEnabled && Set("NN", "IN", "N", "I").contains(a.asInstanceOf[String])) {
+          if (LOG.isDebugEnabled && Set("NN", "DT", "N", "D").contains(a.asInstanceOf[String])) {
             LOG.debug("tag = " + a)
             LOG.debug("    aCounts = " + aCounts.toMap.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
             LOG.debug("    aDefaultCount = " + aDefaultCount)
@@ -141,6 +141,14 @@ object CondFreqDist {
                 LOG.debug("    aDistDefaulted = " + x.toList.sorted.takeRight(10).map { case (b, p) => "%s -> %.2f".format(b, p.underlying) })
               case _ =>
                 LOG.debug("    empty FreqDist")
+            }
+
+            for (w <- List("the", "company", "zzzzzzz").map(_.asInstanceOf[B])) {
+              LOG.debug("p(%s|%s) = c(%s,%s) / c(%s) = %.2f / %.2f = %.2f (%.2f)"
+                .format(
+                  w, a, a, w, a,
+                  aCounts.toMap.getOrElse(w, aDefaultCount), aTotal,
+                  aDistDefaulted(w).toDouble, aDistDefaulted(w).underlying))
             }
           }
 

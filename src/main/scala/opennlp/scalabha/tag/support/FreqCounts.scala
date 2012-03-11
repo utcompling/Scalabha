@@ -16,6 +16,7 @@ import scala.collection.GenTraversable
  */
 class FreqCounts[B, N: Numeric](private val self: Map[B, N]) {
   def ++(that: FreqCounts[B, N]) = new FreqCounts((self.iterator ++ that.iterator).groupByKey.mapValuesStrict(_.sum))
+  def --(bs: TraversableOnce[B]) = new FreqCounts(self -- bs)
   def -(b: B) = new FreqCounts(self - b)
   def iterator = self.iterator
   def toMap = self

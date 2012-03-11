@@ -27,9 +27,9 @@ class SupervisedHmmTaggerTrainerTests {
       new SupervisedHmmTaggerTrainer(
         transitionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter() },
         emissionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter[String, String]() },
-        "<END>", "<END>",
-        new SimpleTagDictFactory())
-    val tagger: Tagger[String, String] = trainer.trainSupervised(train)
+        "<END>", "<END>")
+    val tagDict = new SimpleTagDictFactory().make(train)
+    val tagger: Tagger[String, String] = trainer.trainSupervised(train, tagDict)
     assertEquals(List("D", "N", "V", "."), tagger.tagSequence("the dog walks . ".split(" ")))
     assertEquals(List("D", "N", "V", "."), tagger.tagSequence("a cat walks . ".split(" ")))
   }
@@ -42,30 +42,25 @@ class SupervisedHmmTaggerTrainerTests {
       "a/D dog/N barks/V ./.")
       .map(_.split(" ").map(_.split("/").toSeq.toTuple2).toIndexedSeq)
 
-    val endedTrain = train.map(s => (("<END>", "<END>") +: s :+ ("<END>", "<END>")))
-    val tagBigrams = endedTrain.map(_.map(_._2).sliding2).flatten
-
     val trainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(
         transitionCounterFactory = new CondFreqCounterFactory[String, String] {
           def get() =
-            //TODO: data = tagBigrams
-            new SimpleSmoothingTransitionFreqCounter(1.0, "<END>",
-              Map(),
-              List(),
+            new EisnerSmoothingCondFreqCounter[String, String](1.0,
+              new FreqCounterFactory[String] { def get() = new ItemDroppingFreqCounter("<END>", new SimpleFreqCounter[String]()) },
               new SimpleCondFreqCounter())
         },
         emissionCounterFactory = new CondFreqCounterFactory[String, String] {
           def get() =
-            // data = endedTrain.flatten.map(_.swap)
-            new SimpleSmoothingEmissionFreqCounter(1.0, "<END>", "<END>",
-              Map(),
-              List(),
-              new SimpleCondFreqCounter())
+            new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
+              new EisnerSmoothingCondFreqCounter(1.0,
+                new FreqCounterFactory[String] { def get() = new AddLambdaSmoothingFreqCounter(lambda = 1.0, new SimpleFreqCounter()) },
+                new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
+                  new SimpleCondFreqCounter())))
         },
-        "<END>", "<END>",
-        new SimpleTagDictFactory())
-    val tagger: Tagger[String, String] = trainer.trainSupervised(train)
+        "<END>", "<END>")
+    val tagDict = new SimpleTagDictFactory().make(train)
+    val tagger: Tagger[String, String] = trainer.trainSupervised(train, tagDict)
     assertEquals(List("D", "N", "V", "."), tagger.tagSequence("the dog walks . ".split(" ")))
     assertEquals(List("D", "N", "V", "."), tagger.tagSequence("a cat meows . ".split(" ")))
     assertEquals(List("D", "N", "V", "."), tagger.tagSequence("this bird chirps . ".split(" ")))
@@ -79,9 +74,9 @@ class SupervisedHmmTaggerTrainerTests {
       new SupervisedHmmTaggerTrainer(
         transitionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter() },
         emissionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter[String, String]() },
-        "<END>", "<END>",
-        new SimpleTagDictFactory())
-    val tagger = trainer.trainSupervised(train)
+        "<END>", "<END>")
+    val tagDict = new SimpleTagDictFactory().make(train)
+    val tagger: Tagger[String, String] = trainer.trainSupervised(train, tagDict)
 
     val output = tagger.tag(AsRawFile("data/postag/ic/ictest.txt"))
 
@@ -106,9 +101,9 @@ class SupervisedHmmTaggerTrainerTests {
       new SupervisedHmmTaggerTrainer(
         transitionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter() },
         emissionCounterFactory = new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter[String, String]() },
-        "<END>", "<END>",
-        new SimpleTagDictFactory())
-    val tagger = trainer.trainSupervised(train)
+        "<END>", "<END>")
+    val tagDict = new SimpleTagDictFactory().make(train)
+    val tagger: Tagger[String, String] = trainer.trainSupervised(train, tagDict)
 
     val output = tagger.tag(AsRawFile("data/postag/english/entest"))
 
@@ -129,7 +124,7 @@ class SupervisedHmmTaggerTrainerTests {
   }
 
   @Test
-  def supervised_training_en_smoothed() {
+  def supervised_training_en_eisnerSmoothing() {
     val train = TaggedFile("data/postag/english/entrain")
 
     val endedTrain = train.map(s => (("<END>", "<END>") +: s :+ ("<END>", "<END>")))
@@ -139,40 +134,38 @@ class SupervisedHmmTaggerTrainerTests {
       new SupervisedHmmTaggerTrainer(
         transitionCounterFactory = new CondFreqCounterFactory[String, String] {
           def get() =
-            //TODO: data = tagBigrams
-            new SimpleSmoothingTransitionFreqCounter(1.0, "<END>",
-              Map(),
-              List(),
+            new EisnerSmoothingCondFreqCounter(1.0,
+              new FreqCounterFactory[String] { def get() = new ItemDroppingFreqCounter("<END>", new SimpleFreqCounter[String]()) },
               new SimpleCondFreqCounter())
         },
         emissionCounterFactory = new CondFreqCounterFactory[String, String] {
           def get() =
-            // data = endedTrain.flatten.map(_.swap)
-            new SimpleSmoothingEmissionFreqCounter(1.0, "<END>", "<END>",
-              Map(),
-              List(),
-              new SimpleCondFreqCounter())
+            new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
+              new EisnerSmoothingCondFreqCounter(1.0,
+                new FreqCounterFactory[String] { def get() = new AddLambdaSmoothingFreqCounter(lambda = 1.0, new SimpleFreqCounter()) },
+                new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
+                  new SimpleCondFreqCounter())))
         },
-        "<END>", "<END>",
-        new SimpleTagDictFactory())
-    val tagger = trainer.trainSupervised(train)
+        "<END>", "<END>")
+    val tagDict = new SimpleTagDictFactory().make(train)
+    val tagger: Tagger[String, String] = trainer.trainSupervised(train, tagDict)
 
     val output = tagger.tag(AsRawFile("data/postag/english/entest"))
 
     val gold = TaggedFile("data/postag/english/entest")
     val results = new TaggerEvaluator().evaluate(output, gold, tagger.asInstanceOf[HmmTagger[String, String]].tagDict)
     assertResultsEqual("""
-                Total:   94.13 (22544/23949)
-                Known:   96.86 (21155/21841)
-                Unknown: 65.89 (1389/2108)
-                Common Mistakes:
-                #Err     Gold      Model
-                244      N        J       
-                232      V        N       
-                174      J        N       
-                139      N        V       
-                91       V        J       
-                """, results)
+				Total:   94.15 (22549/23949)
+				Known:   96.86 (21156/21841)
+				Unknown: 66.08 (1393/2108)
+				Common Mistakes:
+				#Err     Gold      Model
+				243      N        J
+				232      V        N
+				179      J        N
+				139      N        V       
+				91       V        J       
+				""", results)
   }
 
   object TaggedFile {
