@@ -19,11 +19,7 @@ object Test {
         "EstimatedRawCountUnsupervisedEmissionDistFactory" -> new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, unlabTrainFile, lambda = 1.0, "<END>", "<END>"),
         "Hacked OneCountUnsupervisedEmissionDistFactory" -> new DefaultHackingUnsupervisedEmissionDistFactory(tagDict, "<END>", "<END>", new OneCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>")),
         "Hacked PartialCountUnsupervisedEmissionDistFactory" -> new DefaultHackingUnsupervisedEmissionDistFactory(tagDict, "<END>", "<END>", new PartialCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>")),
-        "Hacked EstimatedRawCountUnsupervisedEmissionDistFactory" -> new DefaultHackingUnsupervisedEmissionDistFactory(tagDict, "<END>", "<END>", new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, unlabTrainFile, lambda = 1.0, "<END>", "<END>")),
-        "Exp-Hacked OneCountUnsupervisedEmissionDistFactory" -> new ExpDefaultHackingUnsupervisedEmissionDistFactory(tagDict, "<END>", "<END>", new OneCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>")),
-        "Exp-Hacked PartialCountUnsupervisedEmissionDistFactory" -> new ExpDefaultHackingUnsupervisedEmissionDistFactory(tagDict, "<END>", "<END>", new PartialCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>")),
-        "Exp-Hacked EstimatedRawCountUnsupervisedEmissionDistFactory" -> new ExpDefaultHackingUnsupervisedEmissionDistFactory(tagDict, "<END>", "<END>", new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, unlabTrainFile, lambda = 1.0, "<END>", "<END>")))
-    ) {
+        "Hacked EstimatedRawCountUnsupervisedEmissionDistFactory" -> new DefaultHackingUnsupervisedEmissionDistFactory(tagDict, "<END>", "<END>", new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, unlabTrainFile, lambda = 1.0, "<END>", "<END>")))) {
       println("EXPERIMENT: " + name)
       val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
         new UnsupervisedHmmTaggerTrainer(
