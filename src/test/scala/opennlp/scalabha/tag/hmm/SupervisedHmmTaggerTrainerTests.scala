@@ -126,31 +126,8 @@ class SupervisedHmmTaggerTrainerTests {
   @Test
   def en_eisnerSmoothing() {
     val train = TaggedFile("data/postag/english/entrain")
-
-    val trainer: SupervisedTaggerTrainer[String, String] =
-      new SupervisedHmmTaggerTrainer(
-        transitionCounterFactory = new CondFreqCounterFactory[String, String] {
-          def get() =
-            new EisnerSmoothingCondFreqCounter(lambda = 1.0,
-              new FreqCounterFactory[String] { def get() = new ItemDroppingFreqCounter("<END>", new SimpleFreqCounter[String]()) },
-              new SimpleCondFreqCounter())
-        },
-        emissionCounterFactory = new CondFreqCounterFactory[String, String] {
-          def get() =
-            new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
-              new EisnerSmoothingCondFreqCounter(lambda = 1.0,
-                new FreqCounterFactory[String] { def get() = new AddLambdaSmoothingFreqCounter(lambda = 1.0, new SimpleFreqCounter()) },
-                new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
-                  new SimpleCondFreqCounter())))
-        },
-        "<END>", "<END>")
     val tagDict = new SimpleTagDictFactory().make(train)
-    val tagger: Tagger[String, String] = trainer.trainSupervised(train, tagDict)
-
-    val output = tagger.tag(AsRawFile("data/postag/english/entest"))
-
-    val gold = TaggedFile("data/postag/english/entest")
-    val results = new TaggerEvaluator().evaluate(output, gold, tagger.asInstanceOf[HmmTagger[String, String]].tagDict)
+    val results = runSupervisedTrainingTest(tagDict, train)
     assertResultsEqual("""
 				Total:   94.15 (22549/23949)
 				Known:   96.86 (21156/21841)
@@ -163,6 +140,55 @@ class SupervisedHmmTaggerTrainerTests {
 				139      N        V       
 				91       V        J       
 				""", results)
+  }
+
+  @Test
+  def en_comparisonA() {
+    val (tagDictTrain, labeledTrain) = TaggedFile("data/postag/english/entrain").splitAt(3000)
+    val tagDict = new SimpleTagDictFactory().make(tagDictTrain)
+    val results = runSupervisedTrainingTest(tagDict, tagDictTrain)
+    assertResultsEqual("""
+		Total:   93.54 (22401/23949)
+		Known:   96.75 (20772/21469)
+		Unknown: 65.69 (1629/2480)
+		Common Mistakes:
+		#Err     Gold      Model
+		272      V        N
+		264      N        J
+		202      J        N
+		160      N        V
+		101      V        J
+    	""", results)
+  }
+
+  private def runSupervisedTrainingTest(tagDict: Map[String, Set[String]], trainLab: Seq[IndexedSeq[(String, String)]]) = {
+    val gold = TaggedFile("data/postag/english/entest")
+
+    println("tagDictTrain.size = " + tagDict.flattenOver.size)
+    println("labeledTrain.size = " + trainLab.size)
+    println("rawTrain.size     = " + 0)
+
+    val trainer: SupervisedTaggerTrainer[String, String] =
+      new SupervisedHmmTaggerTrainer(
+        transitionCounterFactory = new CondFreqCounterFactory[String, String] {
+          def get() =
+            new EisnerSmoothingCondFreqCounter[String, String](lambda = 1.0,
+              new FreqCounterFactory[String] { def get() = new ItemDroppingFreqCounter("<END>", new SimpleFreqCounter[String]()) },
+              new SimpleCondFreqCounter())
+        },
+        emissionCounterFactory = new CondFreqCounterFactory[String, String] {
+          def get() =
+            new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
+              new EisnerSmoothingCondFreqCounter(lambda = 1.0,
+                new FreqCounterFactory[String] { def get() = new AddLambdaSmoothingFreqCounter(lambda = 1.0, new SimpleFreqCounter()) },
+                new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
+                  new SimpleCondFreqCounter())))
+        },
+        "<END>", "<END>")
+    val tagger = trainer.trainSupervised(trainLab, tagDict)
+    val output = tagger.tag(gold.map(_.map(_._1)))
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
+    results
   }
 
   object TaggedFile {
@@ -189,8 +215,7 @@ class SupervisedHmmTaggerTrainerTests {
 object SupervisedHmmTaggerTrainerTests {
 
   @BeforeClass def turnOffLogging() {
-    //Logger.getRootLogger.setLevel(Level.OFF)
-    Logger.getRootLogger.setLevel(Level.DEBUG)
+    Logger.getRootLogger.setLevel(Level.OFF)
   }
 
 }

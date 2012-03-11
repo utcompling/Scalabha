@@ -113,10 +113,12 @@ class DefaultHackingUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, 
     val distMap = dist.asInstanceOf[Map[Tag, Map[Sym, Probability]]]
     val totalNumSymbols = (tagDict.keySet - startEndSymbol).size.toDouble
 
+    val defaultDist = FreqDist(DefaultedFreqCounts(distMap.map { case (tag, symbols) => tag -> math.log(symbols.size) }, 0.0, 0.0))
+
     distMap.toList.sortBy(_._2.size).map {
       case (tag, symbols) =>
         LOG.debug("%4s: \ttotalNumSymbols = %s, symbols.size = %d".format(tag, totalNumSymbols, symbols.size))
-        tag -> symbols.withDefaultValue(Probability(symbols.size / totalNumSymbols))
+        tag -> symbols.withDefaultValue(defaultDist(tag))
     }.toMap.withDefaultValue(FreqDist.empty)
   }
 

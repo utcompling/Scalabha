@@ -97,7 +97,7 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
  * @param maxIterations							maximum number of iterations to be run during EM
  * @param minAvgLogProbChangeForEM				stop iterating EM if change in average log probability is less than this threshold
  */
-abstract class SemisupervisedHmmTaggerTrainer[Sym, Tag](
+class SemisupervisedHmmTaggerTrainer[Sym, Tag](
   initialTransitionCounterFactory: CondFreqCounterFactory[Tag, Tag],
   initialEmissionCounterFactory: CondFreqCounterFactory[Tag, Sym],
   override protected val estimatedTransitionCounterFactory: CondFreqCounterFactory[Tag, Tag],

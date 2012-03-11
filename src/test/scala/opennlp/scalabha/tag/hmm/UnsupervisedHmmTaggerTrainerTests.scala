@@ -90,7 +90,8 @@ class UnsupervisedHmmTaggerTrainerTests {
   @Test
   def en_testInTagDict() {
     val trainLab = TaggedFile("data/postag/english/entrain") ++ TaggedFile("data/postag/english/entest")
-    val results = runUnsupervisedTrainingTest(trainLab)
+    val tagDict = new SimpleTagDictFactory().make(trainLab)
+    val results = runUnsupervisedTrainingTest(tagDict)
     assertResultsEqual("""
 		Total:   86.02 (20600/23949)
 		Known:   86.02 (20600/23949)
@@ -108,7 +109,8 @@ class UnsupervisedHmmTaggerTrainerTests {
   @Test
   def en_largeTagDict() {
     val trainLab = TaggedFile("data/postag/english/entrain")
-    val results = runUnsupervisedTrainingTest(trainLab)
+    val tagDict = new SimpleTagDictFactory().make(trainLab)
+    val results = runUnsupervisedTrainingTest(tagDict)
     assertResultsEqual("""
 		Total:   77.46 (18550/23949)
 		Known:   84.91 (18545/21841)
@@ -123,17 +125,39 @@ class UnsupervisedHmmTaggerTrainerTests {
     	""", results)
   }
 
-  private def runUnsupervisedTrainingTest(trainLab: Seq[IndexedSeq[(String, String)]]) = {
+  @Test
+  def en_comparisonA() {
+    val (tagDictTrain, labeledTrain) = TaggedFile("data/postag/english/entrain").splitAt(3000)
+    val tagDict = new SimpleTagDictFactory().make(tagDictTrain)
+    val results = runUnsupervisedTrainingTest(tagDict)
+    assertResultsEqual("""
+		Total:   89.29 (21384/23949)
+		Known:   94.65 (20320/21469)
+		Unknown: 42.90 (1064/2480)
+		Common Mistakes:
+		#Err     Gold      Model
+		318      N        J
+		239      N        V
+		188      V        N
+		175      N        D
+		132      J        N
+    	""", results)
+  }
+
+  private def runUnsupervisedTrainingTest(tagDict: Map[String, Set[String]]) = {
     val trainRaw = RawFile("data/postag/english/enraw20k")
     val gold = TaggedFile("data/postag/english/entest")
 
-    val tagDict = new SimpleTagDictFactory().make(trainLab)
+    println("tagDictTrain.size = " + tagDict.flattenOver.size)
+    println("labeledTrain.size = " + 0)
+    println("rawTrain.size     = " + trainRaw.size)
+
     val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
       new UnsupervisedHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
-        //new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, lambda = 1.0, "<END>", "<END>").make(),
-        //new OneCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>").make(),
-        new PartialCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>").make(),
+          new DefaultHackingUnsupervisedEmissionDistFactory(tagDict, "<END>", "<END>",
+            new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, lambda = 1.0, "<END>", "<END>"))
+            .make(),
         estimatedTransitionCounterFactory = new CondFreqCounterFactory[String, String] {
           def get() =
             new EisnerSmoothingCondFreqCounter[String, String](lambda = 1.0,
@@ -187,11 +211,10 @@ class UnsupervisedHmmTaggerTrainerTests {
   }
 }
 
-object HmmTaggerTrainerTests {
+object UnsupervisedHmmTaggerTrainerTests {
 
   @BeforeClass def turnOffLogging() {
     Logger.getRootLogger.setLevel(Level.DEBUG)
-    //Logger.getRootLogger.setLevel(Level.OFF)
   }
 
 }
