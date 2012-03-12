@@ -1,7 +1,9 @@
 package opennlp.scalabha.classify.nb
 
+import scala.collection.mutable
 import opennlp.scalabha.classify._
 import opennlp.scalabha.util._
+import opennlp.scalabha.tag.support._
 
 /**
  * The naive Bayes classifier as a trait: defining common functionality that
@@ -28,72 +30,60 @@ trait NaiveBayesClassifier[L,T] extends Classifier[L,T] {
  * online with new training examples; this is not a mutable structure
  * per se, but can create an updated classifier given a new training
  * example
+ * @param labelDocCount the number of documents encoutered for each label L
+ * @param labelFeatureCount the frequency of feature T given label L
  */
 class OnlineNaiveBayesClassifier[L,T](
-    val docCount:Double,
-    val labelDocCount:Map[L,Double],
-    val labelFeatureCount:Map[(L,T),Double],
-    val vocabulary:Set[T],
-    val labels:Set[L],
-    val addN:Double)
+    val labelDocCounter:FreqCounter[L],
+    val labelFeatureCounter:CondFreqCounter[L,T],
+    val labels:mutable.Set[L])
 extends NaiveBayesClassifier[L,T] {
 
-  val labelTokenSum = {
-    val builder = Map.newBuilder[L,Double]
-    labels.foreach(label => {
-      val count:T => Double = v => labelFeatureCount.getOrElse((label,v), 0.)
-      builder += ((label, vocabulary.map(count).sum))
-    })
-    builder.result
-  }
+  override def priorProb(label:L) = labelDocCounter.toFreqDist()(label)
 
-  override def priorProb(label:L) = Probability(labelDocCount(label) / docCount)
+  override def featureProb(feature:T, label:L) =
+    (labelFeatureCounter.toFreqDist)(label)(feature)
 
-  override def featureProb(feature:T, label:L) = 
-    Probability((labelFeatureCount(label, feature) + addN) / 
-                (labelTokenSum(label) + (addN * vocabulary.size)))
-
-  import OnlineNaiveBayesClassifier._
   def update(label:L, document:Document[T]) = {
-    val newLDC = 
-      labelDocCount + ((label, labelDocCount.getOrElse(label, 0.) + 1.))
-    var newLFC = labelFeatureCount
-    document.allFeatures.foreach(
-      feature => {
-        val k = (label, feature)
-        newLFC = newLFC + ((k, newLFC.getOrElse(k, 0.) + 1.))
-      })
-    new OnlineNaiveBayesClassifier(docCount + 1,
-                                   newLDC,
-                                   newLFC,
-                                   vocabulary ++ document.allFeatures.toSet,
-                                   labels + label,
-                                   addN)
+    labelDocCounter.increment(label, 1)
+    document.allFeatures.foreach(labelFeatureCounter.increment(label, _, 1))
+    labels += label
   }
 }
 
+/**
+ * Utilities for OnlineNaiveBayesClassifier
+ */
 object OnlineNaiveBayesClassifier {
-  private def docFeaturesCount[L,T](label:L, document:Document[T]) = { 
-    val builder = Map.newBuilder[(L,T),Double]
-    document.allFeatures.foreach(feature => builder += (((label,feature),1)))
-    builder.result
+
+  /**
+   * Creates a new online naive Bayes classifier with 0s for counts for
+   * features and documents
+   * @param lambda smoothing parameter for add-lambda smoothing
+   */
+  def empty[L,T](lambda:Double) = {
+    val docCounter = new SimpleFreqCounter[L]
+    val featureCounter =
+      if (lambda == 0)
+        new SimpleCondFreqCounter[L,T]()
+      else
+        new AddLambdaSmoothingCondFreqCounter(lambda,
+                                              new SimpleCondFreqCounter[L,T])
+    val labels = mutable.Set.empty[L]
+    new OnlineNaiveBayesClassifier(docCounter, featureCounter, labels)
   }
+}
 
-  def empty[L,T](addN:Double) = 
-    new OnlineNaiveBayesClassifier(0,
-                                   Map.empty[L,Double],
-                                   Map.empty[(L,T),Double],
-                                   Set.empty[T],
-                                   Set.empty[L],
-                                   addN)
-} 
-
-class OnlineNaiveBayesClassifierTrainer[L,T](val addN:Double) 
+/**
+ * A classifier trainer for an online naive Bayes classifier
+ * @param lambda a smoothing parameter for add-lambda smoothing
+ */
+class OnlineNaiveBayesClassifierTrainer[L,T](val lambda:Double) 
 extends ClassifierTrainer[L,T] {
-  def train(documents:Iterator[(L,Document[T])]) = {
-    var current = OnlineNaiveBayesClassifier.empty[L,T](addN)
-    for ((label, document) <- documents)
-      current = current.update(label, document)
+  def train(labeledDocuments:Iterator[(L,Document[T])]) = {
+    val current = OnlineNaiveBayesClassifier.empty[L,T](lambda)
+    // ld = (label, document)
+    labeledDocuments.foreach(ld => current.update(ld._1, ld._2))
     current
   }
 }

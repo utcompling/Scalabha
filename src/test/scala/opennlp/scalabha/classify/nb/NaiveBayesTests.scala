@@ -3,6 +3,7 @@ package opennlp.scalabha.classify.nb
 import scala.io._
 import org.scalatest.FunSuite
 import opennlp.scalabha.classify._
+import opennlp.scalabha.util._
 
 class MockDocument[T](features:Iterable[T]) extends Document[T] {
   def fields = List(("content", features))
@@ -22,29 +23,30 @@ class NaiveBayesTestSuite extends FunSuite {
                        val features = atts.slice(0, 4)
                        (label, MockDocument(features))
                      })
-    val classifier = trainer.train(labeledDocs)
+    val c = trainer.train(labeledDocs)
 
-    // verify expected basic feature counts
-    assert(classifier.docCount === 14)
-    assert(classifier.labelDocCount("No") === 5)
-    assert(classifier.labelDocCount("Yes") === 9)
-    assert(classifier.labelFeatureCount("Yes", "Outlook=Overcast") === 4)
-    assert(classifier.labelFeatureCount("No", "Outlook=Rain") === 2)
-    assert(classifier.labelFeatureCount("Yes", "Outlook=Sunny") === 2)
-    assert(classifier.labelFeatureCount("No", "Outlook=Sunny") === 3)
-    assert(classifier.labelFeatureCount("No", "Temperature=Cool") === 1)
-    assert(classifier.labelFeatureCount("Yes", "Temperature=Cool") === 3)
-    assert(classifier.labelFeatureCount("No", "Temperature=Hot") === 2)
-    assert(classifier.labelFeatureCount("Yes", "Temperature=Hot") === 2)
-    assert(classifier.labelFeatureCount("No", "Temperature=Mild") === 2)
-    assert(classifier.labelFeatureCount("Yes", "Temperature=Mild") === 4)
-    assert(classifier.labelFeatureCount("No", "Humidity=High") === 4)
-    assert(classifier.labelFeatureCount("Yes", "Humidity=High") === 3)
-    assert(classifier.labelFeatureCount("No", "Humidity=Normal") === 1)
-    assert(classifier.labelFeatureCount("Yes", "Humidity=Normal") === 6)
-    assert(classifier.labelFeatureCount("No", "Wind=Strong") === 3)
-    assert(classifier.labelFeatureCount("Yes", "Wind=Strong") === 3)
-    assert(classifier.labelFeatureCount("No", "Wind=Weak") === 2)
-    assert(classifier.labelFeatureCount("Yes", "Wind=Weak") === 6)
-}
+    // verify expected probabilities
+    assert(c.priorProb("Yes") === Probability(9./14.))
+    assert(c.priorProb("No") === Probability(5./14.))
+    assert(c.featureProb("Outlook=Overcast", "No") === Probability(0.))
+    assert(c.featureProb("Outlook=Overcast", "Yes") === Probability(4./36.))
+    assert(c.featureProb("Outlook=Rain", "No") === Probability(2./20.))
+    assert(c.featureProb("Outlook=Rain", "Yes") === Probability(3./36.))
+    assert(c.featureProb("Outlook=Sunny", "No") === Probability(3./20.))
+    assert(c.featureProb("Outlook=Sunny", "Yes") === Probability(2./36.))
+    assert(c.featureProb("Temperature=Cool", "No") === Probability(1./20.))
+    assert(c.featureProb("Temperature=Cool", "Yes") === Probability(3./36.))
+    assert(c.featureProb("Temperature=Hot", "No") === Probability(2./20.))
+    assert(c.featureProb("Temperature=Hot", "Yes") === Probability(2./36.))
+    assert(c.featureProb("Temperature=Mild", "No") === Probability(2./20.))
+    assert(c.featureProb("Temperature=Mild", "Yes") === Probability(4./36.))
+    assert(c.featureProb("Humidity=High", "No") === Probability(4./20.))
+    assert(c.featureProb("Humidity=High", "Yes") === Probability(3./36.))
+    assert(c.featureProb("Humidity=Normal", "No") === Probability(1./20.))
+    assert(c.featureProb("Humidity=Normal", "Yes") === Probability(6./36.))
+    assert(c.featureProb("Wind=Strong", "No") === Probability(3./20.))
+    assert(c.featureProb("Wind=Strong", "Yes") === Probability(3./36.))
+    assert(c.featureProb("Wind=Weak", "No") === Probability(2./20.))
+    assert(c.featureProb("Wind=Weak", "Yes") === Probability(6./36.))
+  }
 }
