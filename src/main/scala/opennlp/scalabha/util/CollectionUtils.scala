@@ -512,6 +512,7 @@ object CollectionUtils {
   // flattenOver(): Iterator[(A, B)]
   //   - For a map with collections for values, return an iterator of pairs
   //     where each key is paired with each item in its value collection
+  //   - TODO: This might be better called "ungroup"
   //////////////////////////////////////////////////////
 
   class Enrich_flattenOver_GenTraversableOnce[A, B](self: GenMap[A, GenTraversableOnce[B]]) {

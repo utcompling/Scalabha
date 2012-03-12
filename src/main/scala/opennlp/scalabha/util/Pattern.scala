@@ -22,7 +22,7 @@ object Pattern {
   }
 
   object Map {
-    def unapplySeq[A,B](m: Map[A,B]): Option[Seq[(A,B)]] = Some(m.toList)
+    def unapplySeq[A, B](m: Map[A, B]): Option[Seq[(A, B)]] = Some(m.toList)
   }
 
   object -> {
@@ -51,15 +51,17 @@ object Pattern {
   }
 
   object +: {
-    def unapply[T](s: Iterable[T]) =
-      if (s.size >= 1)
-        Some(s.head, s.tail)
+    def unapply[T](s: Iterable[T]): Option[(T, Iterable[T])] =
+      if (s.size >= 1) {
+        val itr = s.iterator
+        Some(itr.next, new Iterable[T] { def iterator = itr })
+      }
       else
         None
   }
 
   object :+ {
-    def unapply[T](s: Iterable[T]) =
+    def unapply[T](s: Iterable[T]): Option[(Iterable[T], T)] =
       if (s.size >= 1)
         Some(s.dropRight(1), s.last)
       else
