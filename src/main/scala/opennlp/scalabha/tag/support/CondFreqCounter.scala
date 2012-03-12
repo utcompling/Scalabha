@@ -70,7 +70,7 @@ abstract class CondFreqCounter[A, B] {
 class SimpleCondFreqCounter[A, B] extends CondFreqCounter[A, B] {
   private val storedCounts = collection.mutable.Map[A, FreqCounter[B]]()
   override def increment(a: A, b: B, n: Double) { storedCounts.getOrElseUpdate(a, new SimpleFreqCounter[B]).increment(b, n) }
-  override def resultCounts() = DefaultedCondFreqCounts(storedCounts.toMap.mapValuesStrict(_.resultCounts), 0, 0)
+  override def resultCounts() = DefaultedCondFreqCounts(storedCounts.toMap.mapValuesStrict(_.resultCounts))
   override def toString = storedCounts.mapValues(_.toString).toString
 }
 
@@ -101,21 +101,20 @@ abstract class DelegatingCondFreqCounter[A, B](delegate: CondFreqCounter[A, B]) 
  */
 class ConstrainingCondFreqCounter[A, B](validEntries: Map[A, Set[B]], delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
   override def resultCounts() = {
-    val DefaultedCondFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts()
-    val filteredResultCounts =
-      validEntries.map {
-        case (a, bs) =>
-          delegateResultCounts.get(a) match {
-            case Some(DefaultedFreqCounts(aCounts, aTotalAdd, aDefault)) =>
-              val filtered = FreqCounts(aCounts.toMap.filterKeys(bs))
-              val defaults = FreqCounts((bs -- aCounts.toMap.keySet).mapTo(b => aDefault).toMap)
+    val zeroCounts = DefaultedCondFreqCounts(CondFreqCounts(validEntries.mapValuesStrict(_ => Map[B, Double]()))) // a count for every A in validEntries
+    val delegateResultCounts = (delegate.resultCounts ++ zeroCounts).counts
+    DefaultedCondFreqCounts(
+      delegateResultCounts.map {
+        case (a, DefaultedFreqCounts(aCounts, aTotalAddition, aDefaultCount)) =>
+          validEntries.get(a) match {
+            case Some(validBs) =>
+              val filtered = FreqCounts(aCounts.toMap.filterKeys(validBs))
+              val defaults = FreqCounts((validBs -- aCounts.toMap.keySet).mapTo(b => aDefaultCount).toMap)
               (a, DefaultedFreqCounts(filtered ++ defaults, 0.0, 0.0))
             case None =>
-              val defaults = FreqCounts(bs.mapTo(b => delegateDefaultCount).toMap)
-              (a, DefaultedFreqCounts(defaults, 0.0, 0.0))
+              (a, DefaultedFreqCounts(FreqCounts[B, Double](), 0.0, 0.0))
           }
-      }
-    DefaultedCondFreqCounts(filteredResultCounts, 0.0, 0.0)
+      })
   }
 }
 
@@ -142,13 +141,11 @@ object ConstrainingCondFreqCounter {
  */
 class ScalingCondFreqCounter[A, B](lambda: Double, delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
   override def resultCounts() = {
-    val DefaultedCondFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts
-    val filteredResultCounts =
-      for ((a, DefaultedFreqCounts(aCounts, aTotalAdd, aDefault)) <- delegateResultCounts) yield {
+    DefaultedCondFreqCounts(
+      for ((a, DefaultedFreqCounts(aCounts, aTotalAdd, aDefault)) <- delegate.resultCounts.counts) yield {
         val scaled = FreqCounts(aCounts.toMap.mapValuesStrict(_ * lambda))
         (a, DefaultedFreqCounts(scaled, aTotalAdd * lambda, aDefault * lambda))
-      }
-    DefaultedCondFreqCounts(filteredResultCounts, delegateTotalAddition * lambda, delegateDefaultCount * lambda)
+      })
   }
 }
 
@@ -165,13 +162,18 @@ class ScalingCondFreqCounter[A, B](lambda: Double, delegate: CondFreqCounter[A, 
  */
 class AddLambdaSmoothingCondFreqCounter[A, B](lambda: Double, delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
   override def resultCounts() = {
-    val DefaultedCondFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts
+    val delegateResultCounts = delegate.resultCounts.counts
+
+    val allBs = delegateResultCounts.flatMap(_._2.counts.toMap.keySet).toSet // collect all Bs across all As
+    val allZeroCounts = FreqCounts(allBs.mapTo(_ => 0.).toMap) // map every B to a 0 count
+
     DefaultedCondFreqCounts(
       delegateResultCounts
         .mapValuesStrict {
-          case DefaultedFreqCounts(c, t, d) => DefaultedFreqCounts(c.toMap.mapValuesStrict(_ + lambda), t + lambda, d + lambda)
-        },
-      delegateTotalAddition + lambda, delegateDefaultCount + lambda)
+          case DefaultedFreqCounts(c, t, d) =>
+            DefaultedFreqCounts(
+              (c ++ allZeroCounts).toMap.mapValuesStrict(_ + lambda), t + lambda, d + lambda)
+        })
   }
 }
 
@@ -194,8 +196,7 @@ class EisnerSmoothingCondFreqCounter[A, B](lambda: Double, backoffFreqCounterFac
   private val LOG = LogFactory.getLog(classOf[EisnerSmoothingCondFreqCounter[A, B]])
 
   override def resultCounts() = {
-    val delegateDefaultedResultCounts = delegate.resultCounts()
-    val DefaultedCondFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegateDefaultedResultCounts
+    val delegateResultCounts = delegate.resultCounts.counts
 
     val numSingleCountItems = delegateResultCounts.mapValuesStrict(_.counts.toMap.count(_._2 < 2.0))
 
@@ -239,9 +240,7 @@ class EisnerSmoothingCondFreqCounter[A, B](lambda: Double, backoffFreqCounterFac
 
           (a, DefaultedFreqCounts(smoothedCounts, aTotalAdd + totalAddition, aDefault + defaultCount))
       }
-    val totalAddition = 1.0
-    val defaultCount = lambda / backoffTotal
-    DefaultedCondFreqCounts(smoothedResultCounts, totalAddition + delegateTotalAddition, defaultCount + delegateDefaultCount)
+    DefaultedCondFreqCounts(smoothedResultCounts)
   }
 }
 
@@ -252,19 +251,16 @@ class EisnerSmoothingCondFreqCounter[A, B](lambda: Double, backoffFreqCounterFac
 /**
  * This counter multiplies each count received from its delegate by a
  * (possibly different) random number between 1 and maxCount.
- *
  */
 class RandomCondFreqCounter[A, B](maxCount: Int, delegate: CondFreqCounter[A, B]) extends DelegatingCondFreqCounter[A, B](delegate) {
   private val rand = new Random(0) // static seed ensures results are reproducible
 
   override def resultCounts() = {
-    val DefaultedCondFreqCounts(delegateResultCounts, delegateTotalAddition, delegateDefaultCount) = delegate.resultCounts
-    val modifiedResultCounts =
-      for ((a, DefaultedFreqCounts(aCounts, aTotalAdd, aDefault)) <- delegateResultCounts) yield {
+    DefaultedCondFreqCounts(
+      for ((a, DefaultedFreqCounts(aCounts, aTotalAdd, aDefault)) <- delegate.resultCounts.counts) yield {
         val scaled = FreqCounts(aCounts.toMap.mapValuesStrict(_ * (rand.nextInt(maxCount) + 1)))
         (a, DefaultedFreqCounts(scaled, aTotalAdd, aDefault))
-      }
-    DefaultedCondFreqCounts(modifiedResultCounts, delegateTotalAddition, delegateDefaultCount)
+      })
   }
 
 }

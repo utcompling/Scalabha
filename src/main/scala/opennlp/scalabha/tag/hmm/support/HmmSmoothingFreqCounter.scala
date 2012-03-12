@@ -11,17 +11,15 @@ class StartEndFixingEmissionFreqCounter[Tag, Sym](startEndSymbol: Sym, startEndT
   extends DelegatingCondFreqCounter[Tag, Sym](delegate) {
 
   override def resultCounts() = {
-    val DefaultedCondFreqCounts(superResultCounts, totalAddition, defaultCount) = delegate.resultCounts()
-
     val corrected =
-      superResultCounts.mapValuesStrict {
+      delegate.resultCounts.counts.mapValuesStrict {
         case DefaultedFreqCounts(aCounts, aTotalAdd, aDefault) =>
           // Remove startEndTag from association with any symbol
           DefaultedFreqCounts(aCounts - startEndSymbol, aTotalAdd, aDefault)
       }
 
     // Make sure startEndSymbol maps only to startEndTag, and with Probability=1
-    DefaultedCondFreqCounts(corrected + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 2.0), 0, 0)), totalAddition, defaultCount)
+    DefaultedCondFreqCounts(corrected + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 2.0), 0., 0.)))
   }
 
 }

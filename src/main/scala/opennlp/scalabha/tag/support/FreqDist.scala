@@ -33,6 +33,8 @@ object FreqDist {
    *
    * Note that if the total (after additions) is zero, the distribution
    * returned is simply the empty distribution.
+   *
+   * @tparam B	the item being counted
    */
   def apply[B](counter: FreqCounter[B]): B => Probability = {
     apply(counter.resultCounts)
@@ -50,6 +52,8 @@ object FreqDist {
    *
    * Note that if the total (after additions) is zero, the distribution
    * returned is simply the empty distribution.
+   *
+   * @tparam B	the item being counted
    */
   def apply[B](resultCounts: DefaultedFreqCounts[B, Double]): B => Probability = {
     val DefaultedFreqCounts(counts, totalAddition, defaultCount) = resultCounts
@@ -95,6 +99,9 @@ object CondFreqDist {
    * that 'A' will map to the empty distribution.  If the grand total
    * (including additions from the top level and all 'A' entries) is zero,
    * then the empty conditional distribution is returned.
+   *
+   * @tparam A	the conditioning item being counted; P(B|A).
+   * @tparam B	the conditioned item being counted; P(B|A).
    */
   def apply[A, B](counter: CondFreqCounter[A, B]): A => B => Probability = {
     apply(counter.resultCounts)
@@ -116,51 +123,11 @@ object CondFreqDist {
    * that 'A' will map to the empty distribution.  If the grand total
    * (including additions from the top level and all 'A' entries) is zero,
    * then the empty conditional distribution is returned.
+   *
+   * @tparam A	the conditioning item being counted; P(B|A).
+   * @tparam B	the conditioned item being counted; P(B|A).
    */
   def apply[A, B](resultCounts: DefaultedCondFreqCounts[A, B, Double]): A => B => Probability = {
-    val DefaultedCondFreqCounts(counts, totalAddition, defaultCount) = resultCounts
-    val (dists: List[(A, B => Probability)], total) =
-      counts.foldLeft(List[(A, B => Probability)](), totalAddition) {
-        case ((dists, total), (a, DefaultedFreqCounts(aCounts, aTotalAddition, aDefaultCount))) =>
-          val aTotal = aCounts.toMap.values.sum + aTotalAddition
-          val aDistDefaulted =
-            if (aTotal == 0)
-              FreqDist.empty
-            else
-              aCounts.toMap.mapValuesStrict(count => (count / aTotal).toProbability)
-                .withDefaultValue((aDefaultCount / aTotal).toProbability)
-
-          if (LOG.isDebugEnabled && Set("NN", "DT", "N", "D").contains(a.asInstanceOf[String])) {
-            LOG.debug("    tag = " + a)
-            LOG.debug("        aCounts = " + aCounts.toMap.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
-            LOG.debug("        aDefaultCount = " + aDefaultCount)
-            LOG.debug("        aTotal = " + aTotal)
-            aDistDefaulted match {
-              case x: Map[String, Probability] =>
-                LOG.debug("        aDistDefaulted = " + x.toList.sorted.takeRight(10).map { case (b, p) => "%s -> %.2f".format(b, p.underlying) })
-              case _ =>
-                LOG.debug("        empty FreqDist")
-            }
-
-            LOG.debug("")
-
-            if (!aCounts.toMap.contains("N".asInstanceOf[B]) && !aCounts.toMap.contains("NN".asInstanceOf[B])) {
-              for (w <- List("the", "company", "zzzzzzz").map(_.asInstanceOf[B])) {
-                LOG.debug("        p(%s|%s) = c(%s,%s) / c(%s) = %.2f / %.2f = %.2f (%.2f)"
-                  .format(
-                    w, a, a, w, a,
-                    aCounts.toMap.getOrElse(w, aDefaultCount), aTotal,
-                    aDistDefaulted(w).toDouble, aDistDefaulted(w).underlying))
-              }
-              LOG.debug("")
-            }
-          }
-
-          ((a, aDistDefaulted) :: dists, total + aTotal)
-      }
-    if (total == 0)
-      CondFreqDist.empty
-    else
-      dists.toMap.withDefaultValue(FreqDist.static((defaultCount / total).toProbability))
+    resultCounts.counts.mapValuesStrict(FreqDist(_))
   }
 }

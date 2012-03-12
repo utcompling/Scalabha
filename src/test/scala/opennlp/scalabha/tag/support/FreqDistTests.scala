@@ -52,8 +52,7 @@ class FreqDistTests {
     val x = CondFreqDist(DefaultedCondFreqCounts(
       Map(
         'A' -> DefaultedFreqCounts(FreqCounts(Map('a -> 7.0, 'b -> 1.0)), 0.0, 0.0),
-        'B' -> DefaultedFreqCounts(FreqCounts(Map('a -> 3.0, 'b -> 9.0)), 0.0, 0.0)),
-        0.0, 0.0))
+        'B' -> DefaultedFreqCounts(FreqCounts(Map('a -> 3.0, 'b -> 9.0)), 0.0, 0.0))))
 
     assertEqualsProb(Probability(0.875), x('A')('a))
     assertEqualsProb(Probability(0.125), x('A')('b))
@@ -61,7 +60,6 @@ class FreqDistTests {
     assertEqualsProb(Probability(0.250), x('B')('a))
     assertEqualsProb(Probability(0.750), x('B')('b))
     assertEqualsProb(Probability(0.000), x('B')('z))
-    assertEqualsProb(Probability(0.000), x('Z')('z))
   }
 
   @Test
@@ -69,8 +67,7 @@ class FreqDistTests {
     val x = CondFreqDist(DefaultedCondFreqCounts(
       Map(
         'A' -> DefaultedFreqCounts(FreqCounts(Map('a -> 3.0, 'b -> 4.0)), 1.0, 1.6),
-        'B' -> DefaultedFreqCounts(FreqCounts(Map('a -> 4.4, 'b -> 9.6)), 2.0, 6.0)),
-        1.0, 2.5))
+        'B' -> DefaultedFreqCounts(FreqCounts(Map('a -> 4.4, 'b -> 9.6)), 2.0, 6.0))))
 
     assertEqualsProb(Probability(0.375), x('A')('a))
     assertEqualsProb(Probability(0.500), x('A')('b))
@@ -78,7 +75,6 @@ class FreqDistTests {
     assertEqualsProb(Probability(0.275), x('B')('a))
     assertEqualsProb(Probability(0.600), x('B')('b))
     assertEqualsProb(Probability(0.375), x('B')('z))
-    assertEqualsProb(Probability(0.100), x('Z')('z))
   }
 
   def assertEqualsProb(a: Probability, b: Probability) {

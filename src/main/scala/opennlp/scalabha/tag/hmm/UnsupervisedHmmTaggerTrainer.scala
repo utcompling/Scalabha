@@ -57,11 +57,13 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
     val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(CondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.0).toMap).toMap)))
     val initialEmissions = initialUnsupervisedEmissionDist
 
-    LOG.debug("    initialUnsupervisedEmissionDist")
-    for (t <- List("NN", "N", "DT", "D").map(_.asInstanceOf[Tag]))
-      for (w <- List("the", "company", "zzzzzzz").map(_.asInstanceOf[Sym]))
-        if (initialUnsupervisedEmissionDist(t)(w) != Probability.zero)
-          LOG.debug("        p(%s|%s) = %.2f (%.2f)".format(w, t, initialUnsupervisedEmissionDist(t)(w).toDouble, initialUnsupervisedEmissionDist(t)(w).underlying))
+    if (LOG.isDebugEnabled) {
+      LOG.debug("    initialUnsupervisedEmissionDist")
+      for (t <- List("NN", "N", "DT", "D").map(_.asInstanceOf[Tag]))
+        for (w <- List("the", "company", "zzzzzzz").map(_.asInstanceOf[Sym]))
+          if (initialUnsupervisedEmissionDist(t)(w) != Probability.zero)
+            LOG.debug("        p(%s|%s) = %.2f (%.2f)".format(w, t, initialUnsupervisedEmissionDist(t)(w).toDouble, initialUnsupervisedEmissionDist(t)(w).underlying))
+    }
 
     // Do not assume any known counts -- use only EM-estimated counts
     val initialTransitionCounts = CondFreqCounts[Tag, Tag, Double]()

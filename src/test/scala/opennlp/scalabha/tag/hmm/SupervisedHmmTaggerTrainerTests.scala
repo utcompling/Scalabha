@@ -12,8 +12,10 @@ import opennlp.scalabha.tag.TaggerEvaluator
 import opennlp.scalabha.tag.ScoreResults
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
+import org.apache.commons.logging.LogFactory
 
 class SupervisedHmmTaggerTrainerTests {
+  val LOG = LogFactory.getLog(classOf[UnsupervisedHmmTaggerTrainerTests])
 
   @Test
   def tiny_noSmoothing() {
@@ -164,9 +166,9 @@ class SupervisedHmmTaggerTrainerTests {
   private def runSupervisedTrainingTest(tagDict: Map[String, Set[String]], trainLab: Seq[IndexedSeq[(String, String)]]) = {
     val gold = TaggedFile("data/postag/english/entest")
 
-    println("tagDictTrain.size = " + tagDict.flattenOver.size)
-    println("labeledTrain.size = " + trainLab.size)
-    println("rawTrain.size     = " + 0)
+    LOG.debug("tagDictTrain.size = " + tagDict.flattenOver.size)
+    LOG.debug("labeledTrain.size = " + trainLab.size)
+    LOG.debug("rawTrain.size     = " + 0)
 
     val trainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(

@@ -13,6 +13,9 @@ import scala.collection.GenTraversable
  * Convenience wrapper of a map from items to their counts.  Its primary
  * function is to make adding counts easier.  The "++" operator adds the
  * counts for each respective entry (unlike Map's standard behavior).
+ *
+ * @tparam B	the item being counted
+ * @tparam N	the Numeric type of the count
  */
 class FreqCounts[B, N: Numeric](private val self: Map[B, N]) {
   def ++(that: FreqCounts[B, N]) = new FreqCounts((self.iterator ++ that.iterator).groupByKey.mapValuesStrict(_.sum))
@@ -33,8 +36,9 @@ object FreqCounts {
  * function is to make adding counts easier.  The "++" operator adds the
  * counts for each respective entry (unlike Map's standard behavior).
  *
- * @tparam A  the conditioning item being counted; P(B|A).
- * @tparam B  the conditioned item being counted; P(B|A).
+ * @tparam A	the conditioning item being counted; P(B|A).
+ * @tparam B	the conditioned item being counted; P(B|A).
+ * @tparam N	the Numeric type of the count
  */
 class CondFreqCounts[A, B, N: Numeric](private val self: Map[A, FreqCounts[B, N]]) {
   def ++(that: CondFreqCounts[A, B, N]) =

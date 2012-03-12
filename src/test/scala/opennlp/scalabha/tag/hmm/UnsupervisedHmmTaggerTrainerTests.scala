@@ -13,8 +13,10 @@ import org.apache.log4j.Logger
 import org.apache.log4j.Level
 import org.apache.log4j.PropertyConfigurator
 import org.apache.log4j.BasicConfigurator
+import org.apache.commons.logging.LogFactory
 
 class UnsupervisedHmmTaggerTrainerTests {
+  val LOG = LogFactory.getLog(classOf[UnsupervisedHmmTaggerTrainerTests])
 
   @Test
   def ic_fullTagDict_noSmoothing() {
@@ -40,13 +42,12 @@ class UnsupervisedHmmTaggerTrainerTests {
     val output = unsupervisedTagger.tag(testRaw)
     val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
     assertResultsEqual("""
-		Total:   12.12 (4/33)
-		Known:   12.12 (4/33)
+		Total:   48.48 (16/33)
+		Known:   48.48 (16/33)
 		Unknown: NaN (0/0)
 		Common Mistakes:
 		#Err     Gold      Model
-		15       H        C
-		14       C        H
+		17       H        C
     	""", results)
   }
 
@@ -74,16 +75,16 @@ class UnsupervisedHmmTaggerTrainerTests {
     val output = unsupervisedTagger.tag(testRaw)
     val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
     assertResultsEqual("""
-		Total:   88.42 (21176/23949)
-		Known:   88.42 (21176/23949)
+		Total:   88.14 (21108/23949)
+		Known:   88.14 (21108/23949)
 		Unknown: NaN (0/0)
 		Common Mistakes:
 		#Err     Gold      Model
 		693      D        N
 		522      D        F
-		279      V        N
+		277      V        N
+		200      P        V
 		198      J        N
-		137      R        J
     	""", results)
   }
 
@@ -93,16 +94,16 @@ class UnsupervisedHmmTaggerTrainerTests {
     val tagDict = new SimpleTagDictFactory().make(trainLab)
     val results = runUnsupervisedTrainingTest(tagDict)
     assertResultsEqual("""
-		Total:   86.02 (20600/23949)
-		Known:   86.02 (20600/23949)
+		Total:   94.80 (22703/23949)
+		Known:   94.80 (22703/23949)
 		Unknown: NaN (0/0)
 		Common Mistakes:
 		#Err     Gold      Model
-		972      D        N
-		522      D        F
-		378      V        N
-		264      J        N
-		176      R        J
+		200      P        V
+		126      N        J
+		106      V        N
+		105      I        R
+		102      N        V
     	""", results)
   }
 
@@ -112,16 +113,16 @@ class UnsupervisedHmmTaggerTrainerTests {
     val tagDict = new SimpleTagDictFactory().make(trainLab)
     val results = runUnsupervisedTrainingTest(tagDict)
     assertResultsEqual("""
-		Total:   77.46 (18550/23949)
-		Known:   84.91 (18545/21841)
-		Unknown: 0.24 (5/2108)
+		Total:   89.26 (21377/23949)
+		Known:   93.84 (20495/21841)
+		Unknown: 41.84 (882/2108)
 		Common Mistakes:
 		#Err     Gold      Model
-		1173     N        E
-		968      D        N
-		522      D        F
-		341      V        N
-		327      V        E
+		221      N        J
+		200      P        V
+		195      N        V
+		184      V        N
+		140      N        D
     	""", results)
   }
 
@@ -148,9 +149,9 @@ class UnsupervisedHmmTaggerTrainerTests {
     val trainRaw = RawFile("data/postag/english/enraw20k")
     val gold = TaggedFile("data/postag/english/entest")
 
-    println("tagDictTrain.size = " + tagDict.flattenOver.size)
-    println("labeledTrain.size = " + 0)
-    println("rawTrain.size     = " + trainRaw.size)
+    LOG.debug("tagDictTrain.size = " + tagDict.flattenOver.size)
+    LOG.debug("labeledTrain.size = " + 0)
+    LOG.debug("rawTrain.size     = " + trainRaw.size)
 
     val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
       new UnsupervisedHmmTaggerTrainer(
@@ -214,7 +215,7 @@ class UnsupervisedHmmTaggerTrainerTests {
 object UnsupervisedHmmTaggerTrainerTests {
 
   @BeforeClass def turnOffLogging() {
-    Logger.getRootLogger.setLevel(Level.DEBUG)
+    Logger.getRootLogger.setLevel(Level.OFF)
   }
 
 }

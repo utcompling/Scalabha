@@ -13,6 +13,9 @@ import scala.collection.GenTraversable
  * Convenience wrapper of a map from items to their counts.  Its primary
  * function is to make adding counts easier.  The "++" operator adds the
  * counts for each respective entry (unlike Map's standard behavior).
+ *
+ * @tparam B	the item being counted
+ * @tparam N	the Numeric type of the count
  */
 case class DefaultedFreqCounts[B, N: Numeric](val counts: FreqCounts[B, N], val totalAddition: N, val defaultCount: N) {
   def ++(that: DefaultedFreqCounts[B, N]) = {
@@ -41,23 +44,14 @@ object DefaultedFreqCounts {
  * Convenience wrapper of a map from items to their counts.  Its primary
  * function is to make adding counts easier.  The "++" operator adds the
  * counts for each respective entry (unlike Map's standard behavior).
+ * 
+ * @tparam A	the conditioning item being counted; P(B|A).
+ * @tparam B	the conditioned item being counted; P(B|A).
+ * @tparam N	the Numeric type of the count
  */
-case class DefaultedCondFreqCounts[A, B, N: Numeric](val counts: Map[A, DefaultedFreqCounts[B, N]], val totalAddition: N, val defaultCount: N) {
+case class DefaultedCondFreqCounts[A, B, N: Numeric](val counts: Map[A, DefaultedFreqCounts[B, N]]) {
   def ++(that: DefaultedCondFreqCounts[A, B, N]): DefaultedCondFreqCounts[A, B, N] = {
-    if (totalAddition == implicitly[Numeric[N]].zero && defaultCount == implicitly[Numeric[N]].zero)
-      add(that.counts, that.totalAddition, that.defaultCount)
-    else if (that.totalAddition == implicitly[Numeric[N]].zero && that.defaultCount == implicitly[Numeric[N]].zero)
-      add(that.counts, totalAddition, defaultCount)
-    else {
-      assert(totalAddition == that.totalAddition)
-      assert(defaultCount == that.defaultCount)
-      add(that.counts, totalAddition, defaultCount)
-    }
-  }
-
-  private def add(thatCounts: Map[A, DefaultedFreqCounts[B, N]], totalAddition: N, defaultCount: N) = {
-    val totalCounts = (counts.iterator ++ thatCounts).groupByKey.mapValuesStrict(_.reduce(_ ++ _))
-    new DefaultedCondFreqCounts(totalCounts, totalAddition, defaultCount)
+    new DefaultedCondFreqCounts((counts.iterator ++ that.counts).groupByKey.mapValuesStrict(_.reduce(_ ++ _)))
   }
 
   def simpleCounts = new CondFreqCounts(counts.mapValuesStrict(_.simpleCounts))
@@ -65,5 +59,5 @@ case class DefaultedCondFreqCounts[A, B, N: Numeric](val counts: Map[A, Defaulte
 
 object DefaultedCondFreqCounts {
   def apply[A, B, N: Numeric](counts: CondFreqCounts[A, B, N]) =
-    new DefaultedCondFreqCounts(counts.toMap.mapValuesStrict(c => DefaultedFreqCounts(FreqCounts(c))), implicitly[Numeric[N]].zero, implicitly[Numeric[N]].zero)
+    new DefaultedCondFreqCounts(counts.toMap.mapValuesStrict(c => DefaultedFreqCounts(FreqCounts(c))))
 }

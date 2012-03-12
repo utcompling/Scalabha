@@ -13,8 +13,10 @@ import org.apache.log4j.Logger
 import org.apache.log4j.Level
 import org.apache.log4j.PropertyConfigurator
 import org.apache.log4j.BasicConfigurator
+import org.apache.commons.logging.LogFactory
 
 class SemisupervisedHmmTaggerTrainerTests {
+  val LOG = LogFactory.getLog(classOf[SemisupervisedHmmTaggerTrainerTests])
 
   @Test
   def en_comparisonA() {
@@ -39,9 +41,9 @@ class SemisupervisedHmmTaggerTrainerTests {
     val trainRaw = RawFile("data/postag/english/enraw20k")
     val gold = TaggedFile("data/postag/english/entest")
 
-    println("tagDictTrain.size = " + tagDict.flattenOver.size)
-    println("labeledTrain.size = " + trainLab.size)
-    println("rawTrain.size     = " + trainRaw.size)
+    LOG.info("tagDictTrain.size = " + tagDict.flattenOver.size)
+    LOG.info("labeledTrain.size = " + trainLab.size)
+    LOG.info("rawTrain.size     = " + trainRaw.size)
 
     val trainer: SemisupervisedTaggerTrainer[String, String] =
       new SemisupervisedHmmTaggerTrainer(
