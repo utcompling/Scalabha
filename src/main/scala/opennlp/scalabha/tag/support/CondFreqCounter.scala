@@ -36,7 +36,7 @@ import util.Random
  *   new SimpleSmoothingCondFreqCounter(lambda,
  *     new ConstrainingCondFreqCounter(validEntries, strict,
  *       new SimpleCondFreqCounter()))
- * {{{
+ * }}}
  *
  * Implementing classes should define:
  * <ul>
