@@ -20,7 +20,7 @@ trait Document[T] {
   /**
    * A concatentation of the features from all the fields
    */
-  def allFeatures = fields.map(_._2).flatten
+  lazy val allFeatures = fields.flatMap(_._2)
 }
 
 /**
@@ -49,7 +49,7 @@ trait Classifier[L,T] {
  * @tparam T the class of value used for the features
  */
 trait ClassifierTrainer[L,T] {
-  def train(documents:Iterator[(L,Document[T])]):Classifier[L,T]
+  def train(documents:TraversableOnce[(L,Document[T])]):Classifier[L,T]
 }
 
 /**
