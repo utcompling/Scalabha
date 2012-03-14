@@ -9,9 +9,10 @@ import opennlp.scalabha.tag.support._
 /**
  * The naive Bayes classifier as a trait: defining common functionality that
  * are shared by different implementations of the NB classifier
+ * @tparam L the class of labels used by the classifiers created
+ * @tparam T the class of value used for the features
  */
 trait NaiveBayesClassifier[L,T] extends Classifier[L,T] {
-  private val one = Probability(1.)
 
   def priorProb(label:L):Probability
 
@@ -21,7 +22,7 @@ trait NaiveBayesClassifier[L,T] extends Classifier[L,T] {
     labels.map(label => {
       val prior = priorProb(label)
       val features = document.allFeatures
-      val featuresProb = (one/:features.map(featureProb(_,label)))(_*_)
+      val featuresProb = features.map(featureProb(_,label)).product
       (label, prior * featuresProb)
     })
 }
@@ -31,8 +32,14 @@ trait NaiveBayesClassifier[L,T] extends Classifier[L,T] {
  * online with new training examples; this is not a mutable structure
  * per se, but can create an updated classifier given a new training
  * example
- * @param labelDocCount the number of documents encoutered for each label L
- * @param labelFeatureCount the frequency of feature T given label L
+ * @param labelDocCountsTransformer CountsTransformer for converting the counts
+ *   of documents associated with each label into a smoothed frequency
+ *   distribution
+ * @param labelFeatureCountsTransformer CondCountsTransformer for converting
+ *   the counts of features wrt the labels into a smoothed frequency
+ *   distribution
+ * @tparam L the class of labels used by the classifiers created
+ * @tparam T the class of value used for the features
  */
 class OnlineNaiveBayesClassifier[L,T](
     val labelDocCountsTransformer:CountsTransformer[L],
@@ -83,17 +90,16 @@ object OnlineNaiveBayesClassifier {
 /**
  * A classifier trainer for an online naive Bayes classifier
  * @param lambda a smoothing parameter for add-lambda smoothing
+ * @tparam L the class of labels used by the classifiers created
+ * @tparam T the class of value used for the features
  */
-class OnlineNaiveBayesClassifierTrainer[L,T](val lambda:Double) 
+case class OnlineNaiveBayesClassifierTrainer[L,T](val lambda:Double) 
 extends ClassifierTrainer[L,T] {
-  def train(labeledDocuments:Iterator[(L,Document[T])]) = {
+  def train(labeledDocuments:TraversableOnce[(L,Document[T])]) = {
     val current = OnlineNaiveBayesClassifier.empty[L,T](lambda)
-    // ld = (label, document)
-    labeledDocuments.foreach(ld => current.update(ld._1, ld._2))
+    labeledDocuments.foreach {
+      case (label, document) => current.update(label, document)
+    }
     current
   }
-}
-
-object OnlineNaiveBayesClassifierTrainer {
-  def apply[L,T](n:Int) = new OnlineNaiveBayesClassifierTrainer[L,T](n)
 }
