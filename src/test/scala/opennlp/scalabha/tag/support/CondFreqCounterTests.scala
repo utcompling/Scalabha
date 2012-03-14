@@ -268,7 +268,7 @@ class CondFreqCounterTests {
     x ++= CondFreqCounts(List('a -> 'A', 'b -> 'A', 'a -> 'B', 'b -> 'B', 'c -> 'B').map(_.swap).groupByKey.mapValuesStrict(_.counts.mapValuesStrict(_.toDouble)))
 
     /* As it happens, the first random values for this test are:
-     * 0 8 9 7 5
+     * 0 8 9 7 5 3
      *
      * without the random weighting, the frequency distribution is:
      *
@@ -285,17 +285,17 @@ class CondFreqCounterTests {
      *
      *   |     A     |     B     |
      * ==+===========+===========+
-     * a | 1 * (5+1) | 1 * (9+1) |
-     * b | 1 * (7+1) | 1 * (8+1) |
-     * c |     0     | 1 * (0+1) |
+     * a | 1 * (3+1) | 1 * (9+1) |
+     * b | 1 * (5+1) | 1 * (0+1) |
+     * c | 0 * (7+1) | 1 * (8+1) |
      * 
      * or
      * 
      *   |  A  |  B  |
      * ==+=====+=====+
      * a |  6  |  10 |
-     * b |  8  |  9  |
-     * c |  0  |  1  |
+     * b |  6  |  1  |
+     * c |  0  |  9  |
      * ==+=====+=====+
      *   |  14 |  20 |
      * 
@@ -307,8 +307,8 @@ class CondFreqCounterTests {
     assertEqualsProb(Probability(0.), d('A')('c))
     assertEqualsProb(Probability(0.), d('A')('z))
     assertEqualsProb(Probability(10. / 20.), d('B')('a))
-    assertEqualsProb(Probability(9. / 20.), d('B')('b))
-    assertEqualsProb(Probability(1. / 20.), d('B')('c))
+    assertEqualsProb(Probability(1. / 20.), d('B')('b))
+    assertEqualsProb(Probability(9. / 20.), d('B')('c))
     assertEqualsProb(Probability(0.), d('B')('z))
   }
 
