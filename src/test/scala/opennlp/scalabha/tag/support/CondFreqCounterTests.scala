@@ -174,7 +174,7 @@ class CondCountsTransformerTests {
           'B' -> DefaultedFreqCounts(Map('a -> 3.), .3, .4)))))
 
     /* As it happens, the first random values for this test are:
-     * 8 9 7 5
+     * 0 8 9 7 5 3
      *
      * without the random weighting, the frequency distribution is:
      *
@@ -189,20 +189,22 @@ class CondCountsTransformerTests {
      * Given the order the frequencies are (re-)calculated, this is randomly
      * adjusted to:
      *
-     *   |   A   |   B   |
-     * ==+=======+=======+
-     * a | 1 + 5 | 2 + 9 |
-     * b | 3 + 7 | 0 + 8 |
+     *   |     A     |     B     |
+     * ==+===========+===========+
+     * a | 1 * (3+1) | 1 * (9+1) |
+     * b | 1 * (5+1) | 1 * (0+1) |
+     * c | 0 * (7+1) | 1 * (8+1) |
      * 
      * or
      * 
-     *   |  A   |  B   |
-     * ==+======+======+
-     * a |  6   |  11  |
-     * b |  10  |  8   |
-     * Z |  .2  |  .4  |
-     * ==+======+======+
-     *   | 16.3 | 19.7 |
+     *   |  A  |  B  |
+     * ==+=====+=====+
+     * a |  6  |  10 |
+     * b |  6  |  1  |
+     * c |  0  |  9  |
+     * ==+=====+=====+
+     *   |  14 |  20 |
+     * 
      */
 
     val counts = new DefaultedCondFreqCounts(Map(
