@@ -156,10 +156,10 @@ class UnsupervisedHmmTaggerTrainerTests {
             new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, lambda = 1.0, "<END>", "<END>"))
             .make(),
         estimatedTransitionCountsTransformer =
-          EisnerSmoothingCondCountsTransformer[String, String](lambda = 1.0, ItemDroppingCountsTransformer("<END>")),
+          AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 1.0),
         estimatedEmissionCountsTransformer =
           StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
-            new EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0),
+            new AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 1.0,
               StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>"))),
         "<END>", "<END>",
         maxIterations = 20,
@@ -203,7 +203,7 @@ class UnsupervisedHmmTaggerTrainerTests {
 object UnsupervisedHmmTaggerTrainerTests {
 
   @BeforeClass def turnOffLogging() {
-    Logger.getRootLogger.setLevel(Level.OFF)
+    Logger.getRootLogger.setLevel(Level.DEBUG)
   }
 
 }

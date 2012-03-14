@@ -31,7 +31,7 @@ class OneCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Ta
   extends UnsupervisedEmissionDistFactory[Tag, Sym] {
 
   override def make(): Tag => Sym => Probability = {
-    val symbolsForTag = (tagDict.flattenOver.map(_.swap).groupByKey - startEndTag).mapValuesStrict(_ - startEndSymbol)
+    val symbolsForTag = (tagDict.flattenOver.map(_.swap).toSet.groupByKey - startEndTag).mapValuesStrict(_ - startEndSymbol)
     val totalNumSymbols = (tagDict.keySet - startEndSymbol).size
     val counts =
       symbolsForTag.mapValuesStrict {
@@ -91,7 +91,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
 
   override def make(): Tag => Sym => Probability = {
     val symbolCounts = (rawData.flatten.counts - startEndSymbol).withDefaultValue(0)
-    val symbolsForTag = (tagDict.flattenOver.map(_.swap).groupByKey - startEndTag).mapValuesStrict(_ - startEndSymbol)
+    val symbolsForTag = (tagDict.flattenOver.map(_.swap).toSet.groupByKey - startEndTag).mapValuesStrict(_ - startEndSymbol)
     val counts =
       symbolsForTag.mapValuesStrict {
         symbols =>

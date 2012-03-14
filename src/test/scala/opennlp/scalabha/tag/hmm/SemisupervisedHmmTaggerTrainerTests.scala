@@ -54,10 +54,10 @@ class SemisupervisedHmmTaggerTrainerTests {
             new EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0),
               StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>"))),
         estimatedTransitionCountsTransformer =
-          EisnerSmoothingCondCountsTransformer[String, String](lambda = 1.0, ItemDroppingCountsTransformer("<END>")),
+          AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 1.0),
         estimatedEmissionCountsTransformer =
           StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
-            new EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0),
+            new AddLambdaSmoothingCondCountsTransformer(lambda = 1.0,
               StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>"))),
         "<END>", "<END>",
         maxIterations = 20,

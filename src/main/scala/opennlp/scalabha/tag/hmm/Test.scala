@@ -27,10 +27,10 @@ object Test {
           initialUnsupervisedEmissionDist =
             unsuperEmissDist.make(),
           estimatedTransitionCountsTransformer =
-            EisnerSmoothingCondCountsTransformer[String, String](lambda = 1.0, ItemDroppingCountsTransformer[String]("<END>")),
+            AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 1.0),
           estimatedEmissionCountsTransformer =
             StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
-              new EisnerSmoothingCondCountsTransformer[String, String](lambda = 1.0, AddLambdaSmoothingCountsTransformer[String](lambda = 1.0),
+              new AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 1.0,
                 StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>"))),
           "<END>", "<END>",
           maxIterations = 20,

@@ -62,8 +62,10 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
       LOG.debug("    initialUnsupervisedEmissionDist")
       for (t <- List("NN", "N", "DT", "D").map(_.asInstanceOf[Tag]))
         for (w <- List("the", "company", "zzzzzzz").map(_.asInstanceOf[Sym]))
-          if (initialUnsupervisedEmissionDist(t)(w) != Probability.zero)
+          try {
             LOG.debug("        p(%s|%s) = %.2f (%.2f)".format(w, t, initialUnsupervisedEmissionDist(t)(w).toDouble, initialUnsupervisedEmissionDist(t)(w).underlying))
+          }
+          catch { case e: NoSuchElementException => }
     }
 
     // Do not assume any known counts -- use only EM-estimated counts

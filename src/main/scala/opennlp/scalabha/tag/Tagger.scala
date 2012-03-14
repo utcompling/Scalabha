@@ -15,7 +15,7 @@ trait Tagger[Sym, Tag] {
    * @return				sequences tagged by the model
    */
   def tag(rawSequences: Iterable[IndexedSeq[Sym]]): Iterable[IndexedSeq[(Sym, Tag)]] =
-    (rawSequences zip rawSequences.map(tagSequence)).map(_.zip)
+    (rawSequences zip rawSequences.map(tagSequence)).map(_.zipped.toIndexedSeq)
 
   /**
    * Tag the sequence using this model.  Uses the Viterbi algorithm.
