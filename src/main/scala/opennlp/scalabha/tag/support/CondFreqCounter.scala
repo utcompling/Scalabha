@@ -79,19 +79,23 @@ case class PassthroughCondCountsTransformer[A, B]() extends CondCountsTransforme
  */
 case class ConstrainingCondCountsTransformer[A, B](validEntries: Map[A, Set[B]], delegate: CondCountsTransformer[A, B]) extends CondCountsTransformer[A, B] {
   override def apply(counts: DefaultedCondFreqCounts[A, B, Double]) = {
-    val zeroCounts = DefaultedCondFreqCounts(validEntries.mapValuesStrict(_ => Map[B, Double]())) // a count for every A in validEntries
+    val resultCounts = delegate(counts)
+    val zeroCountAs = DefaultedCondFreqCounts(validEntries.mapValuesStrict(_ => Map[B, Double]())) // a count for every A in validEntries
+    //val allCountAs = resultCounts ++ zeroCountAs
+    val allBs = (validEntries.values.flatten ++ resultCounts.counts.values.flatMap(_.counts.keySet)).toSet
+    val zeroCountBs = FreqCounts(allBs.map(_ -> 0.).toMap)
     DefaultedCondFreqCounts(
-      (delegate(counts) ++ zeroCounts).counts.map {
+      delegate(counts).counts.map {
         case (a, DefaultedFreqCounts(aCounts, aTotalAddition, aDefaultCount)) =>
           validEntries.get(a) match {
             case Some(validBs) =>
-              val filtered = FreqCounts(aCounts.filterKeys(validBs))
+              val filtered = FreqCounts(aCounts.filterKeys(validBs)) ++ zeroCountBs
               val defaults = FreqCounts((validBs -- aCounts.keySet).mapTo(b => aDefaultCount).toMap)
-              a -> (filtered ++ defaults).toMap
+              a -> (filtered ++ defaults ++ zeroCountBs).toMap
             case None =>
               a -> Map[B, Double]()
           }
-      })
+      }) ++ zeroCountAs
   }
 }
 
@@ -125,12 +129,12 @@ case class AddLambdaSmoothingCondCountsTransformer[A, B](lambda: Double, delegat
     val resultCounts = delegate(counts).counts
 
     val allBs = resultCounts.flatMap(_._2.counts.keySet).toSet // collect all Bs across all As
-    val allZeroCounts = FreqCounts(allBs.mapTo(_ => 0.).toMap) // map every B to a 0 count
 
     new DefaultedCondFreqCounts(
       resultCounts.mapValuesStrict {
         case DefaultedFreqCounts(c, t, d) =>
-          DefaultedFreqCounts((FreqCounts(c) ++ allZeroCounts).toMap.mapValuesStrict(_ + lambda), t + lambda, d + lambda)
+          val defaultCounts = FreqCounts((allBs -- c.keySet).mapTo(_ => d).toMap)
+          DefaultedFreqCounts((FreqCounts(c) ++ defaultCounts).toMap.mapValuesStrict(_ + lambda), t + lambda, d + lambda)
       })
   }
 }
@@ -217,18 +221,23 @@ object EisnerSmoothingCondCountsTransformer {
 //////////////////////////////////////
 
 /**
- * This counter multiplies each count received from its delegate by a
- * (possibly different) random number between 1 and maxCount.
+ * This transformer adds a (possibly different) random number
+ * between 1 and maxCount to each count returned by the delegate.
  */
 case class RandomCondCountsTransformer[A, B](maxCount: Int, delegate: CondCountsTransformer[A, B]) extends CondCountsTransformer[A, B] {
   private val rand = new Random(0) // static seed ensures results are reproducible
 
   override def apply(counts: DefaultedCondFreqCounts[A, B, Double]) = {
+    val resultCounts = delegate(counts).counts
+
+    val allBs = resultCounts.flatMap(_._2.counts.keySet).toSet // collect all Bs across all As
+
     new DefaultedCondFreqCounts(
-      delegate(counts).counts.mapValuesStrict {
-        case DefaultedFreqCounts(aCounts, aTotalAdd, aDefault) =>
-          val scaled = aCounts.mapValuesStrict(_ + rand.nextInt(maxCount))
-          DefaultedFreqCounts(scaled, aTotalAdd, aDefault)
+      resultCounts.mapValuesStrict {
+        case DefaultedFreqCounts(c, t, d) =>
+          val defaultCounts = FreqCounts((allBs -- c.keySet).mapTo(_ => d).toMap)
+          val scaled = (FreqCounts(c) ++ defaultCounts).toMap.mapValuesStrict(_ + rand.nextInt(maxCount + 1))
+          DefaultedFreqCounts(scaled, t, d)
       })
   }
 }
