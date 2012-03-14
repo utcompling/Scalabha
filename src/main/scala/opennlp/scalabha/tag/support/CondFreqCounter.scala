@@ -165,31 +165,38 @@ class EisnerSmoothingCondCountsTransformer[A, B](lambda: Double, backoffCountsTr
   override def apply(counts: DefaultedCondFreqCounts[A, B, Double]) = {
     val resultCounts = delegate(counts).counts
 
-    val numSingleCountItems = resultCounts.mapValuesStrict(_.counts.count(_._2 < 2.0))
-
     // Compute backoff: probability of B regardless of A
     val totalBackoffCounts = resultCounts.values.flatMap(c => c.simpleCounts).groupByKey.mapValuesStrict(_.sum)
     val transformedBackoffCounts = backoffCountsTransformer(totalBackoffCounts)
     val DefaultedFreqCounts(backoffCounts, backoffTotalAddition, backoffDefaultCount) = transformedBackoffCounts
     val backoffTotal = backoffCounts.values.sum + backoffTotalAddition
     val backoffDist = backoffCounts.mapValuesStrict(_ / backoffTotal)
+    val backoffDefault = backoffDefaultCount / backoffTotal
+
+    val allBs = resultCounts.flatMap(_._2.counts.keySet).toSet // collect all Bs across all As
 
     new DefaultedCondFreqCounts(
       resultCounts.map {
         case (a, DefaultedFreqCounts(aCounts, aTotalAdd, aDefault)) =>
-          val smoothedLambda = lambda * (1e-100 + numSingleCountItems.getOrElse(a, 0))
+          // Replace any missing counts with the default
+          val defaultCounts = FreqCounts((allBs -- aCounts.keySet).mapTo(_ => aDefault).toMap)
+          val countsWithDefaults = (FreqCounts(aCounts) ++ defaultCounts).toMap
+          
+          val numSingleCountItems = countsWithDefaults.count(_._2 < 2.0)
+          val smoothedLambda = lambda * (1e-100 + numSingleCountItems)
           val smoothedBackoff = FreqCounts(backoffDist.mapValuesStrict(_ * smoothedLambda))
-          val smoothedCounts = smoothedBackoff ++ FreqCounts(aCounts)
-          val totalAddition = 1.0
-          val defaultCount = smoothedLambda / backoffTotal
+          val smoothedBackoffDefault = backoffDefault * smoothedLambda
+          val smoothedCounts = FreqCounts(countsWithDefaults) ++ smoothedBackoff
+          val smoothedDefaultCount = aDefault + smoothedBackoffDefault
+          val smoothedTotalAddition = aTotalAdd + smoothedBackoffDefault
 
           if (LOG.isDebugEnabled && Set("NN", "DT", "N", "D").contains(a.asInstanceOf[String])) {
             LOG.debug(a + ":")
-            LOG.debug("    aCounts = " + aCounts.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
+            LOG.debug("    aCounts = " + countsWithDefaults.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
             LOG.debug("    smoothedLambda = " + smoothedLambda)
             LOG.debug("    smoothedBackoff = " + smoothedBackoff.toMap.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
             LOG.debug("    smoothedCounts  = " + smoothedCounts.toMap.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
-            LOG.debug("    defaultCount = " + defaultCount)
+            LOG.debug("    smoothedDefaultCount = " + smoothedDefaultCount)
 
             LOG.debug("")
 
@@ -198,15 +205,15 @@ class EisnerSmoothingCondCountsTransformer[A, B](lambda: Double, backoffCountsTr
                 LOG.debug("    c(%s,%s) + sing(%s) * p_back(%s) = %.2f + %.2f * %.2f = %.2f"
                   .format(
                     a, w, a, w,
-                    aCounts.getOrElse(w, 0.), smoothedLambda, backoffDist(w),
+                    countsWithDefaults.getOrElse(w, 0.), smoothedLambda, backoffDist(w),
                     smoothedCounts.toMap(w)))
               }
-              LOG.debug("    defaultCount = " + defaultCount)
+              LOG.debug("    smoothedDefaultCount = " + smoothedDefaultCount)
               LOG.debug("")
             }
           }
 
-          (a, DefaultedFreqCounts(smoothedCounts.toMap, aTotalAdd + totalAddition, aDefault + defaultCount))
+          (a, DefaultedFreqCounts(smoothedCounts.toMap, smoothedTotalAddition, smoothedDefaultCount))
       })
   }
 }
