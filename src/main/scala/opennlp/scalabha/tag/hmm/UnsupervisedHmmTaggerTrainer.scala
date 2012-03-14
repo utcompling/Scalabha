@@ -8,6 +8,7 @@ import opennlp.scalabha.util.Probability._
 import opennlp.scalabha.util.Pattern
 import opennlp.scalabha.util.Pattern.{ -> }
 import opennlp.scalabha.util.Probability
+import scala.collection.GenIterable
 
 /**
  * Factory for training a Hidden Markov Model tagger from a combination of
@@ -18,17 +19,17 @@ import opennlp.scalabha.util.Probability
  * @tparam Tag	tags applied to symbols
  *
  * @param initialUnsupervisedEmissionDist
- * @param estimatedTransitionCounterFactory		factory for generating builders that count tag occurrences and compute distributions during EM
- * @param estimatedEmissionCounterFactory		factory for generating builders that count symbol occurrences and compute distributions during EM
- * @param startEndSymbol						a unique start/end symbol used internally to mark the beginning and end of a sentence
- * @param startEndTag							a unique start/end tag used internally to mark the beginning and end of a sentence
- * @param maxIterations							maximum number of iterations to be run during EM
- * @param minAvgLogProbChangeForEM				stop iterating EM if change in average log probability is less than this threshold
+ * @param estimatedTransitionCountsTransformer		factory for generating builders that count tag occurrences and compute distributions during EM
+ * @param estimatedEmissionCountsTransformer		factory for generating builders that count symbol occurrences and compute distributions during EM
+ * @param startEndSymbol							a unique start/end symbol used internally to mark the beginning and end of a sentence
+ * @param startEndTag								a unique start/end tag used internally to mark the beginning and end of a sentence
+ * @param maxIterations								maximum number of iterations to be run during EM
+ * @param minAvgLogProbChangeForEM					stop iterating EM if change in average log probability is less than this threshold
  */
 class UnsupervisedHmmTaggerTrainer[Sym, Tag](
   initialUnsupervisedEmissionDist: Tag => Sym => Probability,
-  override protected val estimatedTransitionCounterFactory: CondFreqCounterFactory[Tag, Tag],
-  override protected val estimatedEmissionCounterFactory: CondFreqCounterFactory[Tag, Sym],
+  override protected val estimatedTransitionCountsTransformer: CondCountsTransformer[Tag, Tag],
+  override protected val estimatedEmissionCountsTransformer: CondCountsTransformer[Tag, Sym],
   override protected val startEndSymbol: Sym,
   override protected val startEndTag: Tag,
   override protected val maxIterations: Int = 50,
@@ -54,7 +55,7 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
     // Create the initial distributions
     val allTags = tagDictWithEnds.values.flatten.toSet
     LOG.debug("make initialTransitions")
-    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(CondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.0).toMap).toMap)))
+    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.0).toMap).toMap))
     val initialEmissions = initialUnsupervisedEmissionDist
 
     if (LOG.isDebugEnabled) {
@@ -90,25 +91,25 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
  * @tparam Sym	visible symbols in the sequences
  * @tparam Tag	tags applied to symbols
  *
- * @param initialTransitionCounterFactory		factory for generating builders that count tag occurrences and compute distributions for input to EM
- * @param initialEmissionCounterFactory			factory for generating builders that count symbol occurrences and compute distributions for input to EM
- * @param estimatedTransitionCounterFactory		factory for generating builders that count tag occurrences and compute distributions during EM
- * @param estimatedEmissionCounterFactory		factory for generating builders that count symbol occurrences and compute distributions during EM
+ * @param initialTransitionCountsTransformer		factory for generating builders that count tag occurrences and compute distributions for input to EM
+ * @param initialEmissionCountsTransformer			factory for generating builders that count symbol occurrences and compute distributions for input to EM
+ * @param estimatedTransitionCountsTransformer		factory for generating builders that count tag occurrences and compute distributions during EM
+ * @param estimatedEmissionCountsTransformer		factory for generating builders that count symbol occurrences and compute distributions during EM
  * @param startEndSymbol						a unique start/end symbol used internally to mark the beginning and end of a sentence
  * @param startEndTag							a unique start/end tag used internally to mark the beginning and end of a sentence
  * @param maxIterations							maximum number of iterations to be run during EM
  * @param minAvgLogProbChangeForEM				stop iterating EM if change in average log probability is less than this threshold
  */
 class SemisupervisedHmmTaggerTrainer[Sym, Tag](
-  initialTransitionCounterFactory: CondFreqCounterFactory[Tag, Tag],
-  initialEmissionCounterFactory: CondFreqCounterFactory[Tag, Sym],
-  override protected val estimatedTransitionCounterFactory: CondFreqCounterFactory[Tag, Tag],
-  override protected val estimatedEmissionCounterFactory: CondFreqCounterFactory[Tag, Sym],
+  initialTransitionCountsTransformer: CondCountsTransformer[Tag, Tag],
+  initialEmissionCountsTransformer: CondCountsTransformer[Tag, Sym],
+  override protected val estimatedTransitionCountsTransformer: CondCountsTransformer[Tag, Tag],
+  override protected val estimatedEmissionCountsTransformer: CondCountsTransformer[Tag, Sym],
   override protected val startEndSymbol: Sym,
   override protected val startEndTag: Tag,
   override protected val maxIterations: Int = 50,
   override protected val minAvgLogProbChangeForEM: Double = 0.00001)
-  extends SupervisedHmmTaggerTrainer[Sym, Tag](initialTransitionCounterFactory, initialEmissionCounterFactory, startEndSymbol, startEndTag)
+  extends SupervisedHmmTaggerTrainer[Sym, Tag](initialTransitionCountsTransformer, initialEmissionCountsTransformer, startEndSymbol, startEndTag)
   with AbstractEmHmmTaggerTrainer[Sym, Tag]
   with SemisupervisedTaggerTrainer[Sym, Tag] {
 
@@ -134,14 +135,14 @@ class SemisupervisedHmmTaggerTrainer[Sym, Tag](
     val tagDictWithEnds = tagDict + (startEndSymbol -> Set(startEndTag))
 
     // Create the initial distributions
-    val initialTransitions = initialTransitionCounterFactory.get(initialTransitionCounts).toFreqDist
-    val initialEmissions = initialEmissionCounterFactory.get(initialEmissionCounts).toFreqDist
+    val initialTransitions = CondFreqDist(initialTransitionCountsTransformer(initialTransitionCounts))
+    val initialEmissions = CondFreqDist(initialEmissionCountsTransformer(initialEmissionCounts))
 
     // Re-estimate probability distributions using EM
     val (transitions, emissions) =
       reestimateProbabilityDistributions(
         tagDictWithEnds, rawTrainSequences,
-        initialTransitionCounts.toDouble, initialEmissionCounts.toDouble,
+        CondFreqCounts(initialTransitionCounts).toDouble, CondFreqCounts(initialEmissionCounts).toDouble,
         initialTransitions, initialEmissions)
 
     // Construct the HMM tagger from the estimated probabilities
@@ -158,16 +159,16 @@ class SemisupervisedHmmTaggerTrainer[Sym, Tag](
  * @tparam Sym	visible symbols in the sequences
  * @tparam Tag	tags applied to symbols
  *
- * @param estimatedTransitionCounterFactory		factory for generating builders that count tag occurrences and compute distributions during EM
- * @param estimatedEmissionCounterFactory		factory for generating builders that count symbol occurrences and compute distributions during EM
+ * @param estimatedTransitionCountsTransformer		factory for generating builders that count tag occurrences and compute distributions during EM
+ * @param estimatedEmissionCountsTransformer		factory for generating builders that count symbol occurrences and compute distributions during EM
  * @param startEndSymbol						a unique start/end symbol used internally to mark the beginning and end of a sentence
  * @param startEndTag							a unique start/end tag used internally to mark the beginning and end of a sentence
  * @param maxIterations							maximum number of iterations to be run during EM
  * @param minAvgLogProbChangeForEM				stop iterating EM if change in average log probability is less than this threshold
  */
 trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
-  protected val estimatedTransitionCounterFactory: CondFreqCounterFactory[Tag, Tag]
-  protected val estimatedEmissionCounterFactory: CondFreqCounterFactory[Tag, Sym]
+  protected val estimatedTransitionCountsTransformer: CondCountsTransformer[Tag, Tag]
+  protected val estimatedEmissionCountsTransformer: CondCountsTransformer[Tag, Sym]
   protected val startEndSymbol: Sym
   protected val startEndTag: Tag
   protected val maxIterations: Int = 50
@@ -226,14 +227,14 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
       //          probability of various possible state sequences for 
       //          generating the training data
 
-      val (expectedTransitionCounter, expectedEmmissionCounter, avgLogProb) =
+      val (expectedTransitionCounts, expectedEmmissionCounts, avgLogProb) =
         estimateCounts(rawTrainSequences, tagDict, transitions, emissions, initialTransitionCounts, initialEmissionCounts)
 
       // M Step: Use these probability estimates to re-estimate the 
       //         probability distributions
 
-      transitions = expectedTransitionCounter.toFreqDist
-      emissions = expectedEmmissionCounter.toFreqDist
+      transitions = CondFreqDist(estimatedTransitionCountsTransformer(expectedTransitionCounts))
+      emissions = CondFreqDist(estimatedEmissionCountsTransformer(expectedEmmissionCounts))
 
       // compute new iteration information
       averageLogProb = avgLogProb
@@ -256,6 +257,8 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
   /**
    * Estimate transition and emission counts for each sequence in
    * rawTrainSequences using the forward/backward procedure.
+   *
+   * TODO: This method should be rewritten as a MapReduce job.
    */
   protected def estimateCounts(
     rawTrainSequences: Iterable[IndexedSeq[Sym]],
@@ -265,35 +268,18 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     initialTransitionCounts: CondFreqCounts[Tag, Tag, Double],
     initialEmissionCounts: CondFreqCounts[Tag, Sym, Double]) = {
 
-    // iterate over all raw training sequences, estimating counts for each
-    val estimatedCounts = estimatedCountsBySequence(rawTrainSequences, transitions, emissions, tagDict)
+    val (expectedTransitionCounts, expectedEmissionCounts, totalSeqProb, numSequences) =
+      rawTrainSequences.par
+        .map(sequence => estimateCountsForSequence(sequence, transitions, emissions, tagDict))
+        .map {
+          case (estTrCounts, estEmCounts, seqProb) => (estTrCounts, estEmCounts, seqProb.underlying, 1) // number of sentences == 1
+        }
+        .fold((CondFreqCounts[Tag, Tag, Double](), CondFreqCounts[Tag, Sym, Double](), 0., 0)) {
+          case ((aTC, aEC, aP, aN), (bTC, bEC, bP, bN)) =>
+            (aTC ++ bTC, aEC ++ bEC, aP + bP, aN + bN) // sum up all the components
+        }
 
-    // Create counters for accumulating the counts that we estimate for each sequence 
-    val expectedTransitionCounter = estimatedTransitionCounterFactory.get ++= initialTransitionCounts
-    val expectedEmmissionCounter = estimatedEmissionCounterFactory.get ++= initialEmissionCounts
-
-    val (totalSeqProb, numSequences) =
-      estimatedCounts.foldLeft((0.0), 0) {
-        case ((accumSeqProb, numSequences), (expTransitionCounts, expEmissionCounts, seqProb)) =>
-          // update accumulators to keep track of totals across all sequences
-          expectedTransitionCounter ++= expTransitionCounts
-          expectedEmmissionCounter ++= expEmissionCounts
-          (accumSeqProb + seqProb.underlying, numSequences + 1)
-      }
-
-    (expectedTransitionCounter, expectedEmmissionCounter, totalSeqProb / numSequences)
-  }
-
-  protected def estimatedCountsBySequence(
-    rawTrainSequences: Iterable[IndexedSeq[Sym]],
-    transitions: Tag => Tag => Probability,
-    emissions: Tag => Sym => Probability,
-    tagDict: Map[Sym, Set[Tag]]) = {
-
-    rawTrainSequences.par.map { sequence =>
-      // estimate counts for this sequence based on current parameters (transmission/emission probability distributions)
-      estimateCountsForSequence(sequence, transitions, emissions, tagDict)
-    }.seq
+    (expectedTransitionCounts.toMap, expectedEmissionCounts.toMap, totalSeqProb / numSequences)
   }
 
   /**

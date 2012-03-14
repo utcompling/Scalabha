@@ -3,6 +3,7 @@ package opennlp.scalabha.classify.nb
 import scala.collection.mutable
 import opennlp.scalabha.classify._
 import opennlp.scalabha.util._
+import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.tag.support._
 
 /**
@@ -34,19 +35,25 @@ trait NaiveBayesClassifier[L,T] extends Classifier[L,T] {
  * @param labelFeatureCount the frequency of feature T given label L
  */
 class OnlineNaiveBayesClassifier[L,T](
-    val labelDocCounter:FreqCounter[L],
-    val labelFeatureCounter:CondFreqCounter[L,T],
+    val labelDocCountsTransformer:CountsTransformer[L],
+    val labelFeatureCountsTransformer:CondCountsTransformer[L,T],
     val labels:mutable.Set[L])
 extends NaiveBayesClassifier[L,T] {
+  
+  val labelDocCounter = mutable.Map[L, Int]().withDefaultValue(0)
+  val labelFeatureCounter = mutable.Map[L, mutable.Map[T, Int]]()
 
-  override def priorProb(label:L) = labelDocCounter.toFreqDist()(label)
+  override def priorProb(label:L) = FreqDist(labelDocCountsTransformer(labelDocCounter))(label)
 
   override def featureProb(feature:T, label:L) =
-    (labelFeatureCounter.toFreqDist)(label)(feature)
+    CondFreqDist(labelFeatureCountsTransformer(labelFeatureCounter))(label)(feature)
 
   def update(label:L, document:Document[T]) = {
-    labelDocCounter.increment(label, 1)
-    document.allFeatures.foreach(labelFeatureCounter.increment(label, _, 1))
+    labelDocCounter(label) += 1
+    document.allFeatures.counts.foreach{
+      case (feature, count) => 
+        labelFeatureCounter.getOrElseUpdate(label, mutable.Map[T, Int]().withDefaultValue(0))(feature) += count
+    }
     labels += label
   }
 }
@@ -62,13 +69,12 @@ object OnlineNaiveBayesClassifier {
    * @param lambda smoothing parameter for add-lambda smoothing
    */
   def empty[L,T](lambda:Double) = {
-    val docCounter = new SimpleFreqCounter[L]
+    val docCounter = PassthroughCountsTransformer[L]()
     val featureCounter =
       if (lambda == 0)
-        new SimpleCondFreqCounter[L,T]()
+        PassthroughCondCountsTransformer[L,T]()
       else
-        new AddLambdaSmoothingCondFreqCounter(lambda,
-                                              new SimpleCondFreqCounter[L,T])
+        AddLambdaSmoothingCondCountsTransformer[L,T](lambda)
     val labels = mutable.Set.empty[L]
     new OnlineNaiveBayesClassifier(docCounter, featureCounter, labels)
   }

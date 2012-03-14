@@ -39,7 +39,7 @@ class OneCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Ta
           val numInvalidSymbols = totalNumSymbols - symbols.size
           DefaultedFreqCounts(symbols.mapTo(s => countForSym(s) * numInvalidSymbols).toMap, lambda * numInvalidSymbols, lambda)
       } + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 2 * lambda), 0.0, 0.0))
-    CondFreqDist(DefaultedCondFreqCounts(counts))
+    CondFreqDist(new DefaultedCondFreqCounts(counts))
   }
 
   protected def countForSym(sym: Sym): Double = {
@@ -97,7 +97,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
         symbols =>
           DefaultedFreqCounts(symbols.mapTo(s => (symbolCounts(s) + lambda) / tagDict(s).size.toDouble).toMap, lambda, lambda)
       } + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 2 * lambda), 0.0, 0.0))
-    CondFreqDist(DefaultedCondFreqCounts(counts))
+    CondFreqDist(new DefaultedCondFreqCounts(counts))
   }
 }
 

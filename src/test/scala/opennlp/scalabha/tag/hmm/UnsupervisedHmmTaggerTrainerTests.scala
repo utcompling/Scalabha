@@ -31,10 +31,8 @@ class UnsupervisedHmmTaggerTrainerTests {
       new UnsupervisedHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
           new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainLab.map(_.map(_._1)), lambda = 1.0, "<END>", "<END>").make(),
-        estimatedTransitionCounterFactory =
-          new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter() },
-        estimatedEmissionCounterFactory =
-          new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter() },
+        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
+        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -64,10 +62,8 @@ class UnsupervisedHmmTaggerTrainerTests {
       new UnsupervisedHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
           new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainLab.map(_.map(_._1)), lambda = 1.0, "<END>", "<END>").make(),
-        estimatedTransitionCounterFactory =
-          new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter() },
-        estimatedEmissionCounterFactory =
-          new CondFreqCounterFactory[String, String] { def get() = new SimpleCondFreqCounter() },
+        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
+        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -159,20 +155,12 @@ class UnsupervisedHmmTaggerTrainerTests {
           new DefaultHackingUnsupervisedEmissionDistFactory(tagDict, "<END>", "<END>",
             new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, lambda = 1.0, "<END>", "<END>"))
             .make(),
-        estimatedTransitionCounterFactory = new CondFreqCounterFactory[String, String] {
-          def get() =
-            new EisnerSmoothingCondFreqCounter[String, String](lambda = 1.0,
-              new FreqCounterFactory[String] { def get() = new ItemDroppingFreqCounter("<END>", new SimpleFreqCounter[String]()) },
-              new SimpleCondFreqCounter())
-        },
-        estimatedEmissionCounterFactory = new CondFreqCounterFactory[String, String] {
-          def get() =
-            new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
-              new EisnerSmoothingCondFreqCounter(lambda = 1.0,
-                new FreqCounterFactory[String] { def get() = new AddLambdaSmoothingFreqCounter(lambda = 1.0, new SimpleFreqCounter()) },
-                new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
-                  new SimpleCondFreqCounter())))
-        },
+        estimatedTransitionCountsTransformer =
+          EisnerSmoothingCondCountsTransformer[String, String](lambda = 1.0, ItemDroppingCountsTransformer("<END>")),
+        estimatedEmissionCountsTransformer =
+          StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
+            new EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0),
+              StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>"))),
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)

@@ -23,24 +23,6 @@ object FreqDist {
   def static(v: Probability) = (_: Any) => v
 
   /**
-   * Construct a frequency distribution from the counter result.  Calls
-   * FreqCounter.resultCounts and calculates the distribution by dividing
-   * each count by the total count.  P(B) = C(B) / Sum[C(x) for all x].
-   *
-   * The "totalAddition" portion is added to the total count before
-   * dividing.  The "defaultCount" is used as the count for "unseen" items,
-   * those items not included in the counts.
-   *
-   * Note that if the total (after additions) is zero, the distribution
-   * returned is simply the empty distribution.
-   *
-   * @tparam B	the item being counted
-   */
-  def apply[B](counter: FreqCounter[B]): B => Probability = {
-    apply(counter.resultCounts)
-  }
-
-  /**
    * Construct a frequency distribution from the counter result.  Calculates
    * the distribution by dividing each count by the total count.
    * P(B) = C(B) / Sum[C(x) for all x].
@@ -84,28 +66,6 @@ object CondFreqDist {
    * everything to the same probability.  P(B|A) = v for all A,B.
    */
   def static(v: Probability) = (_: Any) => (_: Any) => v
-
-  /**
-   * Construct a frequency distribution from the counter result.  Calls
-   * CondFreqCounter.resultCounts and calculates the distribution for each
-   * entry by dividing each count by the total count for that entry.
-   * P(B|A) = For each A: C(B|A) / Sum[C(x|A) for all x].
-   *
-   * The "totalAddition" portions at each level are added to the total
-   * counts before dividing.  The "defaultCount" at each level are used as
-   * the count for "unseen" items, those items not included in the counts.
-   *
-   * Note that if the total for a given 'A' (after additions) is zero, then
-   * that 'A' will map to the empty distribution.  If the grand total
-   * (including additions from the top level and all 'A' entries) is zero,
-   * then the empty conditional distribution is returned.
-   *
-   * @tparam A	the conditioning item being counted; P(B|A).
-   * @tparam B	the conditioned item being counted; P(B|A).
-   */
-  def apply[A, B](counter: CondFreqCounter[A, B]): A => B => Probability = {
-    apply(counter.resultCounts)
-  }
 
   /**
    * Construct a frequency distribution from the counter result. Calculates

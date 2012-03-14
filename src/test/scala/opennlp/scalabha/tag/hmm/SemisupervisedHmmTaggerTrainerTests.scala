@@ -47,34 +47,18 @@ class SemisupervisedHmmTaggerTrainerTests {
 
     val trainer: SemisupervisedTaggerTrainer[String, String] =
       new SemisupervisedHmmTaggerTrainer(
-        initialTransitionCounterFactory = new CondFreqCounterFactory[String, String] {
-          def get() =
-            new EisnerSmoothingCondFreqCounter[String, String](lambda = 1.0,
-              new FreqCounterFactory[String] { def get() = new ItemDroppingFreqCounter("<END>", new SimpleFreqCounter[String]()) },
-              new SimpleCondFreqCounter())
-        },
-        initialEmissionCounterFactory = new CondFreqCounterFactory[String, String] {
-          def get() =
-            new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
-              new EisnerSmoothingCondFreqCounter(lambda = 1.0,
-                new FreqCounterFactory[String] { def get() = new AddLambdaSmoothingFreqCounter(lambda = 1.0, new SimpleFreqCounter()) },
-                new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
-                  new SimpleCondFreqCounter())))
-        },
-        estimatedTransitionCounterFactory = new CondFreqCounterFactory[String, String] {
-          def get() =
-            new EisnerSmoothingCondFreqCounter[String, String](lambda = 1.0,
-              new FreqCounterFactory[String] { def get() = new ItemDroppingFreqCounter("<END>", new SimpleFreqCounter[String]()) },
-              new SimpleCondFreqCounter())
-        },
-        estimatedEmissionCounterFactory = new CondFreqCounterFactory[String, String] {
-          def get() =
-            new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
-              new EisnerSmoothingCondFreqCounter(lambda = 1.0,
-                new FreqCounterFactory[String] { def get() = new AddLambdaSmoothingFreqCounter(lambda = 1.0, new SimpleFreqCounter()) },
-                new StartEndFixingEmissionFreqCounter[String, String]("<END>", "<END>",
-                  new SimpleCondFreqCounter())))
-        },
+        initialTransitionCountsTransformer =
+          EisnerSmoothingCondCountsTransformer[String, String](lambda = 1.0, ItemDroppingCountsTransformer("<END>")),
+        initialEmissionCountsTransformer =
+          StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
+            new EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0),
+              StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>"))),
+        estimatedTransitionCountsTransformer =
+          EisnerSmoothingCondCountsTransformer[String, String](lambda = 1.0, ItemDroppingCountsTransformer("<END>")),
+        estimatedEmissionCountsTransformer =
+          StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
+            new EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0),
+              StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>"))),
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)

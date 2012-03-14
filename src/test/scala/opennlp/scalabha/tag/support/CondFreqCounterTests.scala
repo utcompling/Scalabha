@@ -4,82 +4,92 @@ import org.junit.Assert._
 import org.junit._
 import opennlp.scalabha.util.Probability
 import opennlp.scalabha.util.Probability._
+import opennlp.scalabha.util.Pattern.{ -> }
 import opennlp.scalabha.util.CollectionUtils._
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
 
-class CondFreqCounterTests {
+class CondCountsTransformerTests {
 
   @Test
-  def test_SimpleCondFreqCounter() {
-    val x = new SimpleCondFreqCounter[Char, Symbol]()
-    x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0), 'B' -> Map('a -> 4.0)))
-    x ++= CondFreqCounts(Map('A' -> Map('b -> 2.0), 'B' -> Map('a -> 1.0, 'b -> 3.0), 'C' -> Map('a -> 2.0)))
-    val d = x.toFreqDist
+  def test_PassthroughCondCountsTransformer_DefaultCounts_double() {
+    val transformer = new PassthroughCondCountsTransformer[Char, Symbol]()
 
-    assertEqualsProb(Probability(0.200), d('A')('a))
-    assertEqualsProb(Probability(0.800), d('A')('b))
-    assertEqualsProb(Probability(0.000), d('A')('z))
-    assertEqualsProb(Probability(0.625), d('B')('a))
-    assertEqualsProb(Probability(0.375), d('B')('b))
-    assertEqualsProb(Probability(0.000), d('B')('z))
-    assertEqualsProb(Probability(1.000), d('C')('a))
-    assertEqualsProb(Probability(0.000), d('C')('b))
-    assertEqualsProb(Probability(0.000), d('C')('z))
+    val counts = Map(
+      'A' -> Map('a -> 1., 'b -> 4.),
+      'B' -> Map('a -> 1., 'b -> 3.),
+      'C' -> Map('a -> 2.))
+
+    val r = transformer(counts)
+    // TODO: assert counts 
+
+    val d = CondFreqDist(r)
+    assertEqualsProb(Probability(1. / 5.), d('A')('a))
+    assertEqualsProb(Probability(4. / 5.), d('A')('b))
+    assertEqualsProb(Probability.zero, d('A')('z))
+    assertEqualsProb(Probability(5. / 8.), d('B')('a))
+    assertEqualsProb(Probability(3. / 8.), d('B')('b))
+    assertEqualsProb(Probability.zero, d('B')('z))
+    assertEqualsProb(Probability.one, d('C')('a))
+    assertEqualsProb(Probability.zero, d('C')('b))
+    assertEqualsProb(Probability.zero, d('C')('z))
   }
 
   @Test
-  def test_ConstrainingCondFreqCounter() {
-    val constr = Map('A' -> Set('a, 'b, 'd), 'B' -> Set('a, 'b), 'D' -> Set('d))
-    val totalAddition = 2.0
-    val defaultCount = 3.0
-    val x = new ConstrainingCondFreqCounter[Char, Symbol](constr,
-      new CondFreqCounter[Char, Symbol] {
-        val delegate = new SimpleCondFreqCounter[Char, Symbol]
-        override def increment(a: Char, b: Symbol, n: Double) { delegate.increment(a, b, n) }
-        override def resultCounts() =
-          DefaultedCondFreqCounts(delegate.resultCounts.counts.map {
-            case ('A', DefaultedFreqCounts(x, _, _)) => ('A', DefaultedFreqCounts(x, 2.0, 3.0))
-            case ('B', DefaultedFreqCounts(x, _, _)) => ('B', DefaultedFreqCounts(x, 1.5, 2.5))
-            case ('C', DefaultedFreqCounts(x, _, _)) => ('C', DefaultedFreqCounts(x, 2.5, 3.5))
-          })
-      })
-    x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 6.0), 'B' -> Map('a -> 4.0)))
-    x ++= CondFreqCounts(Map('A' -> Map('b -> 2.0, 'c -> 1.0), 'B' -> Map('a -> 1.0, 'b -> 3.0), 'C' -> Map('a -> 2.0)))
-    val d = x.toFreqDist
+  def test_ConstrainingCondCountsTransformer_DefaultCounts_double() {
+    val transformer = new ConstrainingCondCountsTransformer[Char, Symbol](
+      validEntries = Map('A' -> Set('a, 'b, 'd), 'B' -> Set('a, 'b), 'D' -> Set('d)),
+      delegate = MockCondCountsTransformer(
+        new DefaultedCondFreqCounts(Map(
+          'A' -> DefaultedFreqCounts(Map('a -> 27.), 21., 22.),
+          'C' -> DefaultedFreqCounts(Map('b -> 29.), 25., 26.))),
+        new DefaultedCondFreqCounts(Map(
+          'A' -> DefaultedFreqCounts(Map('a -> 1., 'b -> 4., 'c -> 7.), 2., 3.),
+          'B' -> DefaultedFreqCounts(Map('a -> 6., 'c -> 6.), 1.5, 2.5),
+          'C' -> DefaultedFreqCounts(Map('a -> 2.), 2.5, 3.5)))))
 
-    //    val resultCounts = x.resultCounts.simpleCounts.toMap
-    //    println(resultCounts)
+    val counts = new DefaultedCondFreqCounts(Map(
+      'A' -> DefaultedFreqCounts(Map('a -> 27.), 21., 22.),
+      'C' -> DefaultedFreqCounts(Map('b -> 29.), 25., 26)))
 
+    val r = transformer(counts)
+    // TODO: assert counts 
+
+    val d = CondFreqDist(r)
     assertEqualsProb(Probability(0.125), d('A')('a))
     assertEqualsProb(Probability(0.500), d('A')('b))
-    assertEqualsProb(Probability(0.000), d('A')('c))
+    assertEqualsProb(Probability.zero, d('A')('c))
     assertEqualsProb(Probability(0.375), d('A')('d))
-    assertEqualsProb(Probability(0.000), d('A')('z))
+    assertEqualsProb(Probability.zero, d('A')('z))
     assertEqualsProb(Probability(0.625), d('B')('a))
     assertEqualsProb(Probability(0.375), d('B')('b))
-    assertEqualsProb(Probability(0.000), d('B')('c))
-    assertEqualsProb(Probability(0.000), d('B')('d))
-    assertEqualsProb(Probability(0.000), d('B')('z))
-    assertEqualsProb(Probability(0.000), d('C')('a))
-    assertEqualsProb(Probability(0.000), d('C')('b))
-    assertEqualsProb(Probability(0.000), d('C')('c))
-    assertEqualsProb(Probability(0.000), d('C')('d))
-    assertEqualsProb(Probability(0.000), d('C')('z))
-    assertEqualsProb(Probability(0.000), d('D')('a))
-    assertEqualsProb(Probability(0.000), d('D')('b))
-    assertEqualsProb(Probability(0.000), d('D')('c))
-    assertEqualsProb(Probability(0.000), d('D')('d))
-    assertEqualsProb(Probability(0.000), d('D')('z))
+    assertEqualsProb(Probability.zero, d('B')('c))
+    assertEqualsProb(Probability.zero, d('B')('d))
+    assertEqualsProb(Probability.zero, d('B')('z))
+    assertEqualsProb(Probability.zero, d('C')('a))
+    assertEqualsProb(Probability.zero, d('C')('b))
+    assertEqualsProb(Probability.zero, d('C')('c))
+    assertEqualsProb(Probability.zero, d('C')('d))
+    assertEqualsProb(Probability.zero, d('C')('z))
+    assertEqualsProb(Probability.zero, d('D')('a))
+    assertEqualsProb(Probability.zero, d('D')('b))
+    assertEqualsProb(Probability.zero, d('D')('c))
+    assertEqualsProb(Probability.zero, d('D')('d))
+    assertEqualsProb(Probability.zero, d('D')('z))
   }
 
   @Test
-  def test_AddLambdaSmoothingCondFreqCounter() {
-    val lambda = 0.1
-    val x = new AddLambdaSmoothingCondFreqCounter[Char, Symbol](lambda,
-      new SimpleCondFreqCounter[Char, Symbol])
-    x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 1.0), 'B' -> Map('a -> 3.0)))
-    x ++= CondFreqCounts(List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'C' -> 'c, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a).groupByKey.mapValuesStrict(_.counts.mapValuesStrict(_.toDouble)))
+  def test_AddLambdaSmoothingCondCountsTransformer_DefaultCounts_double() {
+    val transformer = new AddLambdaSmoothingCondCountsTransformer[Char, Symbol](
+      lambda = 0.1,
+      delegate = MockCondCountsTransformer(
+        new DefaultedCondFreqCounts(Map(
+          'A' -> DefaultedFreqCounts(Map('a -> 27.), 21., 22.),
+          'C' -> DefaultedFreqCounts(Map('b -> 29.), 25., 26.))),
+        new DefaultedCondFreqCounts(Map(
+          'A' -> DefaultedFreqCounts(Map('a -> 1., 'b -> 4., 'c -> 1.), .1, .2),
+          'B' -> DefaultedFreqCounts(Map('a -> 4., 'b -> 3.), .3, .4),
+          'C' -> DefaultedFreqCounts(Map('a -> 2., 'c -> 1.), .5, .6)))))
 
     /* at this point, the frequency distribution (without smoothing) looks like
      * 
@@ -96,11 +106,11 @@ class CondFreqCounterTests {
      *    |  A  |  B  |  C  |
      *  ==+=====+=====+=====+
      *  a | 1.1 | 4.1 | 2.1 |
-     *  b | 4.1 | 3.1 | 0.1 |
-     *  c | 1.1 | 0.1 | 1.1 |
-     *  L | 0.1 | 0.1 | 0.1 |
+     *  b | 4.1 | 3.1 | 0.7 |
+     *  c | 1.1 | 0.5 | 1.1 |
+     *  Z | 0.3 | 0.5 | 0.7 |
      *  ==+=====+=====+=====+
-     *    | 6.4 | 7.4 | 3.4 | 
+     *    | 6.6 | 8.2 | 4.6 | 
      * 
      * where L is the smoothing parameter (lambda). (B,c) and (C,b) aren't 
      * in the original counts, but are added at this point. Thus, for the
@@ -109,207 +119,121 @@ class CondFreqCounterTests {
      * p(a|A) = count(a|A) / count(A) = 1.1/6.4
      */
 
-    val d = x.toFreqDist
+    val counts = new DefaultedCondFreqCounts(Map(
+      'A' -> DefaultedFreqCounts(Map('a -> 27.), 21., 22.),
+      'C' -> DefaultedFreqCounts(Map('b -> 29.), 25., 26)))
 
-    assertEqualsProb(Probability(1.1 / 6.4), d('A')('a))
-    assertEqualsProb(Probability(4.1 / 6.4), d('A')('b))
-    assertEqualsProb(Probability(1.1 / 6.4), d('A')('c))
-    assertEqualsProb(Probability(0.1 / 6.4), d('A')('z))
-    assertEqualsProb(Probability(4.1 / 7.4), d('B')('a))
-    assertEqualsProb(Probability(3.1 / 7.4), d('B')('b))
-    assertEqualsProb(Probability(0.1 / 7.4), d('B')('c))
-    assertEqualsProb(Probability(0.1 / 7.4), d('B')('z))
-    assertEqualsProb(Probability(2.1 / 3.4), d('C')('a))
-    assertEqualsProb(Probability(0.1 / 3.4), d('C')('b))
-    assertEqualsProb(Probability(1.1 / 3.4), d('C')('c))
-    assertEqualsProb(Probability(0.1 / 3.4), d('C')('z))
+    val r = transformer(counts)
+    // TODO: assert counts 
+
+    val d = CondFreqDist(r)
+
+    assertEqualsProb(Probability(1.1 / 6.6), d('A')('a))
+    assertEqualsProb(Probability(4.1 / 6.6), d('A')('b))
+    assertEqualsProb(Probability(1.1 / 6.6), d('A')('c))
+    assertEqualsProb(Probability(0.3 / 6.6), d('A')('z))
+    assertEqualsProb(Probability(4.1 / 8.2), d('B')('a))
+    assertEqualsProb(Probability(3.1 / 8.2), d('B')('b))
+    assertEqualsProb(Probability(0.5 / 8.2), d('B')('c))
+    assertEqualsProb(Probability(0.5 / 8.2), d('B')('z))
+    assertEqualsProb(Probability(2.1 / 4.6), d('C')('a))
+    assertEqualsProb(Probability(0.7 / 4.6), d('C')('b))
+    assertEqualsProb(Probability(1.1 / 4.6), d('C')('c))
+    assertEqualsProb(Probability(0.7 / 4.6), d('C')('z))
   }
 
   @Test
-  def test_addLambdaSmoothing_after_constrain() {
-    val lambda = 0.1
-    val constr = Map('A' -> Set('a, 'b), 'B' -> Set('a, 'b, 'c))
+  def test_AddLambdaSmoothingCondCountsTransformer_before_ConstrainingCondCountsTransformer_DefaultCounts_double() {
+    val transformer =
+      new AddLambdaSmoothingCondCountsTransformer[Char, Symbol](
+        lambda = 0.1,
+        new ConstrainingCondCountsTransformer[Char, Symbol](
+          validEntries = Map('A' -> Set('a, 'b, 'd), 'B' -> Set('a, 'b), 'D' -> Set('d)),
+          delegate = MockCondCountsTransformer(
+            new DefaultedCondFreqCounts(Map(
+              'A' -> DefaultedFreqCounts(Map('a -> 27.), 21., 22.),
+              'C' -> DefaultedFreqCounts(Map('b -> 29.), 25., 26.))),
+            new DefaultedCondFreqCounts(Map(
+              'A' -> DefaultedFreqCounts(Map('a -> 1., 'b -> 4., 'c -> 1.), .1, .2),
+              'B' -> DefaultedFreqCounts(Map('a -> 4., 'b -> 3.), .3, .4),
+              'C' -> DefaultedFreqCounts(Map('a -> 2., 'c -> 1.), .5, .6))))))
 
-    val x =
-      new AddLambdaSmoothingCondFreqCounter[Char, Symbol](
-        lambda,
-        new ConstrainingCondFreqCounter[Char, Symbol](
-          constr,
-          new SimpleCondFreqCounter[Char, Symbol]))
-
-    x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 1.0), 'B' -> Map('a -> 3.0, 'c -> 1.0)))
-    x ++= CondFreqCounts(List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'C' -> 'c, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a).groupByKey.mapValuesStrict(_.counts.mapValuesStrict(_.toDouble)))
-    val d = x.toFreqDist
-
-    /* before applying the constraints and the add-lambda smoothing, the
-     * frequency table is:
-     * 
-     *   |  A  |  B  |  C  |
-     * ==+=====+=====+=====+
-     * a |  1  |  4  |  2  |
-     * b |  4  |  3  |  0  |
-     * c |  1  |  1  |  1  |
-     * ==+=====+=====+=====+
-     *   |  6  |  8  |  3  |
-     *
-     * the constraints zero out the following cells
-     *
-     *   |  A  |  B  |  C  |
-     * ==+=====+=====+=====+
-     * a |  1  |  4  |  0  |
-     * b |  4  |  3  |  0  |
-     * c |  0  |  1  |  0  |
-     * ==+=====+=====+=====+
-     *   |  5  |  8  |  0  |
-     *
-     * applying the add-lambda smoothing adjusts these counts as follows.
-     *
-     *   |  A  |  B  |  C  |
-     * ==+=====+=====+=====+
-     * a | 1.1 | 4.1 | 0.1 |
-     * b | 4.1 | 3.1 | 0.1 |
-     * c | 0.1 | 1.1 | 0.1 |
-     * L | 0.1 | 0.1 | 0.1 |
-     * ==+=====+=====+=====+
-     *   | 5.4 | 8.4 | 0.4 |
-     *
-     * so the probability in the first test case below is
-     * 
-     * p(a|A) = 1.1/5.4
-     */
-
-    assertEqualsProb(Probability(1.1 / 5.4), d('A')('a))
-    assertEqualsProb(Probability(4.1 / 5.4), d('A')('b))
-    assertEqualsProb(Probability(0.1 / 5.4), d('A')('c))
-    assertEqualsProb(Probability(0.1 / 5.4), d('A')('z))
-    assertEqualsProb(Probability(4.1 / 8.4), d('B')('a))
-    assertEqualsProb(Probability(3.1 / 8.4), d('B')('b))
-    assertEqualsProb(Probability(1.1 / 8.4), d('B')('c))
-    assertEqualsProb(Probability(0.1 / 8.4), d('B')('z))
-    assertEqualsProb(Probability(0.1 / 0.4), d('C')('a))
-    assertEqualsProb(Probability(0.1 / 0.4), d('C')('b))
-    assertEqualsProb(Probability(0.1 / 0.4), d('C')('c))
-    assertEqualsProb(Probability(0.1 / 0.4), d('C')('z))
+    // TODO: Complete
   }
 
   @Test
-  def test_constrain_after_addLambdaSmoothing() {
-    val lambda = 0.1
-    val constr = Map('A' -> Set('a, 'b), 'C' -> Set('a, 'b, 'c))
-
-    val x =
-      new ConstrainingCondFreqCounter[Char, Symbol](
-        constr,
-        new AddLambdaSmoothingCondFreqCounter[Char, Symbol](
-          lambda,
-          new SimpleCondFreqCounter[Char, Symbol]))
-
-    x ++= CondFreqCounts(Map('A' -> Map('a -> 1.0, 'b -> 2.0, 'c -> 1.0), 'B' -> Map('a -> 3.0, 'c -> 1.0)))
-    x ++= CondFreqCounts(List('B' -> 'b, 'A' -> 'b, 'B' -> 'a, 'C' -> 'a, 'B' -> 'b, 'C' -> 'c, 'A' -> 'b, 'B' -> 'b, 'C' -> 'a).groupByKey.mapValuesStrict(_.counts.mapValuesStrict(_.toDouble)))
-    val d = x.toFreqDist
-
-    /* before applying the constraints and the add-lambda smoothing, the
-     * frequency table is:
-     * 
-     *   |  A  |  B  |  C  |
-     * ==+=====+=====+=====+
-     * a |  1  |  4  |  2  |
-     * b |  4  |  3  |  0  |
-     * c |  1  |  1  |  1  |
-     * ==+=====+=====+=====+
-     *   |  6  |  8  |  3  |
-     * 
-     * applying the add-lambda smoothing to these counts before applying 
-     * the constraints gives us
-     * 
-     *   |  A  |  B  |  C  |
-     * ==+=====+=====+=====+
-     * a | 1.1 | 4.1 | 2.1 |
-     * b | 4.1 | 3.1 | 0.1 |
-     * c | 1.1 | 1.1 | 1.1 |
-     * L | 0.1 | 0.1 | 0.1 |
-     * ==+=====+=====+=====+
-     *   | 6.4 | 8.4 | 3.3 |
-     * 
-     * applying the constraints 0's out the following cells:
-     * 
-     *   |  A  |  B  |  C  |
-     * ==+=====+=====+=====+
-     * a | 1.1 |  0  | 2.1 |
-     * b | 4.1 |  0  | 0.1 |
-     * c |  0  |  0  | 1.1 |
-     * L |  0  |  0  |  0  |
-     * ==+=====+=====+=====+
-     *   | 5.2 |  0  | 3.3 |
-     *   
-     * so the probability in the first test case below is:
-     * 
-     * p(a|A) = 1.1/5.2
-     */
-
-    assertEqualsProb(Probability(1.1 / 5.2), d('A')('a))
-    assertEqualsProb(Probability(4.1 / 5.2), d('A')('b))
-    assertEqualsProb(Probability(0.), d('A')('c))
-    assertEqualsProb(Probability(0.), d('A')('z))
-    assertEqualsProb(Probability(0.), d('B')('a))
-    assertEqualsProb(Probability(0.), d('B')('b))
-    assertEqualsProb(Probability(0.), d('B')('c))
-    assertEqualsProb(Probability(0.), d('B')('z))
-    assertEqualsProb(Probability(2.1 / 3.3), d('C')('a))
-    assertEqualsProb(Probability(0.1 / 3.3), d('C')('b))
-    assertEqualsProb(Probability(1.1 / 3.3), d('C')('c))
-    assertEqualsProb(Probability(0.), d('C')('z))
-  }
-
-  @Test
-  def test_RandomFreqDist() {
-    val x = new RandomCondFreqCounter[Char, Symbol](10, new SimpleCondFreqCounter())
-
-    x ++= CondFreqCounts(List('a -> 'A', 'b -> 'A', 'a -> 'B', 'b -> 'B', 'c -> 'B').map(_.swap).groupByKey.mapValuesStrict(_.counts.mapValuesStrict(_.toDouble)))
+  def test_RandomCondCountsTransformer_DefaultCounts_double() {
+    val transformer = new RandomCondCountsTransformer[Char, Symbol](
+      maxCount = 10,
+      delegate = MockCondCountsTransformer(
+        new DefaultedCondFreqCounts(Map(
+          'A' -> DefaultedFreqCounts(Map('a -> 27.), 21., 22.),
+          'C' -> DefaultedFreqCounts(Map('b -> 29.), 25., 26.))),
+        new DefaultedCondFreqCounts(Map(
+          'A' -> DefaultedFreqCounts(Map('a -> 1., 'b -> 2.), .1, .2),
+          'B' -> DefaultedFreqCounts(Map('a -> 3.), .3, .4)))))
 
     /* As it happens, the first random values for this test are:
-     * 0 8 9 7 5
+     * 8 9 7 5
      *
      * without the random weighting, the frequency distribution is:
      *
      *   |  A  |  B  |
      * ==+=====+=====+
-     * a |  1  |  1  |
-     * b |  1  |  1  |
-     * c |  0  |  1  |
+     * a |  1  |  2  |
+     * b |  3  |  0  |
+     * Z |  .2 |  .4 |
      * ==+=====+=====+
-     *   |  2  |  3  |
+     *   | 4.2 | 2.4 |
      *
      * Given the order the frequencies are (re-)calculated, this is randomly
-     * adjusted to (the random values are +1 to not introduce 0s):
+     * adjusted to:
      *
-     *   |     A     |     B     |
-     * ==+===========+===========+
-     * a | 1 * (5+1) | 1 * (9+1) |
-     * b | 1 * (7+1) | 1 * (8+1) |
-     * c |     0     | 1 * (0+1) |
+     *   |   A   |   B   |
+     * ==+=======+=======+
+     * a | 1 + 5 | 2 + 9 |
+     * b | 3 + 7 | 0 + 8 |
      * 
      * or
      * 
-     *   |  A  |  B  |
-     * ==+=====+=====+
-     * a |  6  |  10 |
-     * b |  8  |  9  |
-     * c |  0  |  1  |
-     * ==+=====+=====+
-     *   |  14 |  20 |
-     * 
+     *   |  A   |  B   |
+     * ==+======+======+
+     * a |  6   |  11  |
+     * b |  10  |  8   |
+     * Z |  .2  |  .4  |
+     * ==+======+======+
+     *   | 16.3 | 19.7 |
      */
-    val d = x.toFreqDist
 
-    assertEqualsProb(Probability(6. / 14.), d('A')('a))
-    assertEqualsProb(Probability(8. / 14.), d('A')('b))
-    assertEqualsProb(Probability(0.), d('A')('c))
-    assertEqualsProb(Probability(0.), d('A')('z))
-    assertEqualsProb(Probability(10. / 20.), d('B')('a))
-    assertEqualsProb(Probability(9. / 20.), d('B')('b))
-    assertEqualsProb(Probability(1. / 20.), d('B')('c))
-    assertEqualsProb(Probability(0.), d('B')('z))
+    val counts = new DefaultedCondFreqCounts(Map(
+      'A' -> DefaultedFreqCounts(Map('a -> 27.), 21., 22.),
+      'C' -> DefaultedFreqCounts(Map('b -> 29.), 25., 26)))
+
+    val r = transformer(counts)
+    // TODO: assert counts 
+
+    val d = CondFreqDist(r)
+
+    assertEqualsProb(Probability(6. / 16.3), d('A')('a))
+    assertEqualsProb(Probability(10. / 16.3), d('A')('b))
+    assertEqualsProb(Probability(.2 / 16.3), d('A')('z))
+    assertEqualsProb(Probability(11. / 19.7), d('B')('a))
+    assertEqualsProb(Probability(8. / 19.7), d('B')('b))
+    assertEqualsProb(Probability(.4 / 19.7), d('B')('z))
+  }
+
+  case class MockCondCountsTransformer[A, B](expected: DefaultedCondFreqCounts[A, B, Double], returned: DefaultedCondFreqCounts[A, B, Double]) extends CondCountsTransformer[A, B] {
+    override def apply(counts: DefaultedCondFreqCounts[A, B, Double]) = {
+      for ((eA -> e, cA -> c) <- (expected.counts zipEqual counts.counts)) {
+        assertEquals(eA, cA)
+        val DefaultedFreqCounts(eC, eT, eD) = e
+        val DefaultedFreqCounts(cC, cT, cD) = c
+        assertEquals(eC, cC)
+        assertEquals(eT, cT)
+        assertEquals(eD, cD)
+      }
+      returned
+    }
   }
 
   def printDist(d: Char => Symbol => Probability) {
@@ -332,7 +256,7 @@ class CondFreqCounterTests {
 
 }
 
-object CondFreqCounterTests {
+object CondCountsTransformerTests {
 
   @BeforeClass def turnOffLogging() {
     Logger.getRootLogger.setLevel(Level.OFF)
