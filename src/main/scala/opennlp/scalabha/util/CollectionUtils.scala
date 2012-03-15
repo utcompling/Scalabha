@@ -545,7 +545,7 @@ object CollectionUtils {
      * @param n	the maximum number of sub-elements to take
      * @return the new collection
      */
-    def takeSub[That](n: Int)(implicit bf: CanBuildFrom[Repr, GenIterable[A], That]): That = {
+    def takeSub[That](n: Int)(implicit bf: CanBuildFrom[Repr, R, That]): That = {
       val b = bf(self.asInstanceOf[Repr])
       for (x <- enriched_takeSub_Iterator(self.toIterator).takeSub(n)) b += x
       b.result
