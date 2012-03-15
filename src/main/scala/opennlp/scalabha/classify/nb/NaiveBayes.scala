@@ -28,6 +28,27 @@ trait NaiveBayesClassifier[L,T] extends Classifier[L,T] {
 }
 
 /**
+ * An immmutable naive Bayes classifier with pre-computed prior and feature
+ * probabilities
+ * @param priorPr a probability distribution over the labels
+ * @param featurePr a function from labels to probability distributions over
+ *   the features
+ * @param labels the set of labels
+ * @tparam L the class of labels
+ * @tparam T the class of features
+ */
+case class CompiledNaiveBayesClassifier[L,T](
+    priorPr:L => Probability,
+    featurePr:L => T => Probability,
+    val labels:Set[L])
+extends NaiveBayesClassifier[L,T] {
+
+  override def priorProb(label:L) = priorPr(label)
+
+  override def featureProb(feature:T, label:L) = featurePr(label)(feature)
+}
+
+/**
  * Implementation of the naive Bayes classifier which can be updated
  * online with new training examples; this is not a mutable structure
  * per se, but can create an updated classifier given a new training
@@ -46,9 +67,16 @@ class OnlineNaiveBayesClassifier[L,T](
     val labelFeatureCountsTransformer:CondCountsTransformer[L,T],
     val labels:mutable.Set[L])
 extends NaiveBayesClassifier[L,T] {
-  
+
   val labelDocCounter = mutable.Map[L, Int]().withDefaultValue(0)
   val labelFeatureCounter = mutable.Map[L, mutable.Map[T, Int]]()
+
+  def compiled = {
+    val labelDocDist = FreqDist(labelDocCountsTransformer(labelDocCounter))
+    val labelFeatDist =
+      CondFreqDist(labelFeatureCountsTransformer(labelFeatureCounter))
+    CompiledNaiveBayesClassifier(labelDocDist, labelFeatDist, labels.toSet)
+  }
 
   override def priorProb(label:L) = FreqDist(labelDocCountsTransformer(labelDocCounter))(label)
 
