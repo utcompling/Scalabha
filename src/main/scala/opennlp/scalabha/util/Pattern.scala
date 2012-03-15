@@ -2,24 +2,29 @@ package opennlp.scalabha.util
 
 object Pattern {
 
-  object Int {
+  object UnapplyInt {
+    def x = 1
     val IntRE = """^(\d+)$""".r
     def unapply(v: Any): Option[Int] = v match {
       case i: Int => Some(i)
-      case s: String => s match { case IntRE(i) => Some(i.toInt); case _ => None }
+      case IntRE(s) => Some(s.toInt)
+      case _ => None
     }
   }
+//  implicit def int2unapplyInt(objA: Int.type) = UnapplyInt
 
-  object Double {
-    val DoubleRE = """^(\d+\.?\d*)|(\d*\.?\d+)$""".r
+  object UnapplyDouble {
+    val DoubleRE = """^(\d+\.?\d*|\d*\.?\d+)$""".r
     def unapply(v: Any): Option[Double] = v match {
       case i: Int => Some(i)
       case l: Long => Some(l)
       case f: Float => Some(f)
       case d: Double => Some(d)
-      case s: String => if (DoubleRE.findFirstIn(s).isDefined) Some(s.toDouble) else None
+      case DoubleRE(s) => Some(s.toDouble)
+      case _ => None
     }
   }
+//  implicit def double2unapplyDouble(objA: Double.type) = UnapplyDouble
 
   object Map {
     def unapplySeq[A, B](m: Map[A, B]): Option[Seq[(A, B)]] = Some(m.toList)
@@ -27,8 +32,7 @@ object Pattern {
 
   object -> {
     def unapply[A, B](pair: (A, B)): Option[(A, B)] = {
-      val (a, b) = pair
-      Some(a -> b)
+      Some(pair)
     }
   }
 
@@ -36,7 +40,7 @@ object Pattern {
     val RangeRE = """^(\d+)-(\d*)$""".r
     def unapplySeq(s: String): Option[Seq[Int]] = Some((
       s.split(",").flatMap {
-        case Int(i) => i.toInt to i.toInt
+        case UnapplyInt(i) => i.toInt to i.toInt
         case RangeRE(b, e) => b.toInt to e.toInt
       }).toSet.toList.sorted)
   }
