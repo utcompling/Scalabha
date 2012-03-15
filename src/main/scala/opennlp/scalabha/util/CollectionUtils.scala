@@ -9,6 +9,8 @@ import scala.collection.GenTraversableOnce
 import scala.collection.TraversableLike
 import scala.collection.GenMap
 import scala.collection.mutable
+import scala.collection.GenIterable
+import scala.collection.GenIterableLike
 
 object CollectionUtils {
 
@@ -211,7 +213,8 @@ object CollectionUtils {
           if (self.hasNext) {
             if (thatItr.hasNext) true
             else throw new RuntimeException("Attempting to zipEqual collections of different lengths.")
-          } else {
+          }
+          else {
             if (thatItr.hasNext) throw new RuntimeException("Attempting to zipEqual collections of different lengths.")
             else false
           }
@@ -525,6 +528,70 @@ object CollectionUtils {
     def flattenOver() = self.iterator.flatMap { case (a, bs) => bs.toIterator.map((a, _)) }
   }
   implicit def enrich_flattenOver_GenTraversableOnce[A, B](self: GenMap[A, GenTraversableOnce[B]]) = new Enrich_flattenOver_GenTraversableOnce(self)
+
+  //////////////////////////////////////////////////////
+  // takeSub[GenIterable[B]](n: Int): Repr[GenIterable[B]]
+  //   - Take iterables from this collection until the total number of 
+  //     elements in the taken items is about to exceed `n`.  The total number
+  //     of elements will be less than or equal to `n`.
+  //////////////////////////////////////////////////////
+
+  class Enriched_takeSub_GenTraversableLike[A, R <: GenIterable[A], Repr <: GenTraversable[GenIterable[A]]](self: GenTraversableLike[GenIterableLike[A, R], Repr]) {
+    /**
+     * Take iterables from this collection until the total number of elements
+     * in the taken items is about to exceed `n`.  The total number of
+     * elements will be less than or equal to `n`.
+     *
+     * @param n	the maximum number of sub-elements to take
+     * @return the new collection
+     */
+    def takeSub[That](n: Int)(implicit bf: CanBuildFrom[Repr, GenIterable[A], That]): That = {
+      val b = bf(self.asInstanceOf[Repr])
+      for (x <- enriched_takeSub_Iterator(self.toIterator).takeSub(n)) b += x
+      b.result
+    }
+  }
+  implicit def enrich_takeSub_GenTraversableLike[A, R <: GenIterable[A], Repr <: GenTraversable[GenIterable[A]]](self: GenTraversableLike[GenIterableLike[A, R], Repr]) = new Enriched_takeSub_GenTraversableLike(self)
+
+  class Enriched_takeSub_Iterator[A, R <: GenIterable[A]](self: Iterator[GenIterableLike[A, R]]) {
+    /**
+     * Take iterables from this collection until the total number of elements
+     * in the taken items is about to exceed `n`.  The total number of
+     * elements will be less than or equal to `n`.
+     *
+     * @param n	the maximum number of sub-elements to take
+     * @return the new collection
+     */
+    def takeSub(n: Int): Iterator[R] = {
+      if (self.isEmpty) {
+        self.asInstanceOf[Iterator[R]]
+      }
+      else {
+        new Iterator[R] {
+          private var nextElement: R = self.next.asInstanceOf[R]
+          private var total: Int = nextElement.size
+
+          override def hasNext = total <= n
+
+          override def next = {
+            if (hasNext) {
+              val x = nextElement
+              if (self.hasNext) {
+                nextElement = self.next.asInstanceOf[R]
+                total += nextElement.size
+              }
+              else
+                total = n + 1
+              x
+            }
+            else
+              throw new NoSuchElementException("next on empty iterator")
+          }
+        }
+      }
+    }
+  }
+  implicit def enriched_takeSub_Iterator[A, R <: GenIterable[A]](self: Iterator[GenIterableLike[A, R]]) = new Enriched_takeSub_Iterator(self)
 
   //////////////////////////////////////////////////////
   // +:(elem: B): Iterator[B]
