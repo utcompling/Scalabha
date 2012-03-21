@@ -1,7 +1,7 @@
 package opennlp.scalabha.tag.hmm.support
 
 import opennlp.scalabha.util.CollectionUtils._
-import opennlp.scalabha.util.Probability
+import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.tag.support._
 import org.apache.commons.logging.LogFactory
 
@@ -9,7 +9,7 @@ import org.apache.commons.logging.LogFactory
  * Produce a conditional frequency distribution without labeled training data.
  */
 trait UnsupervisedEmissionDistFactory[Tag, Sym] {
-  def make(): Tag => Sym => Probability
+  def make(): Tag => Sym => LogNum
 }
 
 /**
@@ -30,7 +30,7 @@ trait UnsupervisedEmissionDistFactory[Tag, Sym] {
 class OneCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Tag]], lambda: Double, startEndSymbol: Sym, startEndTag: Tag)
   extends UnsupervisedEmissionDistFactory[Tag, Sym] {
 
-  override def make(): Tag => Sym => Probability = {
+  override def make(): Tag => Sym => LogNum = {
     val symbolsForTag = (tagDict.flattenOver.map(_.swap).toSet.groupByKey - startEndTag).mapValuesStrict(_ - startEndSymbol)
     val totalNumSymbols = (tagDict.keySet - startEndSymbol).size
     val counts =
@@ -89,7 +89,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
   extends UnsupervisedEmissionDistFactory[Tag, Sym] {
   protected val LOG = LogFactory.getLog(classOf[EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym]])
 
-  override def make(): Tag => Sym => Probability = {
+  override def make(): Tag => Sym => LogNum = {
     val symbolCounts = (rawData.flatten.counts - startEndSymbol).withDefaultValue(0)
     val symbolsForTag = (tagDict.flattenOver.map(_.swap).toSet.groupByKey - startEndTag).mapValuesStrict(_ - startEndSymbol)
     val counts =
@@ -108,9 +108,9 @@ class DefaultHackingUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, 
   extends UnsupervisedEmissionDistFactory[Tag, Sym] {
   protected val LOG = LogFactory.getLog(classOf[DefaultHackingUnsupervisedEmissionDistFactory[Tag, Sym]])
 
-  override def make(): Tag => Sym => Probability = {
+  override def make(): Tag => Sym => LogNum = {
     val dist = delegate.make()
-    val distMap = dist.asInstanceOf[Map[Tag, Map[Sym, Probability]]]
+    val distMap = dist.asInstanceOf[Map[Tag, Map[Sym, LogNum]]]
     val totalNumSymbols = (tagDict.keySet - startEndSymbol).size.toDouble
 
     val defaultDist = FreqDist(DefaultedFreqCounts(distMap.map { case (tag, symbols) => tag -> math.log(symbols.size) }, 0.0, 0.0))

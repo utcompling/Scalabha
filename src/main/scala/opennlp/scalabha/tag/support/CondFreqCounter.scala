@@ -2,8 +2,6 @@ package opennlp.scalabha.tag.support
 
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.Pattern
-import opennlp.scalabha.util.Probability
-import opennlp.scalabha.util.Probability._
 import org.apache.commons.logging.LogFactory
 import util.Random
 import collection.{ Map => CMap }

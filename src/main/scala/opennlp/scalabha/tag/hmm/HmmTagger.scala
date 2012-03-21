@@ -6,8 +6,8 @@ import opennlp.scalabha.tag.Tagger
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.Pattern
 import opennlp.scalabha.util.Pattern.{ -> }
-import opennlp.scalabha.util.Probability._
-import opennlp.scalabha.util.Probability
+import opennlp.scalabha.util.LogNum._
+import opennlp.scalabha.util.LogNum
 
 /**
  * Hidden Markov Model for tagging.
@@ -24,8 +24,8 @@ import opennlp.scalabha.util.Probability
  * 							the beginning and end of a sentence
  */
 class HmmTagger[Sym, Tag](
-  transitions: Tag => Tag => Probability,
-  emissions: Tag => Sym => Probability,
+  transitions: Tag => Tag => LogNum,
+  emissions: Tag => Sym => LogNum,
   val tagDict: Map[Sym, Set[Tag]],
   startEndSymbol: Sym,
   startEndTag: Tag)
@@ -45,7 +45,7 @@ class HmmTagger[Sym, Tag](
     val tagDictWithEnds = tagDict + (startEndSymbol -> Set(startEndTag))
 
     // Get initial viterbi for start symbol
-    val startViterbi = Map(startEndTag -> Probability.one)
+    val startViterbi = Map(startEndTag -> LogNum.one)
 
     // Build up backpointers list by calculating viterbi scores for each subsequent observation
     val (lastViterbi, backpointers) =

@@ -10,8 +10,8 @@ import opennlp.scalabha.tag.SupervisedTaggerTrainer
 import opennlp.scalabha.tag.UnsupervisedTaggerTrainer
 import opennlp.scalabha.tag.hmm.support._
 import org.apache.commons.logging.LogFactory
-import opennlp.scalabha.util.Probability
-import opennlp.scalabha.util.Probability._
+import opennlp.scalabha.util.LogNum
+import opennlp.scalabha.util.LogNum._
 import scala.collection.GenTraversableOnce
 import scala.collection.mutable.ListBuffer
 

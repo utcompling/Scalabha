@@ -14,9 +14,9 @@ import opennlp.scalabha.tag.support._
  */
 trait NaiveBayesClassifier[L,T] extends Classifier[L,T] {
 
-  def priorProb(label:L):Probability
+  def priorProb(label:L):LogNum
 
-  def featureProb(feature:T, label:L):Probability
+  def featureProb(feature:T, label:L):LogNum
 
   override def classify(document:Document[T]) =
     labels.map(label => {
@@ -38,8 +38,8 @@ trait NaiveBayesClassifier[L,T] extends Classifier[L,T] {
  * @tparam T the class of features
  */
 case class CompiledNaiveBayesClassifier[L,T](
-    priorPr:L => Probability,
-    featurePr:L => T => Probability,
+    priorPr:L => LogNum,
+    featurePr:L => T => LogNum,
     val labels:Set[L])
 extends NaiveBayesClassifier[L,T] {
 

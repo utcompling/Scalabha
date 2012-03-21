@@ -3,7 +3,7 @@ package opennlp.scalabha.tag.support
 import org.junit.Assert._
 import org.junit.Test
 
-import opennlp.scalabha.util.Probability
+import opennlp.scalabha.util.LogNum
 
 class CountsTransformerTests {
 
@@ -20,9 +20,9 @@ class CountsTransformerTests {
     assertEqualsDouble(0., rD)
 
     val d = FreqDist(r)
-    assertEqualsProb(Probability(5. / 8.), d('a))
-    assertEqualsProb(Probability(3. / 8.), d('b))
-    assertEqualsProb(Probability.zero, d('def))
+    assertEqualsProb(LogNum(5. / 8.), d('a))
+    assertEqualsProb(LogNum(3. / 8.), d('b))
+    assertEqualsProb(LogNum.zero, d('def))
   }
 
   @Test
@@ -38,9 +38,9 @@ class CountsTransformerTests {
     assertEqualsDouble(1., rD)
 
     val d = FreqDist(r)
-    assertEqualsProb(Probability(5. / 10.), d('a))
-    assertEqualsProb(Probability(3. / 10.), d('b))
-    assertEqualsProb(Probability(1. / 10.), d('def))
+    assertEqualsProb(LogNum(5. / 10.), d('a))
+    assertEqualsProb(LogNum(3. / 10.), d('b))
+    assertEqualsProb(LogNum(1. / 10.), d('def))
   }
 
   @Test
@@ -76,11 +76,11 @@ class CountsTransformerTests {
     assertEqualsDouble(0., rD)
 
     val d = FreqDist(r)
-    assertEqualsProb(Probability(5. / 9.), d('a))
-    assertEqualsProb(Probability(3. / 9.), d('b))
-    assertEqualsProb(Probability.zero, d('c))
-    assertEqualsProb(Probability(1. / 9.), d('d))
-    assertEqualsProb(Probability.zero, d('def))
+    assertEqualsProb(LogNum(5. / 9.), d('a))
+    assertEqualsProb(LogNum(3. / 9.), d('b))
+    assertEqualsProb(LogNum.zero, d('c))
+    assertEqualsProb(LogNum(1. / 9.), d('d))
+    assertEqualsProb(LogNum.zero, d('def))
   }
 
   @Test
@@ -116,11 +116,11 @@ class CountsTransformerTests {
     assertEqualsDouble(0., rD)
 
     val d = FreqDist(r)
-    assertEqualsProb(Probability(5. / 9.), d('a))
-    assertEqualsProb(Probability(3. / 9.), d('b))
-    assertEqualsProb(Probability.zero, d('c))
-    assertEqualsProb(Probability(1. / 9.), d('d))
-    assertEqualsProb(Probability.zero, d('def))
+    assertEqualsProb(LogNum(5. / 9.), d('a))
+    assertEqualsProb(LogNum(3. / 9.), d('b))
+    assertEqualsProb(LogNum.zero, d('c))
+    assertEqualsProb(LogNum(1. / 9.), d('d))
+    assertEqualsProb(LogNum.zero, d('def))
   }
 
   @Test
@@ -155,11 +155,11 @@ class CountsTransformerTests {
     assertEqualsDouble(1.1, rD)
 
     val d = FreqDist(r)
-    assertEqualsProb(Probability(5.1 / 16.4), d('a))
-    assertEqualsProb(Probability(3.1 / 16.4), d('b))
-    assertEqualsProb(Probability(6.1 / 16.4), d('c))
-    assertEqualsProb(Probability(1.1 / 16.4), d('d))
-    assertEqualsProb(Probability(1.1 / 16.4), d('def))
+    assertEqualsProb(LogNum(5.1 / 16.4), d('a))
+    assertEqualsProb(LogNum(3.1 / 16.4), d('b))
+    assertEqualsProb(LogNum(6.1 / 16.4), d('c))
+    assertEqualsProb(LogNum(1.1 / 16.4), d('d))
+    assertEqualsProb(LogNum(1.1 / 16.4), d('def))
   }
 
   @Test
@@ -203,11 +203,11 @@ class CountsTransformerTests {
     assertEqualsDouble(0.1, rD)
 
     val d = FreqDist(r)
-    assertEqualsProb(Probability(5.1 / 9.5), d('a))
-    assertEqualsProb(Probability(3.1 / 9.5), d('b))
-    assertEqualsProb(Probability(0.1 / 9.5), d('c))
-    assertEqualsProb(Probability(1.1 / 9.5), d('d))
-    assertEqualsProb(Probability(0.1 / 9.5), d('def))
+    assertEqualsProb(LogNum(5.1 / 9.5), d('a))
+    assertEqualsProb(LogNum(3.1 / 9.5), d('b))
+    assertEqualsProb(LogNum(0.1 / 9.5), d('c))
+    assertEqualsProb(LogNum(1.1 / 9.5), d('d))
+    assertEqualsProb(LogNum(0.1 / 9.5), d('def))
   }
 
   @Test
@@ -251,11 +251,11 @@ class CountsTransformerTests {
     assertEqualsDouble(0.0, rD)
 
     val d = FreqDist(r)
-    assertEqualsProb(Probability(5.1 / 9.3), d('a))
-    assertEqualsProb(Probability(3.1 / 9.3), d('b))
-    assertEqualsProb(Probability(0.0 / 9.3), d('c))
-    assertEqualsProb(Probability(1.1 / 9.3), d('d))
-    assertEqualsProb(Probability(0.0 / 9.3), d('def))
+    assertEqualsProb(LogNum(5.1 / 9.3), d('a))
+    assertEqualsProb(LogNum(3.1 / 9.3), d('b))
+    assertEqualsProb(LogNum(0.0 / 9.3), d('c))
+    assertEqualsProb(LogNum(1.1 / 9.3), d('d))
+    assertEqualsProb(LogNum(0.0 / 9.3), d('def))
   }
 
   case class MockCountsTransformer[B](expected: DefaultedFreqCounts[B, Double], returned: DefaultedFreqCounts[B, Double]) extends CountsTransformer[B] {
@@ -269,7 +269,7 @@ class CountsTransformerTests {
     }
   }
 
-  def assertEqualsProb(a: Probability, b: Probability) {
+  def assertEqualsProb(a: LogNum, b: LogNum) {
     assertEqualsDouble(a.toDouble, b.toDouble)
   }
 

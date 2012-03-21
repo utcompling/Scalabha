@@ -1,8 +1,8 @@
 package opennlp.scalabha.tag.support
 
 import opennlp.scalabha.util.CollectionUtils._
-import opennlp.scalabha.util.Probability
-import opennlp.scalabha.util.Probability._
+import opennlp.scalabha.util.LogNum
+import opennlp.scalabha.util.LogNum._
 import org.apache.commons.logging.LogFactory
 
 /**
@@ -14,13 +14,13 @@ object FreqDist {
    * Return an "empty" frequency distribution: a function that maps
    * everything to the zero-probability.  P(B) = 0 for all B.
    */
-  val empty = static(Probability.zero)
+  val empty = static(LogNum.zero)
 
   /**
    * Return a "static" frequency distribution: a function that maps
    * everything to the same probability.  P(B) = v for all B.
    */
-  def static(v: Probability) = (_: Any) => v
+  def static(v: LogNum) = (_: Any) => v
 
   /**
    * Construct a frequency distribution from the counter result.  Calculates
@@ -37,14 +37,14 @@ object FreqDist {
    *
    * @tparam B	the item being counted
    */
-  def apply[B](resultCounts: DefaultedFreqCounts[B, Double]): B => Probability = {
+  def apply[B](resultCounts: DefaultedFreqCounts[B, Double]): B => LogNum = {
     val DefaultedFreqCounts(counts, totalAddition, defaultCount) = resultCounts
     val total = counts.toMap.values.sum + totalAddition
     if (total == 0)
       FreqDist.empty
     else
-      counts.toMap.mapValuesStrict(count => (count / total).toProbability)
-        .withDefaultValue((defaultCount / total).toProbability)
+      counts.toMap.mapValuesStrict(count => (count / total).toLogNum)
+        .withDefaultValue((defaultCount / total).toLogNum)
   }
 }
 
@@ -59,13 +59,13 @@ object CondFreqDist {
    * Return an "empty" frequency distribution: a function that maps
    * everything to the zero-probability.  P(B|A) = 0 for all A,B.
    */
-  val empty = static(Probability.zero)
+  val empty = static(LogNum.zero)
 
   /**
    * Return a "static" frequency distribution: a function that maps
    * everything to the same probability.  P(B|A) = v for all A,B.
    */
-  def static(v: Probability) = (_: Any) => (_: Any) => v
+  def static(v: LogNum) = (_: Any) => (_: Any) => v
 
   /**
    * Construct a frequency distribution from the counter result. Calculates
@@ -87,7 +87,7 @@ object CondFreqDist {
    * @tparam A	the conditioning item being counted; P(B|A).
    * @tparam B	the conditioned item being counted; P(B|A).
    */
-  def apply[A, B](resultCounts: DefaultedCondFreqCounts[A, B, Double]): A => B => Probability = {
+  def apply[A, B](resultCounts: DefaultedCondFreqCounts[A, B, Double]): A => B => LogNum = {
     resultCounts.counts.mapValuesStrict(FreqDist(_))
   }
 }

@@ -2,8 +2,8 @@ package opennlp.scalabha.tag.support
 
 import org.junit.Assert._
 import org.junit._
-import opennlp.scalabha.util.Probability
-import opennlp.scalabha.util.Probability._
+import opennlp.scalabha.util.LogNum
+import opennlp.scalabha.util.LogNum._
 import opennlp.scalabha.util.Pattern.{ -> }
 import opennlp.scalabha.util.CollectionUtils._
 import org.apache.log4j.Logger
@@ -24,15 +24,15 @@ class CondCountsTransformerTests {
     // TODO: assert counts 
 
     val d = CondFreqDist(r)
-    assertEqualsProb(Probability(1. / 5.), d('A')('a))
-    assertEqualsProb(Probability(4. / 5.), d('A')('b))
-    assertEqualsProb(Probability.zero, d('A')('def))
-    assertEqualsProb(Probability(5. / 8.), d('B')('a))
-    assertEqualsProb(Probability(3. / 8.), d('B')('b))
-    assertEqualsProb(Probability.zero, d('B')('def))
-    assertEqualsProb(Probability.one, d('C')('a))
-    assertEqualsProb(Probability.zero, d('C')('b))
-    assertEqualsProb(Probability.zero, d('C')('def))
+    assertEqualsProb(LogNum(1. / 5.), d('A')('a))
+    assertEqualsProb(LogNum(4. / 5.), d('A')('b))
+    assertEqualsProb(LogNum.zero, d('A')('def))
+    assertEqualsProb(LogNum(5. / 8.), d('B')('a))
+    assertEqualsProb(LogNum(3. / 8.), d('B')('b))
+    assertEqualsProb(LogNum.zero, d('B')('def))
+    assertEqualsProb(LogNum.one, d('C')('a))
+    assertEqualsProb(LogNum.zero, d('C')('b))
+    assertEqualsProb(LogNum.zero, d('C')('def))
   }
 
   @Test
@@ -87,26 +87,26 @@ class CondCountsTransformerTests {
     // TODO: assert counts 
 
     val d = CondFreqDist(r)
-    assertEqualsProb(Probability(5. / 11.), d('A')('a))
-    assertEqualsProb(Probability(4. / 11.), d('A')('b))
-    assertEqualsProb(Probability(0. / 11.), d('A')('c))
-    assertEqualsProb(Probability(2. / 11.), d('A')('d))
-    assertEqualsProb(Probability(0. / 11.), d('A')('def))
-    assertEqualsProb(Probability(6. / 9.), d('B')('a))
-    assertEqualsProb(Probability(3. / 9.), d('B')('b))
-    assertEqualsProb(Probability(0. / 9.), d('B')('c))
-    assertEqualsProb(Probability(0. / 9.), d('B')('d))
-    assertEqualsProb(Probability(0. / 9.), d('B')('def))
-    assertEqualsProb(Probability.zero, d('C')('a))
-    assertEqualsProb(Probability.zero, d('C')('b))
-    assertEqualsProb(Probability.zero, d('C')('c))
-    assertEqualsProb(Probability.zero, d('C')('d))
-    assertEqualsProb(Probability.zero, d('C')('def))
-    assertEqualsProb(Probability.zero, d('D')('a))
-    assertEqualsProb(Probability.zero, d('D')('b))
-    assertEqualsProb(Probability.zero, d('D')('c))
-    assertEqualsProb(Probability.zero, d('D')('d))
-    assertEqualsProb(Probability.zero, d('D')('def))
+    assertEqualsProb(LogNum(5. / 11.), d('A')('a))
+    assertEqualsProb(LogNum(4. / 11.), d('A')('b))
+    assertEqualsProb(LogNum(0. / 11.), d('A')('c))
+    assertEqualsProb(LogNum(2. / 11.), d('A')('d))
+    assertEqualsProb(LogNum(0. / 11.), d('A')('def))
+    assertEqualsProb(LogNum(6. / 9.), d('B')('a))
+    assertEqualsProb(LogNum(3. / 9.), d('B')('b))
+    assertEqualsProb(LogNum(0. / 9.), d('B')('c))
+    assertEqualsProb(LogNum(0. / 9.), d('B')('d))
+    assertEqualsProb(LogNum(0. / 9.), d('B')('def))
+    assertEqualsProb(LogNum.zero, d('C')('a))
+    assertEqualsProb(LogNum.zero, d('C')('b))
+    assertEqualsProb(LogNum.zero, d('C')('c))
+    assertEqualsProb(LogNum.zero, d('C')('d))
+    assertEqualsProb(LogNum.zero, d('C')('def))
+    assertEqualsProb(LogNum.zero, d('D')('a))
+    assertEqualsProb(LogNum.zero, d('D')('b))
+    assertEqualsProb(LogNum.zero, d('D')('c))
+    assertEqualsProb(LogNum.zero, d('D')('d))
+    assertEqualsProb(LogNum.zero, d('D')('def))
   }
 
   @Test
@@ -161,26 +161,26 @@ class CondCountsTransformerTests {
     // TODO: assert counts 
 
     val d = CondFreqDist(r)
-    assertEqualsProb(Probability(5. / 11.), d('A')('a))
-    assertEqualsProb(Probability(4. / 11.), d('A')('b))
-    assertEqualsProb(Probability(0. / 11.), d('A')('c))
-    assertEqualsProb(Probability(2. / 11.), d('A')('d))
-    assertEqualsProb(Probability(0. / 11.), d('A')('def))
-    assertEqualsProb(Probability(6. / 9.), d('B')('a))
-    assertEqualsProb(Probability(3. / 9.), d('B')('b))
-    assertEqualsProb(Probability(0. / 9.), d('B')('c))
-    assertEqualsProb(Probability(0. / 9.), d('B')('d))
-    assertEqualsProb(Probability(0. / 9.), d('B')('def))
-    assertEqualsProb(Probability.zero, d('C')('a))
-    assertEqualsProb(Probability.zero, d('C')('b))
-    assertEqualsProb(Probability.zero, d('C')('c))
-    assertEqualsProb(Probability.zero, d('C')('d))
-    assertEqualsProb(Probability.zero, d('C')('def))
-    assertEqualsProb(Probability.zero, d('D')('a))
-    assertEqualsProb(Probability.zero, d('D')('b))
-    assertEqualsProb(Probability.zero, d('D')('c))
-    assertEqualsProb(Probability.zero, d('D')('d))
-    assertEqualsProb(Probability.zero, d('D')('def))
+    assertEqualsProb(LogNum(5. / 11.), d('A')('a))
+    assertEqualsProb(LogNum(4. / 11.), d('A')('b))
+    assertEqualsProb(LogNum(0. / 11.), d('A')('c))
+    assertEqualsProb(LogNum(2. / 11.), d('A')('d))
+    assertEqualsProb(LogNum(0. / 11.), d('A')('def))
+    assertEqualsProb(LogNum(6. / 9.), d('B')('a))
+    assertEqualsProb(LogNum(3. / 9.), d('B')('b))
+    assertEqualsProb(LogNum(0. / 9.), d('B')('c))
+    assertEqualsProb(LogNum(0. / 9.), d('B')('d))
+    assertEqualsProb(LogNum(0. / 9.), d('B')('def))
+    assertEqualsProb(LogNum.zero, d('C')('a))
+    assertEqualsProb(LogNum.zero, d('C')('b))
+    assertEqualsProb(LogNum.zero, d('C')('c))
+    assertEqualsProb(LogNum.zero, d('C')('d))
+    assertEqualsProb(LogNum.zero, d('C')('def))
+    assertEqualsProb(LogNum.zero, d('D')('a))
+    assertEqualsProb(LogNum.zero, d('D')('b))
+    assertEqualsProb(LogNum.zero, d('D')('c))
+    assertEqualsProb(LogNum.zero, d('D')('d))
+    assertEqualsProb(LogNum.zero, d('D')('def))
   }
 
   @Test
@@ -235,21 +235,21 @@ class CondCountsTransformerTests {
 
     val d = CondFreqDist(r)
 
-    assertEqualsProb(Probability(5.1 / 19.4), d('A')('a))
-    assertEqualsProb(Probability(4.1 / 19.4), d('A')('b))
-    assertEqualsProb(Probability(7.1 / 19.4), d('A')('c))
-    assertEqualsProb(Probability(2.1 / 19.4), d('A')('d))
-    assertEqualsProb(Probability(2.1 / 19.4), d('A')('def))
-    assertEqualsProb(Probability(6.1 / 22.4), d('B')('a))
-    assertEqualsProb(Probability(3.1 / 22.4), d('B')('b))
-    assertEqualsProb(Probability(9.1 / 22.4), d('B')('c))
-    assertEqualsProb(Probability(3.1 / 22.4), d('B')('d))
-    assertEqualsProb(Probability(3.1 / 22.4), d('B')('def))
-    assertEqualsProb(Probability(8.1 / 15.4), d('C')('a))
-    assertEqualsProb(Probability(1.1 / 15.4), d('C')('b))
-    assertEqualsProb(Probability(1.1 / 15.4), d('C')('c))
-    assertEqualsProb(Probability(1.1 / 15.4), d('C')('d))
-    assertEqualsProb(Probability(1.1 / 15.4), d('C')('def))
+    assertEqualsProb(LogNum(5.1 / 19.4), d('A')('a))
+    assertEqualsProb(LogNum(4.1 / 19.4), d('A')('b))
+    assertEqualsProb(LogNum(7.1 / 19.4), d('A')('c))
+    assertEqualsProb(LogNum(2.1 / 19.4), d('A')('d))
+    assertEqualsProb(LogNum(2.1 / 19.4), d('A')('def))
+    assertEqualsProb(LogNum(6.1 / 22.4), d('B')('a))
+    assertEqualsProb(LogNum(3.1 / 22.4), d('B')('b))
+    assertEqualsProb(LogNum(9.1 / 22.4), d('B')('c))
+    assertEqualsProb(LogNum(3.1 / 22.4), d('B')('d))
+    assertEqualsProb(LogNum(3.1 / 22.4), d('B')('def))
+    assertEqualsProb(LogNum(8.1 / 15.4), d('C')('a))
+    assertEqualsProb(LogNum(1.1 / 15.4), d('C')('b))
+    assertEqualsProb(LogNum(1.1 / 15.4), d('C')('c))
+    assertEqualsProb(LogNum(1.1 / 15.4), d('C')('d))
+    assertEqualsProb(LogNum(1.1 / 15.4), d('C')('def))
   }
 
   @Test
@@ -318,26 +318,26 @@ class CondCountsTransformerTests {
     // TODO: assert counts 
 
     val d = CondFreqDist(r)
-    assertEqualsProb(Probability(5.1 / 11.5), d('A')('a))
-    assertEqualsProb(Probability(4.1 / 11.5), d('A')('b))
-    assertEqualsProb(Probability(0.1 / 11.5), d('A')('c))
-    assertEqualsProb(Probability(2.1 / 11.5), d('A')('d))
-    assertEqualsProb(Probability(0.1 / 11.5), d('A')('def))
-    assertEqualsProb(Probability(6.1 / 9.5), d('B')('a))
-    assertEqualsProb(Probability(3.1 / 9.5), d('B')('b))
-    assertEqualsProb(Probability(0.1 / 9.5), d('B')('c))
-    assertEqualsProb(Probability(0.1 / 9.5), d('B')('d))
-    assertEqualsProb(Probability(0.1 / 9.5), d('B')('def))
-    assertEqualsProb(Probability(0.1 / 0.5), d('C')('a))
-    assertEqualsProb(Probability(0.1 / 0.5), d('C')('b))
-    assertEqualsProb(Probability(0.1 / 0.5), d('C')('c))
-    assertEqualsProb(Probability(0.1 / 0.5), d('C')('d))
-    assertEqualsProb(Probability(0.1 / 0.5), d('C')('def))
-    assertEqualsProb(Probability(0.1 / 0.5), d('D')('a))
-    assertEqualsProb(Probability(0.1 / 0.5), d('D')('b))
-    assertEqualsProb(Probability(0.1 / 0.5), d('D')('c))
-    assertEqualsProb(Probability(0.1 / 0.5), d('D')('d))
-    assertEqualsProb(Probability(0.1 / 0.5), d('D')('def))
+    assertEqualsProb(LogNum(5.1 / 11.5), d('A')('a))
+    assertEqualsProb(LogNum(4.1 / 11.5), d('A')('b))
+    assertEqualsProb(LogNum(0.1 / 11.5), d('A')('c))
+    assertEqualsProb(LogNum(2.1 / 11.5), d('A')('d))
+    assertEqualsProb(LogNum(0.1 / 11.5), d('A')('def))
+    assertEqualsProb(LogNum(6.1 / 9.5), d('B')('a))
+    assertEqualsProb(LogNum(3.1 / 9.5), d('B')('b))
+    assertEqualsProb(LogNum(0.1 / 9.5), d('B')('c))
+    assertEqualsProb(LogNum(0.1 / 9.5), d('B')('d))
+    assertEqualsProb(LogNum(0.1 / 9.5), d('B')('def))
+    assertEqualsProb(LogNum(0.1 / 0.5), d('C')('a))
+    assertEqualsProb(LogNum(0.1 / 0.5), d('C')('b))
+    assertEqualsProb(LogNum(0.1 / 0.5), d('C')('c))
+    assertEqualsProb(LogNum(0.1 / 0.5), d('C')('d))
+    assertEqualsProb(LogNum(0.1 / 0.5), d('C')('def))
+    assertEqualsProb(LogNum(0.1 / 0.5), d('D')('a))
+    assertEqualsProb(LogNum(0.1 / 0.5), d('D')('b))
+    assertEqualsProb(LogNum(0.1 / 0.5), d('D')('c))
+    assertEqualsProb(LogNum(0.1 / 0.5), d('D')('d))
+    assertEqualsProb(LogNum(0.1 / 0.5), d('D')('def))
   }
 
   @Test
@@ -408,26 +408,26 @@ class CondCountsTransformerTests {
 
     val d = CondFreqDist(r)
 
-    assertEqualsProb(Probability(5.1 / 11.3), d('A')('a))
-    assertEqualsProb(Probability(4.1 / 11.3), d('A')('b))
-    assertEqualsProb(Probability(0.0 / 11.3), d('A')('c))
-    assertEqualsProb(Probability(2.1 / 11.3), d('A')('d))
-    assertEqualsProb(Probability(0.0 / 11.3), d('A')('def))
-    assertEqualsProb(Probability(6.1 / 9.2), d('B')('a))
-    assertEqualsProb(Probability(3.1 / 9.2), d('B')('b))
-    assertEqualsProb(Probability(0.0 / 9.2), d('B')('c))
-    assertEqualsProb(Probability(0.0 / 9.2), d('B')('d))
-    assertEqualsProb(Probability(0.0 / 9.2), d('B')('def))
-    assertEqualsProb(Probability.zero, d('C')('a))
-    assertEqualsProb(Probability.zero, d('C')('b))
-    assertEqualsProb(Probability.zero, d('C')('c))
-    assertEqualsProb(Probability.zero, d('C')('d))
-    assertEqualsProb(Probability.zero, d('C')('def))
-    assertEqualsProb(Probability.zero, d('D')('a))
-    assertEqualsProb(Probability.zero, d('D')('b))
-    assertEqualsProb(Probability.zero, d('D')('c))
-    assertEqualsProb(Probability.zero, d('D')('d))
-    assertEqualsProb(Probability.zero, d('D')('def))
+    assertEqualsProb(LogNum(5.1 / 11.3), d('A')('a))
+    assertEqualsProb(LogNum(4.1 / 11.3), d('A')('b))
+    assertEqualsProb(LogNum(0.0 / 11.3), d('A')('c))
+    assertEqualsProb(LogNum(2.1 / 11.3), d('A')('d))
+    assertEqualsProb(LogNum(0.0 / 11.3), d('A')('def))
+    assertEqualsProb(LogNum(6.1 / 9.2), d('B')('a))
+    assertEqualsProb(LogNum(3.1 / 9.2), d('B')('b))
+    assertEqualsProb(LogNum(0.0 / 9.2), d('B')('c))
+    assertEqualsProb(LogNum(0.0 / 9.2), d('B')('d))
+    assertEqualsProb(LogNum(0.0 / 9.2), d('B')('def))
+    assertEqualsProb(LogNum.zero, d('C')('a))
+    assertEqualsProb(LogNum.zero, d('C')('b))
+    assertEqualsProb(LogNum.zero, d('C')('c))
+    assertEqualsProb(LogNum.zero, d('C')('d))
+    assertEqualsProb(LogNum.zero, d('C')('def))
+    assertEqualsProb(LogNum.zero, d('D')('a))
+    assertEqualsProb(LogNum.zero, d('D')('b))
+    assertEqualsProb(LogNum.zero, d('D')('c))
+    assertEqualsProb(LogNum.zero, d('D')('d))
+    assertEqualsProb(LogNum.zero, d('D')('def))
   }
 
   @Test
@@ -505,29 +505,29 @@ class CondCountsTransformerTests {
 
     val d = CondFreqDist(r)
 
-    assertEqualsProb(Probability((5 + .2 * 3 * (19.1/44.7)) / (22 + .2 * 3)), d('A')('a))
-    assertEqualsProb(Probability((4 + .2 * 3 * ( 4.1/44.7)) / (22 + .2 * 3)), d('A')('b))
-    assertEqualsProb(Probability((7 + .2 * 3 * (16.1/44.7)) / (22 + .2 * 3)), d('A')('c))
-    assertEqualsProb(Probability((1 + .2 * 3 * ( 2.1/44.7)) / (22 + .2 * 3)), d('A')('x))
-    assertEqualsProb(Probability((1 + .2 * 3 * ( 2.1/44.7)) / (22 + .2 * 3)), d('A')('y))
-    assertEqualsProb(Probability((1 + .2 * 3 * ( 1.1/44.7)) / (22 + .2 * 3)), d('A')('z))
-    assertEqualsProb(Probability((2 + .2 * 3 * (  .1/44.7)) / (22 + .2 * 3)), d('A')('def))
+    assertEqualsProb(LogNum((5 + .2 * 3 * (19.1/44.7)) / (22 + .2 * 3)), d('A')('a))
+    assertEqualsProb(LogNum((4 + .2 * 3 * ( 4.1/44.7)) / (22 + .2 * 3)), d('A')('b))
+    assertEqualsProb(LogNum((7 + .2 * 3 * (16.1/44.7)) / (22 + .2 * 3)), d('A')('c))
+    assertEqualsProb(LogNum((1 + .2 * 3 * ( 2.1/44.7)) / (22 + .2 * 3)), d('A')('x))
+    assertEqualsProb(LogNum((1 + .2 * 3 * ( 2.1/44.7)) / (22 + .2 * 3)), d('A')('y))
+    assertEqualsProb(LogNum((1 + .2 * 3 * ( 1.1/44.7)) / (22 + .2 * 3)), d('A')('z))
+    assertEqualsProb(LogNum((2 + .2 * 3 * (  .1/44.7)) / (22 + .2 * 3)), d('A')('def))
 
-    assertEqualsProb(Probability((6 + .2 * 2 * (19.1/44.7)) / (27 + .2 * 2)), d('B')('a))
-    assertEqualsProb(Probability((3 + .2 * 2 * ( 4.1/44.7)) / (27 + .2 * 2)), d('B')('b))
-    assertEqualsProb(Probability((9 + .2 * 2 * (16.1/44.7)) / (27 + .2 * 2)), d('B')('c))
-    assertEqualsProb(Probability((1 + .2 * 2 * ( 2.1/44.7)) / (27 + .2 * 2)), d('B')('x))
-    assertEqualsProb(Probability((1 + .2 * 2 * ( 2.1/44.7)) / (27 + .2 * 2)), d('B')('y))
-    assertEqualsProb(Probability((3 + .2 * 2 * ( 1.1/44.7)) / (27 + .2 * 2)), d('B')('z))
-    assertEqualsProb(Probability((3 + .2 * 2 * (  .1/44.7)) / (27 + .2 * 2)), d('B')('def))
+    assertEqualsProb(LogNum((6 + .2 * 2 * (19.1/44.7)) / (27 + .2 * 2)), d('B')('a))
+    assertEqualsProb(LogNum((3 + .2 * 2 * ( 4.1/44.7)) / (27 + .2 * 2)), d('B')('b))
+    assertEqualsProb(LogNum((9 + .2 * 2 * (16.1/44.7)) / (27 + .2 * 2)), d('B')('c))
+    assertEqualsProb(LogNum((1 + .2 * 2 * ( 2.1/44.7)) / (27 + .2 * 2)), d('B')('x))
+    assertEqualsProb(LogNum((1 + .2 * 2 * ( 2.1/44.7)) / (27 + .2 * 2)), d('B')('y))
+    assertEqualsProb(LogNum((3 + .2 * 2 * ( 1.1/44.7)) / (27 + .2 * 2)), d('B')('z))
+    assertEqualsProb(LogNum((3 + .2 * 2 * (  .1/44.7)) / (27 + .2 * 2)), d('B')('def))
 
-    assertEqualsProb(Probability((8 + .2 * 0 * (19.1/44.7)) / (18 + .2 * 0)), d('C')('a))
-    assertEqualsProb(Probability((1 + .2 * 0 * ( 4.1/44.7)) / (18 + .2 * 0)), d('C')('b))
-    assertEqualsProb(Probability((1 + .2 * 0 * (16.1/44.7)) / (18 + .2 * 0)), d('C')('c))
-    assertEqualsProb(Probability((1 + .2 * 0 * ( 2.1/44.7)) / (18 + .2 * 0)), d('C')('x))
-    assertEqualsProb(Probability((1 + .2 * 0 * ( 2.1/44.7)) / (18 + .2 * 0)), d('C')('y))
-    assertEqualsProb(Probability((1 + .2 * 0 * ( 1.1/44.7)) / (18 + .2 * 0)), d('C')('z))
-    assertEqualsProb(Probability((1 + .2 * 0 * (  .1/44.7)) / (18 + .2 * 0)), d('C')('def))
+    assertEqualsProb(LogNum((8 + .2 * 0 * (19.1/44.7)) / (18 + .2 * 0)), d('C')('a))
+    assertEqualsProb(LogNum((1 + .2 * 0 * ( 4.1/44.7)) / (18 + .2 * 0)), d('C')('b))
+    assertEqualsProb(LogNum((1 + .2 * 0 * (16.1/44.7)) / (18 + .2 * 0)), d('C')('c))
+    assertEqualsProb(LogNum((1 + .2 * 0 * ( 2.1/44.7)) / (18 + .2 * 0)), d('C')('x))
+    assertEqualsProb(LogNum((1 + .2 * 0 * ( 2.1/44.7)) / (18 + .2 * 0)), d('C')('y))
+    assertEqualsProb(LogNum((1 + .2 * 0 * ( 1.1/44.7)) / (18 + .2 * 0)), d('C')('z))
+    assertEqualsProb(LogNum((1 + .2 * 0 * (  .1/44.7)) / (18 + .2 * 0)), d('C')('def))
   }
 
   @Test
@@ -588,12 +588,12 @@ class CondCountsTransformerTests {
 
     val d = CondFreqDist(r)
 
-    assertEqualsProb(Probability(1.0 / 9.1), d('A')('a))
-    assertEqualsProb(Probability(8.0 / 9.1), d('A')('b))
-    assertEqualsProb(Probability(0.2 / 9.1), d('A')('def))
-    assertEqualsProb(Probability(11. / 16.7), d('B')('a))
-    assertEqualsProb(Probability(5.4 / 16.7), d('B')('b))
-    assertEqualsProb(Probability(0.4 / 16.7), d('B')('def))
+    assertEqualsProb(LogNum(1.0 / 9.1), d('A')('a))
+    assertEqualsProb(LogNum(8.0 / 9.1), d('A')('b))
+    assertEqualsProb(LogNum(0.2 / 9.1), d('A')('def))
+    assertEqualsProb(LogNum(11. / 16.7), d('B')('a))
+    assertEqualsProb(LogNum(5.4 / 16.7), d('B')('b))
+    assertEqualsProb(LogNum(0.4 / 16.7), d('B')('def))
   }
 
   case class MockCondCountsTransformer[A, B](expected: DefaultedCondFreqCounts[A, B, Double], returned: DefaultedCondFreqCounts[A, B, Double]) extends CondCountsTransformer[A, B] {
@@ -610,7 +610,7 @@ class CondCountsTransformerTests {
     }
   }
 
-  def assertEqualsProb(a: Probability, b: Probability) {
+  def assertEqualsProb(a: LogNum, b: LogNum) {
     assertEquals(a.toDouble, b.toDouble, 0.001)
   }
 

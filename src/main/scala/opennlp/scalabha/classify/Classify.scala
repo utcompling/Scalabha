@@ -1,6 +1,6 @@
 package opennlp.scalabha.classify
 
-import opennlp.scalabha.util.Probability
+import opennlp.scalabha.util.LogNum
 
 /**
  * Trait for documents with fields and features
@@ -37,7 +37,7 @@ trait Classifier[L,T] {
    * Classify a document
    * @return a sequence of labels with their double-valued scores
    */
-  def classify(document:Document[T]):Iterable[(L,Probability)]
+  def classify(document:Document[T]):Iterable[(L,LogNum)]
 
   /** Return the best label provided this classifier */
   def bestLabel(document:Document[T]) = classify(document).maxBy(_._2)
@@ -59,6 +59,6 @@ trait ClassifierTrainer[L,T] {
  * @tparam T the class of value used for the features
  */
 trait SoftClassifierTrainer[L,T] {
-  def train(documents:Iterable[(Iterable[(L,Probability)],_ <: Document[T])])
+  def train(documents:Iterable[(Iterable[(L,LogNum)],_ <: Document[T])])
   :Classifier[L,T]
 }
