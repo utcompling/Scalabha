@@ -14,12 +14,9 @@ object Test {
     val tagDict = new SimpleTagDictFactory().make(tagDictFile)
     for (
       (name, unsuperEmissDist) <- List(
-        "OneCountUnsupervisedEmissionDistFactory" -> new OneCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>"),
+        "EstimatedRawCountUnsupervisedEmissionDistFactory" -> new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, unlabTrainFile, "<END>", "<END>"),
         "PartialCountUnsupervisedEmissionDistFactory" -> new PartialCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>"),
-        "EstimatedRawCountUnsupervisedEmissionDistFactory" -> new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, unlabTrainFile, lambda = 1.0, "<END>", "<END>"),
-        "Hacked OneCountUnsupervisedEmissionDistFactory" -> new DefaultHackingUnsupervisedEmissionDistFactory(tagDict, "<END>", "<END>", new OneCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>")),
-        "Hacked PartialCountUnsupervisedEmissionDistFactory" -> new DefaultHackingUnsupervisedEmissionDistFactory(tagDict, "<END>", "<END>", new PartialCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>")),
-        "Hacked EstimatedRawCountUnsupervisedEmissionDistFactory" -> new DefaultHackingUnsupervisedEmissionDistFactory(tagDict, "<END>", "<END>", new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, unlabTrainFile, lambda = 1.0, "<END>", "<END>")))
+        "OneCountUnsupervisedEmissionDistFactory" -> new OneCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>"))
     ) {
       println("EXPERIMENT: " + name)
       val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
@@ -27,11 +24,9 @@ object Test {
           initialUnsupervisedEmissionDist =
             unsuperEmissDist.make(),
           estimatedTransitionCountsTransformer =
-            AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 1.0),
+            PassthroughCondCountsTransformer[String, String](),
           estimatedEmissionCountsTransformer =
-            StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
-              new AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 1.0,
-                StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>"))),
+            PassthroughCondCountsTransformer[String, String](),
           "<END>", "<END>",
           maxIterations = 20,
           minAvgLogProbChangeForEM = 0.00001)

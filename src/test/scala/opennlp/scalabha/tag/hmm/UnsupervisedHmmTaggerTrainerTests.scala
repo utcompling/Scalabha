@@ -30,9 +30,9 @@ class UnsupervisedHmmTaggerTrainerTests {
     val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
       new UnsupervisedHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
-          new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainLab.map(_.map(_._1)), lambda = 1.0, "<END>", "<END>").make(),
+          new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainLab.map(_.map(_._1)), "<END>", "<END>").make(),
         estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
-        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
+        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer[String, String](),
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -61,9 +61,9 @@ class UnsupervisedHmmTaggerTrainerTests {
     val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
       new UnsupervisedHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
-          new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainLab.map(_.map(_._1)), lambda = 1.0, "<END>", "<END>").make(),
+          new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainLab.map(_.map(_._1)), "<END>", "<END>").make(),
         estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
-        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
+        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer[String, String](),
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -153,14 +153,10 @@ class UnsupervisedHmmTaggerTrainerTests {
       new UnsupervisedHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
           new DefaultHackingUnsupervisedEmissionDistFactory(tagDict, "<END>", "<END>",
-            new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, lambda = 1.0, "<END>", "<END>"))
+            new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, "<END>", "<END>"))
             .make(),
-        estimatedTransitionCountsTransformer =
-          AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 1.0),
-        estimatedEmissionCountsTransformer =
-          StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
-            new AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 1.0,
-              StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>"))),
+        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
+        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer[String, String](),
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)

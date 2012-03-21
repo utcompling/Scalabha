@@ -9,6 +9,7 @@ import opennlp.scalabha.util.Pattern
 import opennlp.scalabha.util.Pattern.{ -> }
 import opennlp.scalabha.util.LogNum
 import scala.collection.GenIterable
+import opennlp.scalabha.tag.hmm.support._
 
 /**
  * Factory for training a Hidden Markov Model tagger from a combination of
@@ -236,7 +237,8 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
       //         probability distributions
 
       transitions = CondFreqDist(estimatedTransitionCountsTransformer(expectedTransitionCounts))
-      emissions = CondFreqDist(estimatedEmissionCountsTransformer(expectedEmmissionCounts))
+      emissions = CondFreqDist(
+        new StartEndFixingEmissionCountsTransformer(startEndSymbol, startEndTag, estimatedEmissionCountsTransformer)(expectedEmmissionCounts))
 
       // compute new iteration information
       averageLogProb = avgLogProb
