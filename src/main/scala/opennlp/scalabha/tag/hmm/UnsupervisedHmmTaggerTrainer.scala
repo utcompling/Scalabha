@@ -48,7 +48,7 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
    */
   override def trainUnsupervised(tagDict: Map[Sym, Set[Tag]], rawTrainSequences: Iterable[IndexedSeq[Sym]]): Tagger[Sym, Tag] = {
     LOG.info("Beginning unsupervised training")
-    LOG.info("Tag dict: %d symbols, %.3f avg tags/symbol".format(tagDict.size, tagDict.values.map(_.size.toDouble).avg))
+    LOG.info("Tag dict: %d symbols, %.3f avg tags/symbol".format(tagDict.size, tagDict.values.map(_.size).avg))
 
     // Correct tag dictionary for start/final symbols
     val tagDictWithEnds = tagDict + (startEndSymbol -> Set(startEndTag))

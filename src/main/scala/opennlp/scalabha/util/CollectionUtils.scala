@@ -641,6 +641,21 @@ object CollectionUtils {
   }
   implicit def enrich_avg_GenTraversableOnce[A](self: GenTraversableOnce[A]) = new Enrich_avg_GenTraversableOnce(self)
 
+  class Enrich_avg_Int_GenTraversableOnce(self: GenTraversableOnce[Int]) {
+    /**
+     * Find the average (mean) of this collection of numbers.
+     *
+     * @return the average (mean)
+     */
+    def avg = {
+      val (total, count) = self.toIterator.foldLeft((0, 0)) {
+        case ((total, count), x) => (total + x, count + 1)
+      }
+      total.toDouble / count
+    }
+  }
+  implicit def enrich_avg_Int_GenTraversableOnce(self: GenTraversableOnce[Int]) = new Enrich_avg_Int_GenTraversableOnce(self)
+
   //////////////////////////////////////////////////////
   // normalize(): Repr[A]
   //   - Normalize this collection of numbers by dividing each by the sum
@@ -661,6 +676,22 @@ object CollectionUtils {
     }
   }
   implicit def enrich_normalize_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) = new Enriched_normalize_GenTraversableLike(self)
+
+  class Enriched_normalize_Int_GenTraversableLike[Repr <: GenTraversable[Int]](self: GenTraversableLike[Int, Repr]) {
+    /**
+     * Normalize this collection of numbers by dividing each by the sum
+     *
+     * @return normalized values
+     */
+    def normalize[That](implicit bf: CanBuildFrom[Repr, Double, That]) = {
+      val b = bf(self.asInstanceOf[Repr])
+      b.sizeHint(self.size)
+      val total = self.sum.toDouble
+      for (x <- self) b += x / total
+      b.result
+    }
+  }
+  implicit def enrich_normalize_Int_GenTraversableLike[Repr <: GenTraversable[Int]](self: GenTraversableLike[Int, Repr]) = new Enriched_normalize_Int_GenTraversableLike(self)
 
   //////////////////////////////////////////////////////
   // normalizeValues(): Repr[(T,U)]
@@ -683,6 +714,21 @@ object CollectionUtils {
   }
   implicit def enrich_normalizeValues_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) = new Enriched_normalizeValues_GenTraversableLike(self)
 
+  class Enriched_normalizeValues_Int_GenTraversableLike[T, Repr <: GenTraversable[(T, Int)]](self: GenTraversableLike[(T, Int), Repr]) {
+    /**
+     * Normalize this values in this collection of pairs
+     *
+     * @return a collection of pairs
+     */
+    def normalizeValues[That](implicit bf: CanBuildFrom[Repr, (T, Double), That]) = {
+      val b = bf(self.asInstanceOf[Repr])
+      b.sizeHint(self.size)
+      val total = self.map(_._2).sum.toDouble
+      for ((k, v) <- self) b += k -> (v / total)
+      b.result
+    }
+  }
+  implicit def enrich_normalizeValues_Int_GenTraversableLike[T, Repr <: GenTraversable[(T, Int)]](self: GenTraversableLike[(T, Int), Repr]) = new Enriched_normalizeValues_Int_GenTraversableLike(self)
 
   //  class ReversableIterableMap[A, B](map: Map[A, GenTraversableOnce[B]]) {
   //    def reverse(): Map[B, GenTraversableOnce[A]] =
