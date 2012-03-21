@@ -641,6 +641,49 @@ object CollectionUtils {
   }
   implicit def enrich_avg_GenTraversableOnce[A](self: GenTraversableOnce[A]) = new Enrich_avg_GenTraversableOnce(self)
 
+  //////////////////////////////////////////////////////
+  // normalize(): Repr[A]
+  //   - Normalize this collection of numbers by dividing each by the sum
+  //////////////////////////////////////////////////////
+
+  class Enriched_normalize_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
+    /**
+     * Normalize this collection of numbers by dividing each by the sum
+     *
+     * @return normalized values
+     */
+    def normalize[That](implicit num: Fractional[A], bf: CanBuildFrom[Repr, A, That]) = {
+      val b = bf(self.asInstanceOf[Repr])
+      b.sizeHint(self.size)
+      val total = self.sum
+      for (x <- self) b += num.div(x, total)
+      b.result
+    }
+  }
+  implicit def enrich_normalize_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) = new Enriched_normalize_GenTraversableLike(self)
+
+  //////////////////////////////////////////////////////
+  // normalizeValues(): Repr[(T,U)]
+  //   - Normalize this values in this collection of pairs
+  //////////////////////////////////////////////////////
+
+  class Enriched_normalizeValues_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) {
+    /**
+     * Normalize this values in this collection of pairs
+     *
+     * @return a collection of pairs
+     */
+    def normalizeValues[That](implicit num: Fractional[U], bf: CanBuildFrom[Repr, (T, U), That]) = {
+      val b = bf(self.asInstanceOf[Repr])
+      b.sizeHint(self.size)
+      val total = self.map(_._2).sum
+      for ((k, v) <- self) b += k -> num.div(v, total)
+      b.result
+    }
+  }
+  implicit def enrich_normalizeValues_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) = new Enriched_normalizeValues_GenTraversableLike(self)
+
+
   //  class ReversableIterableMap[A, B](map: Map[A, GenTraversableOnce[B]]) {
   //    def reverse(): Map[B, GenTraversableOnce[A]] =
   //      map.flattenOver.groupBy(_._2).mapValues(_.map(_._1)).iterator.toMap
