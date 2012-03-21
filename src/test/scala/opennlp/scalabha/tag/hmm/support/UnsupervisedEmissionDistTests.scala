@@ -47,6 +47,10 @@ class UnsupervisedEmissionDistTests {
     println(d('N)("dog"))
     println(d('V)("walks"))
     
+    println
+    println(d('N)("aardvark") / d('V)("aardvark"))
+    println(d('N)("meanders") / d('V)("meanders"))
+    
     assertEqualsProb(LogNum(1. / 5.), d('N)("bird"))
   }
 
