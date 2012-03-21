@@ -99,23 +99,44 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
     val vocabKnown = tagDict.keySet // set of all symbols in tag dict (known symbols)
     val vocabUnknown = vocabRaw -- vocabKnown // set of all symbols NOT found in tag dict (unknown symbols)
 
+    val rawKnownCountByWord = rawSymbolCounts.filter(x => vocabKnown(x._1)) // counts of each known type from raw data
     val rawUnkwnCountByWord = rawSymbolCounts.filter(x => vocabUnknown(x._1)) // counts of each unknown type from raw data
 
-    val knownTagCounts = tagToSymbolDict.mapValuesStrict(_.size) // number of symbols associated with each tag
-    val knownTagCountsExaggerated = knownTagCounts.mapValuesStrict(c => math.exp(c.toDouble)) // skew the counts to exaggerate the differences
-    val knownTagSkewedProportions = knownTagCountsExaggerated.normalizeValues // skewed proportion of symbols associated with this tag
-
     println("totalRawWordCount = " + rawSymbolCounts.values.sum)
-    println("totalRawWordCount (known)   = " + rawSymbolCounts.filter(x => vocabKnown(x._1)).values.sum)
-    println("totalRawWordCount (unknown) = " + rawUnkwnCountByWord.values.sum)
+    println("totalRawWordCount (known)   = " + rawKnownCountByWord)
+    println("totalRawWordCount (unknown) = " + rawUnkwnCountByWord)
+
+    val knownCounts =
+      tagToSymbolDict.mapValuesStrict {
+        _.mapTo(s => (rawSymbolCounts(s)) / tagDict(s).size.toDouble).toMap // estimated C(w,t) for known symbols
+      }
+
+    val estimatedUnknownProportions = {
+      val estUnkProportionsFromRaw = {
+        val totalRawKnownCount = rawKnownCountByWord.values.sum // total count of known tokens from raw data
+        val totalRawUnkwnCount = rawUnkwnCountByWord.values.sum // total count of unknown tokens from raw data
+        val unknownKnownRatio = totalRawUnkwnCount.toDouble / totalRawKnownCount // ratio of unknown to known tokens in raw data
+
+        val unknownTokenCounts = knownCounts.mapValuesStrict(_.values.sum * unknownKnownRatio) // estimated number of unknown tokens for each tag 
+        unknownTokenCounts.normalizeValues // estimated count mass for unknowns spread across all unknown tokens
+      }
+
+      val estUnkProportionsFromTagDict = {
+        val numberOfSymbolsPerTag = tagToSymbolDict.mapValuesStrict(_.size) // number of symbols associated with each tag
+        numberOfSymbolsPerTag.normalizeValues
+      }
+
+      estUnkProportionsFromRaw.keySet.mapTo {
+        tag => estUnkProportionsFromRaw(tag) * estUnkProportionsFromRaw(tag)
+      }.normalizeValues.toMap
+    }
 
     val counts =
-      tagToSymbolDict.map {
-        case (tag, symbols) =>
-          val estimatedKnownCounts = symbols.mapTo(s => (rawSymbolCounts(s)) / tagDict(s).size.toDouble).toMap // estimated C(w,t) for known symbols 
-          val estimatedUniformUnknownTokenCount = knownTagSkewedProportions(tag) // estimated count mass (for tag t) for each unknown token  
-          val estimatedUnknownCounts = rawUnkwnCountByWord.mapValuesStrict(_ * estimatedUniformUnknownTokenCount) // estimated unknown-symbol count mass given to each type
-          (tag, DefaultedFreqCounts(estimatedKnownCounts ++ estimatedUnknownCounts)) // combine known and unknown estimates
+      knownCounts.map {
+        case (tag, estimatedKnownCounts) =>
+          val estimatedUnknownProportion = estimatedUnknownProportions(tag)
+          val unknownCounts = rawUnkwnCountByWord.mapValuesStrict(_ * estimatedUnknownProportion)
+          (tag, DefaultedFreqCounts(estimatedKnownCounts ++ unknownCounts)) // combine known and unknown estimates
       }
 
     println("totalEstWordCount           = " + counts.values.map(_.simpleCounts.values.sum).sum)

@@ -41,9 +41,13 @@ class UnsupervisedEmissionDistTests {
     val d = new EstimatedRawCountUnsupervisedEmissionDistFactory[Symbol, String](tagDict, rawData, startEndSymbol = "<END>", startEndTag = 'END).make()
 
     println(d('N)("aardvark"))
-    println(d('N)("meanders"))
     println(d('V)("aardvark"))
+    println(d('R)("aardvark"))
+    println(d('D)("aardvark"))
+    println(d('N)("meanders"))
     println(d('V)("meanders"))
+    println(d('R)("meanders"))
+    println(d('D)("meanders"))
     println(d('N)("dog"))
     println(d('V)("walks"))
     
