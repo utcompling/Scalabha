@@ -1,5 +1,6 @@
 package opennlp.scalabha.tag.hmm.support
 
+import scala.math
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.tag.support._
@@ -98,25 +99,25 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
     val vocabKnown = tagDict.keySet // set of all symbols in tag dict (known symbols)
     val vocabUnknown = vocabRaw -- vocabKnown // set of all symbols NOT found in tag dict (unknown symbols)
 
-    val totalRawWordCount = rawSymbolCounts.values.sum // total number of tokens in raw data
-    val rawKnownCountByWord = rawSymbolCounts.filter(x => vocabKnown(x._1)) // counts of each known type from raw data
     val rawUnkwnCountByWord = rawSymbolCounts.filter(x => vocabUnknown(x._1)) // counts of each unknown type from raw data
-    val totalRawKnownCount = rawKnownCountByWord.values.sum // total count of known tokens from raw data
     val totalRawUnkwnCount = rawUnkwnCountByWord.values.sum // total count of unknown tokens from raw data
-    val unknownKnownRatio = totalRawUnkwnCount.toDouble / totalRawKnownCount // ratio of unknown to known tokens in raw data
 
-    println("totalRawWordCount = " + totalRawWordCount)
+    val knownTagCounts = tagToSymbolDict.mapValuesStrict(_.size) // number of symbols associated with each tag
+    val knownTagCountsExaggerated = knownTagCounts.mapValuesStrict(c => math.exp(c.toDouble)) // skew the counts to exaggerate the differences
+    val knownTagSkewedProportions = knownTagCountsExaggerated.normalizeValues // skewed proportion of symbols associated with this tag
+    val unknownTagCountsSkewed = knownTagSkewedProportions.mapValuesStrict(_ * totalRawUnkwnCount) // skewed count of unknown tokens for each tag
+
+    println("totalRawWordCount = " + rawSymbolCounts.values.sum)
     println("totalRawWordCount (known)   = " + rawSymbolCounts.filter(x => vocabKnown(x._1)).values.sum)
     println("totalRawWordCount (unknown) = " + rawUnkwnCountByWord.values.sum)
-    println("unknownKnownRatio = " + unknownKnownRatio)
+    println("totalRawWordCount (unk-skw) = " + unknownTagCountsSkewed.values.sum)
 
     val counts =
       tagToSymbolDict.map {
         case (tag, symbols) =>
           val estimatedKnownCounts = symbols.mapTo(s => (rawSymbolCounts(s)) / tagDict(s).size.toDouble).toMap // estimated C(w,t) for known symbols 
-          val estimatedTotalKnownCount = estimatedKnownCounts.values.sum // estimated total known-symbol token count for this tag
-          val estimatedTotalUnkwnCount = estimatedTotalKnownCount * unknownKnownRatio // estimate total unknown-symbol token count from the overall known/unknown token count ratio
-          val estimatedUniformUnknownTokenCount = estimatedTotalUnkwnCount / totalRawUnkwnCount.toDouble // estimated count mass for unknowns spread across all unknown tokens  
+          val estimatedTotalUnkwnCount = unknownTagCountsSkewed(tag) // skewed count of unknown tokens having this tag
+          val estimatedUniformUnknownTokenCount = estimatedTotalUnkwnCount / totalRawUnkwnCount // estimated count mass for unknowns spread across all unknown tokens  
           val estimatedUnknownCounts = rawUnkwnCountByWord.mapValuesStrict(_ * estimatedUniformUnknownTokenCount) // estimated unknown-symbol count mass given to each type
           (tag, DefaultedFreqCounts(estimatedKnownCounts ++ estimatedUnknownCounts)) // combine known and unknown estimates
       }
