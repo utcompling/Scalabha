@@ -41,21 +41,14 @@ class UnsupervisedEmissionDistTests {
 
     val d = new EstimatedRawCountUnsupervisedEmissionDistFactory[Symbol, String](tagDict, rawData, startEndSymbol = "<END>", startEndTag = 'END).make()
 
-    println(d('N)("aardvark"))
-    println(d('V)("aardvark"))
-    println(d('R)("aardvark"))
-    println(d('D)("aardvark"))
-    println(d('N)("meanders"))
-    println(d('V)("meanders"))
-    println(d('R)("meanders"))
-    println(d('D)("meanders"))
-    println(d('N)("dog"))
-    println(d('V)("walks"))
-    
+    for (w <- List("aardvark", "dog", "the"))
+      for(t <- List('N, 'V, 'R, 'D))
+        println("p(%s|%s) = %s".format(w, t, d(t)(w).logValue))
+
     println
     println(d('N)("aardvark") / d('V)("aardvark"))
     println(d('N)("meanders") / d('V)("meanders"))
-    
+
     assertEqualsProb(LogNum(1. / 5.), d('N)("bird"))
   }
 

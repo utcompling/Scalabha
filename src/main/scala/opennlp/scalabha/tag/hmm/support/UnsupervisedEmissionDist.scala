@@ -78,7 +78,7 @@ class PartialCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Se
  *
  * So, if a word w appears C(w) times in the raw corpus, and is seen with
  * |TD(w)| tags in the tag dictionary, then assume
- * for each t in TD(w): C(t,w) = C(w) / |TD(w)|.
+ * for each t in TD(w): C(w,t) = C(w) / |TD(w)|.
  *
  * If a word from the raw corpus does not appear in the tag dictionary, then
  *
@@ -113,10 +113,6 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
 
     val estimatedUnknownProportions = {
       val estUnkProportionsFromRaw = {
-        val totalRawKnownCount = rawKnownCountByWord.values.sum // total count of known tokens from raw data
-        val totalRawUnkwnCount = rawUnkwnCountByWord.values.sum // total count of unknown tokens from raw data
-        val unknownKnownRatio = totalRawUnkwnCount.toDouble / totalRawKnownCount // ratio of unknown to known tokens in raw data
-
         println("raw proportions =              " + knownCounts.mapValues(_.values.sum).normalizeValues.mapValues("%.3f".format(_)))
 
         knownCounts
@@ -130,7 +126,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
         val x =
           tagToSymbolDict
             .mapValuesStrict(_.size) // number of symbols associated with each tag
-            //.mapValuesStrict(math.pow(math.E * 2, _)) // exaggerate the differences
+            .mapValuesStrict(math.pow(_, 2)) // exaggerate the differences
             .normalizeValues
 
         println("tagDict (skewed) proportions = " + x.normalizeValues.mapValues("%.3f".format(_)))
@@ -139,7 +135,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
       }
 
       estUnkProportionsFromRaw.keySet.mapTo {
-        tag => estUnkProportionsFromTagDict(tag) //* estUnkProportionsFromRaw(tag)
+        tag => estUnkProportionsFromTagDict(tag) * estUnkProportionsFromRaw(tag)
       }.normalizeValues.toMap
     }
 

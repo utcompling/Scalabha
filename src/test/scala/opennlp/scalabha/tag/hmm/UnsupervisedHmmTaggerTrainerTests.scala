@@ -152,9 +152,7 @@ class UnsupervisedHmmTaggerTrainerTests {
     val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
       new UnsupervisedHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
-          new DefaultHackingUnsupervisedEmissionDistFactory(tagDict, "<END>", "<END>",
-            new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, "<END>", "<END>"))
-            .make(),
+          new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, "<END>", "<END>").make(),
         estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
         estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer[String, String](),
         "<END>", "<END>",
