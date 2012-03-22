@@ -19,6 +19,63 @@ class UnsupervisedHmmTaggerTrainerTests {
   val LOG = LogFactory.getLog(classOf[UnsupervisedHmmTaggerTrainerTests])
 
   @Test
+  def tiny() {
+    val trainRaw = List(
+      "the dog walks quickly",
+      "the cat walks quietly",
+      "the dog saw the cat",
+      "the cat saw the dog",
+      "the dog saw the saw",
+      "the bird sings",
+      "the mouse walks",
+      "the aardvark walks",
+      "the aardvark meanders").map(_.split(" ").toIndexedSeq)
+
+    val tagDict = Map(
+      "bird" -> Set("N"),
+      "cat" -> Set("N"),
+      "dog" -> Set("N"),
+      "horse" -> Set("N"),
+      "mouse" -> Set("N"),
+      "quickly" -> Set("R"),
+      "quietly" -> Set("R"),
+      "saw" -> Set("N", "V"),
+      "sings" -> Set("V"),
+      "the" -> Set("D"),
+      "walks" -> Set("V")).withDefaultValue(Set("N","V","R","D"))
+
+    val gold = List(
+      Vector(("the", "D"), ("bird", "N"), ("walks", "V")),
+      Vector(("a", "D"), ("dog", "N"), ("walks", "V"), ("quickly", "R")),
+      Vector(("the", "D"), ("moose", "N"), ("walks", "V"), ("quickly", "R")),
+      Vector(("the", "D"), ("dog", "N"), ("runs", "V"), ("quickly", "R")),
+      Vector(("the", "D"), ("dog", "N"), ("walks", "V"), ("briskly", "R")))
+
+    val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
+      new UnsupervisedHmmTaggerTrainer(
+        initialUnsupervisedEmissionDist =
+          new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, "<END>", "<END>").make(),
+        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
+        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer[String, String](),
+        "<END>", "<END>",
+        maxIterations = 20,
+        minAvgLogProbChangeForEM = 0.00001)
+    val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainRaw)
+    val output = unsupervisedTagger.tag(gold.map(_.map(_._1)))
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
+    assertResultsEqual("""
+		Total:   84.21 (16/19)
+		Known:   100.00 (15/15)
+		Unknown: 25.00 (1/4)
+		Common Mistakes:
+		#Err     Gold      Model
+		1        V        N
+		1        D        N
+		1        R        N
+    	""", results)
+  }
+
+  @Test
   def ic_fullTagDict_noSmoothing() {
     val trainLab = TaggedFile("data/postag/ic/ictrain.txt")
     val testLab = TaggedFile("data/postag/ic/ictest.txt")

@@ -231,7 +231,7 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     if ((averageLogProb - prevAvgLogProb).abs < minAvgLogProbChangeForEM)
       LOG.info("DONE: Change in average log probability is less than " + minAvgLogProbChangeForEM)
     if (averageLogProb < prevAvgLogProb)
-      LOG.info("DIVERGED: log probability decreased on iteration %d".format(iteration))
+      throw new RuntimeException("DIVERGED: log probability decreased on iteration %d".format(iteration))
     if (averageLogProb == Double.NegativeInfinity)
       throw new RuntimeException("averageLogProb == -Infinity on iteration %d".format(iteration))
 
