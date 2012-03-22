@@ -204,8 +204,8 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
       // M Step: Use these probability estimates to re-estimate the 
       //         probability distributions
 
-      transitions = CondFreqDist(DefaultedCondFreqCounts(expectedTransitionCounts))
-      emissions = CondFreqDist(DefaultedCondFreqCounts(expectedEmmissionCounts))
+      transitions = CondFreqDist(DefaultedCondFreqCounts(expectedTransitionCounts.toMap))
+      emissions = CondFreqDist(DefaultedCondFreqCounts(expectedEmmissionCounts.toMap))
 
       // compute new iteration information
       averageLogProb = avgLogProb
@@ -241,16 +241,17 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
 
     val (expectedTransitionCounts, expectedEmissionCounts, totalSeqProb, numSequences) =
       rawTrainSequences.par
-        .map(sequence => estimateCountsForSequence(sequence, transitions, emissions, tagDict))
         .map {
-          case (estTrCounts, estEmCounts, seqProb) => (estTrCounts, estEmCounts, seqProb.logValue, 1) // number of sentences == 1
+          sequence =>
+            val (estTrCounts, estEmCounts, seqProb) = estimateCountsForSequence(sequence, transitions, emissions, tagDict)
+            (estTrCounts, estEmCounts, seqProb.logValue, 1) // number of sentences == 1
         }
         .fold((CondFreqCounts[Tag, Tag, Double](), CondFreqCounts[Tag, Sym, Double](), 0., 0)) {
           case ((aTC, aEC, aP, aN), (bTC, bEC, bP, bN)) =>
             (aTC ++ bTC, aEC ++ bEC, aP + bP, aN + bN) // sum up all the components
         }
 
-    (expectedTransitionCounts.toMap, expectedEmissionCounts.toMap, totalSeqProb / numSequences)
+    (expectedTransitionCounts ++ initialTransitionCounts, expectedEmissionCounts ++ initialEmissionCounts, totalSeqProb / numSequences)
   }
 
   /**
