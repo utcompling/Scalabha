@@ -55,19 +55,8 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
 
     // Create the initial distributions
     val allTags = tagDictWithEnds.values.flatten.toSet
-    LOG.debug("make initialTransitions")
     val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.0).toMap).toMap))
     val initialEmissions = initialUnsupervisedEmissionDist
-
-    if (LOG.isDebugEnabled) {
-      LOG.debug("    initialUnsupervisedEmissionDist")
-      for (t <- List("NN", "N", "DT", "D").map(_.asInstanceOf[Tag]))
-        for (w <- List("the", "company", "zzzzzzz").map(_.asInstanceOf[Sym]))
-          try {
-            LOG.debug("        p(%s|%s) = %.2f (%.2f)".format(w, t, initialUnsupervisedEmissionDist(t)(w).toDouble, initialUnsupervisedEmissionDist(t)(w).logValue))
-          }
-          catch { case e: NoSuchElementException => }
-    }
 
     // Do not assume any known counts -- use only EM-estimated counts
     val initialTransitionCounts = CondFreqCounts[Tag, Tag, Double]()
@@ -194,22 +183,13 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     initialEmissions: Tag => Sym => LogNum) = {
 
     if (LOG.isDebugEnabled) {
-      initialEmissions match {
-        case ie: Map[String, Map[String, LogNum]] =>
-          if (ie contains "N") {
-            LOG.debug("    initialEmissions(N)(default) = " + initialEmissions("N".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).logValue)
-            LOG.debug("                       (man)     = " + initialEmissions("N".asInstanceOf[Tag])("man".asInstanceOf[Sym]).logValue)
-            LOG.debug("    initialEmissions(I)(default) = " + initialEmissions("I".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).logValue)
-            LOG.debug("                       (man)     = " + initialEmissions("I".asInstanceOf[Tag])("man".asInstanceOf[Sym]).logValue)
-          }
-          else {
-            LOG.debug("    initialEmissions(NN)(default) = " + initialEmissions("NN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).logValue)
-            LOG.debug("                        (man)     = " + initialEmissions("NN".asInstanceOf[Tag])("man".asInstanceOf[Sym]).logValue)
-            LOG.debug("    initialEmissions(IN)(default) = " + initialEmissions("IN".asInstanceOf[Tag])("unknown word".asInstanceOf[Sym]).logValue)
-            LOG.debug("                        (man)     = " + initialEmissions("IN".asInstanceOf[Tag])("man".asInstanceOf[Sym]).logValue)
-          }
-        case _ =>
-          LOG.debug("    Empty FreqDist")
+      val unknownWord = (rawTrainSequences.flatten.toSet -- tagDict.keySet).head
+
+      LOG.debug("    initialEmissions")
+      for (w <- List(unknownWord, "company", "the").map(_.asInstanceOf[Sym])) {
+        val probs = tagDict.values.flatten.toSet.mapTo(initialEmissions(_)(w).logValue)
+        for ((t, p) <- probs.toList.sortBy(-_._2))
+          LOG.debug("        p(%s|%s) = %.2f".format(if (w == unknownWord) "unk" else w, t, p))
       }
     }
 
