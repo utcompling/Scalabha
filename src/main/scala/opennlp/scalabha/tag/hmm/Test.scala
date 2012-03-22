@@ -23,10 +23,6 @@ object Test {
         new UnsupervisedHmmTaggerTrainer(
           initialUnsupervisedEmissionDist =
             unsuperEmissDist.make(),
-          estimatedTransitionCountsTransformer =
-            PassthroughCondCountsTransformer[String, String](),
-          estimatedEmissionCountsTransformer =
-            PassthroughCondCountsTransformer[String, String](),
           "<END>", "<END>",
           maxIterations = 20,
           minAvgLogProbChangeForEM = 0.00001)

@@ -55,8 +55,6 @@ class UnsupervisedHmmTaggerTrainerTests {
       new UnsupervisedHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
           new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, "<END>", "<END>").make(),
-        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
-        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer[String, String](),
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -88,8 +86,6 @@ class UnsupervisedHmmTaggerTrainerTests {
       new UnsupervisedHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
           new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainLab.map(_.map(_._1)), "<END>", "<END>").make(),
-        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
-        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer[String, String](),
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -119,8 +115,6 @@ class UnsupervisedHmmTaggerTrainerTests {
       new UnsupervisedHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
           new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainLab.map(_.map(_._1)), "<END>", "<END>").make(),
-        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
-        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer[String, String](),
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -210,8 +204,6 @@ class UnsupervisedHmmTaggerTrainerTests {
       new UnsupervisedHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
           new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, "<END>", "<END>").make(),
-        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
-        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer[String, String](),
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
