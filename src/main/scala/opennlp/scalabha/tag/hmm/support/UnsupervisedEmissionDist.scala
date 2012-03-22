@@ -130,7 +130,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
         val x =
           tagToSymbolDict
             .mapValuesStrict(_.size) // number of symbols associated with each tag
-            .mapValuesStrict(math.pow(math.E * 2, _)) // exaggerate the differences
+            //.mapValuesStrict(math.pow(math.E * 2, _)) // exaggerate the differences
             .normalizeValues
 
         println("tagDict (skewed) proportions = " + x.normalizeValues.mapValues("%.3f".format(_)))
