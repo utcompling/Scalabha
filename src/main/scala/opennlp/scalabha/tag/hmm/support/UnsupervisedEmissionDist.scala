@@ -92,7 +92,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
   protected val LOG = LogFactory.getLog(classOf[EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym]])
 
   override def make(): Tag => Sym => LogNum = {
-    val rawSymbolCounts = (rawData.flatten.counts - startEndSymbol) // number of times each symbol appears in the raw data
+    val rawSymbolCounts = (rawData.flatten.counts - startEndSymbol).withDefaultValue(0) // number of times each symbol appears in the raw data
     val tagToSymbolDict = (tagDict.flattenOver.map(_.swap).toSet.groupByKey - startEndTag).mapValuesStrict(_ - startEndSymbol) // a reversed tag dict; Tag -> Set[Symbol]
 
     val vocabRaw = rawSymbolCounts.keySet // set of all symbols in raw data
@@ -130,7 +130,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
         val x =
           tagToSymbolDict
             .mapValuesStrict(_.size) // number of symbols associated with each tag
-            .mapValuesStrict(math.exp(_)) // exaggerate the differences
+            .mapValuesStrict(math.pow(math.E * 2, _)) // exaggerate the differences
             .normalizeValues
 
         println("tagDict (skewed) proportions = " + x.normalizeValues.mapValues("%.3f".format(_)))

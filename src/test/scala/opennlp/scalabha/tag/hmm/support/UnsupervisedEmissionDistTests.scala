@@ -30,6 +30,7 @@ class UnsupervisedEmissionDistTests {
       "bird" -> Set('N),
       "cat" -> Set('N),
       "dog" -> Set('N),
+      "horse" -> Set('N),
       "mouse" -> Set('N),
       "quickly" -> Set('R),
       "quietly" -> Set('R),
