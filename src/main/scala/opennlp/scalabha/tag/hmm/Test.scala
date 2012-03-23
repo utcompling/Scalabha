@@ -10,14 +10,17 @@ object Test {
     val tagDictFile = TaggedFile("data/s00-15.pos").toList
     val unlabTrainFile = AsRawFile("data/s16-18.pos").toList
     val labeledTest = TaggedFile("data/s19-21.pos").toList
-    
+
     val tagDict = new SimpleTagDictFactory().make(tagDictFile)
 
     {
       val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
         new UnsupervisedHmmTaggerTrainer(
           initialUnsupervisedEmissionDist =
-            new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, unlabTrainFile, "<END>", "<END>").make(),
+            new EstimatedRawCountUnsupervisedEmissionDistFactory(
+              new PassthroughCountsTransformer(),
+              tagDict,
+              unlabTrainFile, "<END>", "<END>").make(),
           "<END>", "<END>",
           maxIterations = 20,
           minAvgLogProbChangeForEM = 0.00001)

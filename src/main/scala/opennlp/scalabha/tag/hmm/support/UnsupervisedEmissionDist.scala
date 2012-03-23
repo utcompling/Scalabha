@@ -14,65 +14,6 @@ trait UnsupervisedEmissionDistFactory[Tag, Sym] {
 }
 
 /**
- * For each word, assume a word/tag count of 1 for each entry in the tag
- * dictionary.  This gives an even distribution across all words known to have
- * the tag.  Then, assume one additional count that is divided across all
- * other words in the vocabulary.  However, since our HMM does not allow
- * known words to be associated with tags outside of the tag dictionary,
- * these are simply zero, but that same count is used for unseen words.
- * Thus, the 'default' count for a tag is 1/(V-S) where V is the
- * vocabulary size and S is the number of words associated with the tag.
- *
- * In the implementation, for a tag, we give a count of (V-S) to each word in
- * the tag dictionary associated with that tag.  We also add an extra (V-S) to
- * the total count for normalizing.  Unseen words have a 'default' count of 1,
- * yielding a probability of 1/((S+1)*(V-S)).
- */
-class OneCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Tag]], lambda: Double, startEndSymbol: Sym, startEndTag: Tag)
-  extends UnsupervisedEmissionDistFactory[Tag, Sym] {
-
-  override def make(): Tag => Sym => LogNum = {
-    val symbolsForTag = (tagDict.flattenOver.map(_.swap).toSet.groupByKey - startEndTag).mapValuesStrict(_ - startEndSymbol)
-    val totalNumSymbols = (tagDict.keySet - startEndSymbol).size
-    val counts =
-      symbolsForTag.mapValuesStrict {
-        symbols =>
-          val numInvalidSymbols = totalNumSymbols - symbols.size
-          DefaultedFreqCounts(symbols.mapTo(s => countForSym(s) * numInvalidSymbols).toMap, lambda * numInvalidSymbols, lambda)
-      } + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 2 * lambda), 0.0, 0.0))
-    CondFreqDist(new DefaultedCondFreqCounts(counts))
-  }
-
-  protected def countForSym(sym: Sym): Double = {
-    lambda
-  }
-}
-
-/**
- * For each word, assume a word/tag count of 1/T where T is the number of tags
- * with which the word is associated in the tag dictionary.
- * This gives a distribution across all words known to have the tag that
- * assigns lower weight to the words that are divided among many tags.
- * Then, assume one additional count that is divided across all
- * other words in the vocabulary.  However, since our HMM does not allow
- * known words to be associated with tags outside of the tag dictionary,
- * these are simply zero, but that same count is used for unseen words.
- * Thus, the 'default' count for a tag is 1/(V-S) where V is the
- * vocabulary size and S is the number of words associated with the tag.
- *
- * In the implementation, for a tag, we give a count of (V-S)/T to each word in
- * the tag dictionary associated with that tag.  We also add an extra (V-S) to
- * the total count for normalizing.  Unseen words have a 'default' count of 1.
- */
-class PartialCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Tag]], lambda: Double, startEndSymbol: Sym, startEndTag: Tag)
-  extends OneCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict, lambda, startEndSymbol, startEndTag) {
-
-  override protected def countForSym(sym: Sym): Double = {
-    lambda / tagDict(sym).size
-  }
-}
-
-/**
  * Count occurrences of each word in the raw data and spread them evenly
  * among the tags to which the word is associated in the tag dictionary.
  *
@@ -87,13 +28,19 @@ class PartialCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Se
  * zero counts.  Unseen words are assumed to have a 'default' count of 1 for
  * each tag.
  */
-class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Tag]], rawData: Iterable[Iterable[Sym]], startEndSymbol: Sym, startEndTag: Tag)
+class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
+  countsTransformer: CountsTransformer[Sym],
+  tagDict: Map[Sym, Set[Tag]],
+  rawData: Iterable[Iterable[Sym]],
+  startEndSymbol: Sym,
+  startEndTag: Tag)
   extends UnsupervisedEmissionDistFactory[Tag, Sym] {
   protected val LOG = LogFactory.getLog(classOf[EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym]])
 
   override def make(): Tag => Sym => LogNum = {
-    val unsmoothedRawSymbolCounts = (rawData.flatten.counts - startEndSymbol) // number of times each symbol appears in the raw data
-    val rawSymbolCounts = unsmoothedRawSymbolCounts.mapValuesStrict(_ + 1).withDefaultValue(1) // use add-one smoothing on all raw data counts
+    val DefaultedFreqCounts(rawCounts, totalAddition, defaultCount) = countsTransformer(rawData.flatten.counts)
+
+    val rawSymbolCounts = (rawCounts - startEndSymbol).withDefaultValue(defaultCount) // number of times each symbol appears in the raw data
     val tagToSymbolDict = (tagDict.flattenOver.map(_.swap).toSet.groupByKey - startEndTag).mapValuesStrict(_ - startEndSymbol) // a reversed tag dict; Tag -> Set[Symbol]
 
     val vocabRaw = rawSymbolCounts.keySet // set of all symbols in raw data
@@ -148,35 +95,13 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
           val estimatedUnknownProportion = estimatedUnknownProportions(tag)
           val unknownCounts = rawUnkwnCountByWord.mapValuesStrict(_ * estimatedUnknownProportion)
           val totalCounts = estimatedKnownCounts ++ unknownCounts // combine known and unknown estimates
-          (tag, DefaultedFreqCounts(totalCounts, estimatedUnknownProportion, estimatedUnknownProportion)) // default for unseen words in test is one count 
+          (tag, DefaultedFreqCounts(totalCounts, (totalAddition + defaultCount) * estimatedUnknownProportion, defaultCount * estimatedUnknownProportion)) // default for unseen words in test is one count 
       }
 
     println("totalEstWordCount           = " + counts.values.map(_.simpleCounts.values.sum).sum)
     val totalEstKnown = counts.values.map(_.simpleCounts.filter(x => vocabKnown(x._1)).values.sum).sum; println("totalEstWordCount (known)   = " + totalEstKnown)
     val totalEstUnkwn = counts.values.map(_.simpleCounts.filter(x => vocabUnknown(x._1)).values.sum).sum; println("totalEstWordCount (unknown) = " + totalEstUnkwn)
     println("totalEstWordCount (known + unknown) = " + (totalEstKnown + totalEstUnkwn))
-    CondFreqDist(new DefaultedCondFreqCounts(counts + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 2.)))))
-  }
-}
-
-/**
- * Hack the default probability for each tag by making it |TD(tag)| / V
- */
-class DefaultHackingUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sym, Set[Tag]], startEndSymbol: Sym, startEndTag: Tag, delegate: UnsupervisedEmissionDistFactory[Tag, Sym])
-  extends UnsupervisedEmissionDistFactory[Tag, Sym] {
-  protected val LOG = LogFactory.getLog(classOf[DefaultHackingUnsupervisedEmissionDistFactory[Tag, Sym]])
-
-  override def make(): Tag => Sym => LogNum = {
-    val dist = delegate.make()
-    val distMap = dist.asInstanceOf[Map[Tag, Map[Sym, LogNum]]]
-    val totalNumSymbols = (tagDict.keySet - startEndSymbol).size.toDouble
-
-    val defaultDist = FreqDist(DefaultedFreqCounts(distMap.map { case (tag, symbols) => tag -> math.log(symbols.size) }, 0.0, 0.0))
-
-    distMap.toList.sortBy(_._2.size).map {
-      case (tag, symbols) =>
-        LOG.debug("%4s: \ttotalNumSymbols = %s, symbols.size = %d".format(tag, totalNumSymbols, symbols.size))
-        tag -> symbols.withDefaultValue(defaultDist(tag))
-    }.toMap.withDefaultValue(FreqDist.empty)
+    CondFreqDist(new DefaultedCondFreqCounts(counts + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 1.)))))
   }
 }

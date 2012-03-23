@@ -39,7 +39,11 @@ class UnsupervisedEmissionDistTests {
       "the" -> Set('D),
       "walks" -> Set('V))
 
-    val d = new EstimatedRawCountUnsupervisedEmissionDistFactory[Symbol, String](tagDict, rawData, startEndSymbol = "<END>", startEndTag = 'END).make()
+    val d =
+      new EstimatedRawCountUnsupervisedEmissionDistFactory[Symbol, String](
+        new PassthroughCountsTransformer(),
+        tagDict,
+        rawData, startEndSymbol = "<END>", startEndTag = 'END).make()
 
     for (w <- List("aardvark", "meanders", "horse", "unseen word", "dog", "the"))
       for (t <- List('N, 'V, 'R, 'D))
