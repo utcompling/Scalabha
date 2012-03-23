@@ -18,7 +18,6 @@ class TaggerEvaluator[Sym, Tag] {
     for ((result, gold) <- taggerOutput zipEqual goldData) {
       assert(result.size == gold.size, "sequence length in result does not match gold: %s != %s".format(result, gold))
       for (((rsltSym, rsltTag), (goldSym, goldTag)) <- result zipEqual gold) {
-        //x = {println(result); println(gold); println(); 1};
         assert(rsltSym == goldSym, "result sentence and gold sentence are different: %s != %s".format(result.map(_._1), gold.map(_._1)))
 
         if (rsltTag == goldTag)

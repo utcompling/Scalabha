@@ -92,7 +92,8 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
   protected val LOG = LogFactory.getLog(classOf[EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym]])
 
   override def make(): Tag => Sym => LogNum = {
-    val rawSymbolCounts = (rawData.flatten.counts - startEndSymbol).withDefaultValue(0) // number of times each symbol appears in the raw data
+    val unsmoothedRawSymbolCounts = (rawData.flatten.counts - startEndSymbol) // number of times each symbol appears in the raw data
+    val rawSymbolCounts = unsmoothedRawSymbolCounts.mapValuesStrict(_ + 1).withDefaultValue(1) // use add-one smoothing on all raw data counts
     val tagToSymbolDict = (tagDict.flattenOver.map(_.swap).toSet.groupByKey - startEndTag).mapValuesStrict(_ - startEndSymbol) // a reversed tag dict; Tag -> Set[Symbol]
 
     val vocabRaw = rawSymbolCounts.keySet // set of all symbols in raw data
@@ -146,7 +147,8 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](tagDict: Map[Sy
         case (tag, estimatedKnownCounts) =>
           val estimatedUnknownProportion = estimatedUnknownProportions(tag)
           val unknownCounts = rawUnkwnCountByWord.mapValuesStrict(_ * estimatedUnknownProportion)
-          (tag, DefaultedFreqCounts(estimatedKnownCounts ++ unknownCounts)) // combine known and unknown estimates
+          val totalCounts = estimatedKnownCounts ++ unknownCounts // combine known and unknown estimates
+          (tag, DefaultedFreqCounts(totalCounts, estimatedUnknownProportion, estimatedUnknownProportion)) // default for unseen words in test is one count 
       }
 
     println("totalEstWordCount           = " + counts.values.map(_.simpleCounts.values.sum).sum)

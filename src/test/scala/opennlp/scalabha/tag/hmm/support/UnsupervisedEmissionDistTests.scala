@@ -41,8 +41,8 @@ class UnsupervisedEmissionDistTests {
 
     val d = new EstimatedRawCountUnsupervisedEmissionDistFactory[Symbol, String](tagDict, rawData, startEndSymbol = "<END>", startEndTag = 'END).make()
 
-    for (w <- List("aardvark", "dog", "the"))
-      for(t <- List('N, 'V, 'R, 'D))
+    for (w <- List("aardvark", "meanders", "horse", "unseen word", "dog", "the"))
+      for (t <- List('N, 'V, 'R, 'D))
         println("p(%s|%s) = %s".format(w, t, d(t)(w).logValue))
 
     println

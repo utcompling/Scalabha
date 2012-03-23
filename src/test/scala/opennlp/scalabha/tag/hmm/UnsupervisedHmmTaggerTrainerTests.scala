@@ -19,6 +19,64 @@ class UnsupervisedHmmTaggerTrainerTests {
   val LOG = LogFactory.getLog(classOf[UnsupervisedHmmTaggerTrainerTests])
 
   @Test
+  def tiny_beforeEM() {
+    val trainRaw = List(
+      "the dog walks quickly",
+      "the cat walks quietly",
+      "the dog saw the cat",
+      "the cat saw the dog",
+      "the dog saw the saw",
+      "the bird sings",
+      "the mouse walks",
+      "the aardvark walks",
+      "the aardvark meanders").map(_.split(" ").toIndexedSeq)
+
+    val tagDict = Map(
+      "bird" -> Set("N"),
+      "cat" -> Set("N"),
+      "dog" -> Set("N"),
+      "horse" -> Set("N"),
+      "mouse" -> Set("N"),
+      "quickly" -> Set("R"),
+      "quietly" -> Set("R"),
+      "saw" -> Set("N", "V"),
+      "sings" -> Set("V"),
+      "the" -> Set("D"),
+      "walks" -> Set("V")).withDefaultValue(Set("N", "V", "R", "D"))
+
+    val gold = List(
+      Vector(("the", "D"), ("bird", "N"), ("walks", "V")),
+      Vector(("the", "D"), ("horse", "N"), ("walks", "V")),
+      Vector(("the", "D"), ("aardvark", "N"), ("walks", "V")),
+      Vector(("the", "D"), ("dog", "N"), ("meanders", "V")),
+      Vector(("a", "D"), ("dog", "N"), ("walks", "V"), ("quickly", "R")),
+      Vector(("the", "D"), ("moose", "N"), ("walks", "V"), ("quickly", "R")),
+      Vector(("the", "D"), ("dog", "N"), ("runs", "V"), ("quickly", "R")),
+      Vector(("the", "D"), ("dog", "N"), ("walks", "V"), ("briskly", "R")))
+
+    val tagDictWithEnds = tagDict + ("<END>" -> Set("<END>"))
+
+    // Create the initial distributions
+    val allTags = tagDictWithEnds.values.flatten.toSet
+    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.0).toMap).toMap))
+    val initialEmissions = new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, "<END>", "<END>").make()
+    val unsupervisedTagger = new HmmTagger(initialTransitions, initialEmissions, tagDictWithEnds, "<END>", "<END>")
+
+    val output = unsupervisedTagger.tag(gold.map(_.map(_._1)))
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
+    assertResultsEqual("""
+		Total:   84.21 (16/19)
+		Known:   100.00 (15/15)
+		Unknown: 25.00 (1/4)
+		Common Mistakes:
+		#Err     Gold      Model
+		1        V        N
+		1        D        N
+		1        R        N
+    	""", results)
+  }
+
+  @Test
   def tiny() {
     val trainRaw = List(
       "the dog walks quickly",
@@ -42,10 +100,12 @@ class UnsupervisedHmmTaggerTrainerTests {
       "saw" -> Set("N", "V"),
       "sings" -> Set("V"),
       "the" -> Set("D"),
-      "walks" -> Set("V")).withDefaultValue(Set("N","V","R","D"))
+      "walks" -> Set("V")).withDefaultValue(Set("N", "V", "R", "D"))
 
     val gold = List(
       Vector(("the", "D"), ("bird", "N"), ("walks", "V")),
+      Vector(("the", "D"), ("horse", "N"), ("walks", "V")),
+      Vector(("the", "D"), ("aardvark", "N"), ("walks", "V")),
       Vector(("a", "D"), ("dog", "N"), ("walks", "V"), ("quickly", "R")),
       Vector(("the", "D"), ("moose", "N"), ("walks", "V"), ("quickly", "R")),
       Vector(("the", "D"), ("dog", "N"), ("runs", "V"), ("quickly", "R")),
@@ -206,7 +266,16 @@ class UnsupervisedHmmTaggerTrainerTests {
           new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, trainRaw, "<END>", "<END>").make(),
         "<END>", "<END>",
         maxIterations = 20,
-        minAvgLogProbChangeForEM = 0.00001)
+        minAvgLogProbChangeForEM = 0.00001) {
+
+        protected override def hmmExaminationHook(hmm: HmmTagger[String, String]) {
+          val output = hmm.tag(gold.map(_.map(_._1)))
+          val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
+          println(results)
+        }
+
+      }
+
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainRaw)
     val output = unsupervisedTagger.tag(gold.map(_.map(_._1)))
     val results = new TaggerEvaluator().evaluate(output, gold, tagDict)

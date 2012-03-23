@@ -56,16 +56,11 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
     val initialEmissions = initialUnsupervisedEmissionDist
     val initialHmm = new HmmTagger(initialTransitions, initialEmissions, tagDictWithEnds, startEndSymbol, startEndTag)
 
-    // Do not assume any known counts -- use only EM-estimated counts
-    val initialTransitionCounts = CondFreqCounts[Tag, Tag, Double]()
-    val initialEmissionCounts = CondFreqCounts[Tag, Sym, Double]()
+    hmmExaminationHook(initialHmm)
 
     // Re-estimate probability distributions using EM
-    trainWithEm(
-      rawTrainSequences,
-      initialHmm,
-      initialTransitionCounts, initialEmissionCounts)
-
+    // Do not assume any known counts -- use only EM-estimated counts
+    trainWithEm(rawTrainSequences, initialHmm)
   }
 
 }
@@ -122,6 +117,8 @@ class SemisupervisedHmmTaggerTrainer[Sym, Tag](
     val initialEmissions = CondFreqDist(initialEmissionCountsTransformer(initialEmissionCounts))
     val initialHmm = new HmmTagger(initialTransitions, initialEmissions, tagDictWithEnds, startEndSymbol, startEndTag)
 
+    hmmExaminationHook(initialHmm)
+
     // Re-estimate probability distributions using EM
     val hmm =
       trainWithEm(
@@ -169,10 +166,10 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     initialEmissionCounts: CondFreqCounts[Tag, Sym, Double]): HmmTagger[Sym, Tag] = {
 
     if (LOG.isDebugEnabled) {
-      val unknownWord = (rawTrainSequences.flatten.toSet -- initialHmm.tagDict.keySet).head
+      val unknownWord = (rawTrainSequences.flatten.toSet -- initialHmm.tagDict.keySet).headOption
 
       LOG.debug("    initialEmissions")
-      for (w <- List(unknownWord, "company", "the").map(_.asInstanceOf[Sym])) {
+      for (w <- List(unknownWord, Some("company"), Some("the")).flatten.map(_.asInstanceOf[Sym])) {
         val probs = initialHmm.tagDict.values.flatten.toSet.mapTo(initialHmm.emissions(_)(w).logValue)
         for ((t, p) <- probs.toList.sortBy(-_._2))
           LOG.debug("        p(%s|%s) = %.2f".format(if (w == unknownWord) "unk" else w, t, p))
@@ -217,6 +214,8 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     val hmm = HmmTagger(transitions, emissions, initialHmm.tagDict, initialHmm.startEndSymbol, initialHmm.startEndTag)
 
     LOG.info("\t" + iteration + ": " + avgLogProb)
+
+    hmmExaminationHook(hmm)
 
     // Check each ending condition
     if (iteration >= maxIterations) {
@@ -436,6 +435,10 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
       }
 
     expectedEmissionCounts.map(CondFreqCounts(_)).reduce(_ ++ _)
+  }
+
+  protected def hmmExaminationHook(hmm: HmmTagger[Sym, Tag]) {
+
   }
 }
 
