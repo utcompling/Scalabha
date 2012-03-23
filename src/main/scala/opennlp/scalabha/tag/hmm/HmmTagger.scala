@@ -23,12 +23,12 @@ import opennlp.scalabha.util.LogNum
  * @param startEndTag		the special start/end tag used in the transitions and emissions to mark
  * 							the beginning and end of a sentence
  */
-class HmmTagger[Sym, Tag](
-  transitions: Tag => Tag => LogNum,
-  emissions: Tag => Sym => LogNum,
+case class HmmTagger[Sym, Tag](
+  val transitions: Tag => Tag => LogNum,
+  val emissions: Tag => Sym => LogNum,
   val tagDict: Map[Sym, Set[Tag]],
-  startEndSymbol: Sym,
-  startEndTag: Tag)
+  val startEndSymbol: Sym,
+  val startEndTag: Tag)
   extends Tagger[Sym, Tag] {
 
   /**

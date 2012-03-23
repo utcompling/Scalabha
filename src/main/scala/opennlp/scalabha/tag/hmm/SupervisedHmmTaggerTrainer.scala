@@ -52,7 +52,7 @@ class SupervisedHmmTaggerTrainer[Sym, Tag](
     val (transitionCounts, emissionCounts) = getCountsFromTagged(taggedTrainSequences)
     val transitionDist = CondFreqDist(transitionCountsTransformer(transitionCounts))
     val emissionDist = CondFreqDist(emissionCountsTransformer(emissionCounts))
-    new HmmTagger(transitionDist, emissionDist, tagDict, startEndSymbol, startEndTag)
+    new HmmTagger(transitionDist, emissionDist, tagDict + (startEndSymbol -> Set(startEndTag)), startEndSymbol, startEndTag)
   }
 
   /**
