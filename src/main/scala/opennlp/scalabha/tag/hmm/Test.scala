@@ -10,19 +10,14 @@ object Test {
     val tagDictFile = TaggedFile("data/s00-15.pos").toList
     val unlabTrainFile = AsRawFile("data/s16-18.pos").toList
     val labeledTest = TaggedFile("data/s19-21.pos").toList
-
+    
     val tagDict = new SimpleTagDictFactory().make(tagDictFile)
-    for (
-      (name, unsuperEmissDist) <- List(
-        "EstimatedRawCountUnsupervisedEmissionDistFactory" -> new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, unlabTrainFile, "<END>", "<END>"),
-        "PartialCountUnsupervisedEmissionDistFactory" -> new PartialCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>"),
-        "OneCountUnsupervisedEmissionDistFactory" -> new OneCountUnsupervisedEmissionDistFactory(tagDict, lambda = 1.0, "<END>", "<END>"))
-    ) {
-      println("EXPERIMENT: " + name)
+
+    {
       val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
         new UnsupervisedHmmTaggerTrainer(
           initialUnsupervisedEmissionDist =
-            unsuperEmissDist.make(),
+            new EstimatedRawCountUnsupervisedEmissionDistFactory(tagDict, unlabTrainFile, "<END>", "<END>").make(),
           "<END>", "<END>",
           maxIterations = 20,
           minAvgLogProbChangeForEM = 0.00001)
