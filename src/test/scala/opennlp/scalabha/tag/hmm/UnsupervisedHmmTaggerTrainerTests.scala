@@ -1,19 +1,20 @@
 package opennlp.scalabha.tag.hmm
 
-import org.junit.Assert._
-import org.junit._
-import opennlp.scalabha.util.CollectionUtils._
+import scala.Array.canBuildFrom
 import scala.io.Source
-import opennlp.scalabha.tag._
-import opennlp.scalabha.tag.support._
-import opennlp.scalabha.tag.hmm.support._
-import opennlp.scalabha.tag.TaggerEvaluator
-import opennlp.scalabha.tag.ScoreResults
-import org.apache.log4j.Logger
-import org.apache.log4j.Level
-import org.apache.log4j.PropertyConfigurator
-import org.apache.log4j.BasicConfigurator
+
 import org.apache.commons.logging.LogFactory
+import org.apache.log4j.Level
+import org.apache.log4j.Logger
+import org.junit.Assert.assertEquals
+import org.junit.BeforeClass
+import org.junit.Test
+
+import opennlp.scalabha.tag.hmm._
+import opennlp.scalabha.tag.hmm.support._
+import opennlp.scalabha.tag.support._
+import opennlp.scalabha.tag._
+import opennlp.scalabha.util.CollectionUtils._
 
 class UnsupervisedHmmTaggerTrainerTests {
   val LOG = LogFactory.getLog(classOf[UnsupervisedHmmTaggerTrainerTests])
@@ -282,7 +283,7 @@ class UnsupervisedHmmTaggerTrainerTests {
 
     // Create the initial distributions
     val allTags = tagDictWithEnds.values.flatten.toSet
-    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.0).toMap).toMap))
+    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.).toMap).toMap))
     val initialEmissions =
       new EstimatedRawCountUnsupervisedEmissionDistFactory(
         new AddLambdaSmoothingCountsTransformer(lambda = 1.,
@@ -301,11 +302,13 @@ class UnsupervisedHmmTaggerTrainerTests {
     val emUnsupervisedTagger =
       (new AbstractEmHmmTaggerTrainer[String, String] {
         override val estimatedTransitionCountsTransformer =
-          AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 0.1)
+          PassthroughCondCountsTransformer[String, String]()
+//          AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 0.1)
         override val estimatedEmissionCountsTransformer =
-          StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
-            new AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 0.1,
-              StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>")))
+          PassthroughCondCountsTransformer[String, String]()
+//          StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
+//            new AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 0.1,
+//              StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>")))
         override val startEndSymbol = "<END>"
         override val startEndTag = "<END>"
         override val maxIterations: Int = 50

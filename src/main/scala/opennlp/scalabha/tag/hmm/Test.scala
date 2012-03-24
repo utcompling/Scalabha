@@ -21,6 +21,8 @@ object Test {
               new PassthroughCountsTransformer(),
               tagDict,
               unlabTrainFile, "<END>", "<END>").make(),
+          estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
+          estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
           "<END>", "<END>",
           maxIterations = 20,
           minAvgLogProbChangeForEM = 0.00001)
