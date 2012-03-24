@@ -35,6 +35,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
   startEndSymbol: Sym,
   startEndTag: Tag)
   extends UnsupervisedEmissionDistFactory[Tag, Sym] {
+  
   protected val LOG = LogFactory.getLog(classOf[EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym]])
 
   override def make(): Tag => Sym => LogNum = {
@@ -50,9 +51,9 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
     val rawKnownCountByWord = rawSymbolCounts.filter(x => vocabKnown(x._1)) // counts of each known type from raw data
     val rawUnkwnCountByWord = rawSymbolCounts.filter(x => vocabUnknown(x._1)) // counts of each unknown type from raw data
 
-    println("totalRawWordCount = " + rawSymbolCounts.values.sum)
-    println("totalRawWordCount (known)   = " + rawKnownCountByWord.values.sum)
-    println("totalRawWordCount (unknown) = " + rawUnkwnCountByWord.values.sum)
+    LOG.debug("totalRawWordCount = " + rawSymbolCounts.values.sum)
+    LOG.debug("totalRawWordCount (known)   = " + rawKnownCountByWord.values.sum)
+    LOG.debug("totalRawWordCount (unknown) = " + rawUnkwnCountByWord.values.sum)
 
     val knownCounts =
       tagToSymbolDict.mapValuesStrict {
@@ -61,7 +62,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
 
     val estimatedUnknownProportions = {
       val estUnkProportionsFromRaw = {
-        println("raw proportions =              " + knownCounts.mapValues(_.values.sum).normalizeValues.mapValues("%.3f".format(_)))
+        LOG.debug("raw proportions =              " + knownCounts.mapValues(_.values.sum).normalizeValues.mapValues("%.3f".format(_)))
 
         knownCounts
           .mapValuesStrict(_.values.sum) // estimated number of unknown tokens for each tag 
@@ -69,7 +70,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
       }
 
       val estUnkProportionsFromTagDict = {
-        println("tagDict proportions =          " + tagToSymbolDict.mapValues(_.size).normalizeValues.mapValues("%.3f".format(_)))
+        LOG.debug("tagDict proportions =          " + tagToSymbolDict.mapValues(_.size).normalizeValues.mapValues("%.3f".format(_)))
 
         val x =
           tagToSymbolDict
@@ -77,7 +78,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
             .mapValuesStrict(math.pow(_, 2)) // exaggerate the differences
             .normalizeValues
 
-        println("tagDict (skewed) proportions = " + x.normalizeValues.mapValues("%.3f".format(_)))
+        LOG.debug("tagDict (skewed) proportions = " + x.normalizeValues.mapValues("%.3f".format(_)))
 
         x
       }
@@ -87,7 +88,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
       }.normalizeValues.toMap
     }
 
-    println("combined =                     " + estimatedUnknownProportions.normalizeValues.mapValues("%.3f".format(_)))
+    LOG.debug("combined =                     " + estimatedUnknownProportions.normalizeValues.mapValues("%.3f".format(_)))
 
     val counts =
       knownCounts.map {
@@ -98,10 +99,10 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
           (tag, DefaultedFreqCounts(totalCounts, (totalAddition + defaultCount) * estimatedUnknownProportion, defaultCount * estimatedUnknownProportion)) // default for unseen words in test is one count 
       }
 
-    println("totalEstWordCount           = " + counts.values.map(_.simpleCounts.values.sum).sum)
-    val totalEstKnown = counts.values.map(_.simpleCounts.filter(x => vocabKnown(x._1)).values.sum).sum; println("totalEstWordCount (known)   = " + totalEstKnown)
-    val totalEstUnkwn = counts.values.map(_.simpleCounts.filter(x => vocabUnknown(x._1)).values.sum).sum; println("totalEstWordCount (unknown) = " + totalEstUnkwn)
-    println("totalEstWordCount (known + unknown) = " + (totalEstKnown + totalEstUnkwn))
+    LOG.debug("totalEstWordCount           = " + counts.values.map(_.simpleCounts.values.sum).sum)
+    val totalEstKnown = counts.values.map(_.simpleCounts.filter(x => vocabKnown(x._1)).values.sum).sum; LOG.debug("totalEstWordCount (known)   = " + totalEstKnown)
+    val totalEstUnkwn = counts.values.map(_.simpleCounts.filter(x => vocabUnknown(x._1)).values.sum).sum; LOG.debug("totalEstWordCount (unknown) = " + totalEstUnkwn)
+    LOG.debug("totalEstWordCount (known + unknown) = " + (totalEstKnown + totalEstUnkwn))
     CondFreqDist(new DefaultedCondFreqCounts(counts + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 1.)))))
   }
 }
