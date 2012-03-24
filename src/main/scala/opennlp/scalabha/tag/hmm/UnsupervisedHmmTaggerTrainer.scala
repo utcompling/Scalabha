@@ -21,6 +21,8 @@ import scala.annotation.tailrec
  * @tparam Tag	tags applied to symbols
  *
  * @param initialUnsupervisedEmissionDist
+ * @param estimatedTransitionCountsTransformer		factory for generating builders that count tag occurrences and compute distributions during EM
+ * @param estimatedEmissionCountsTransformer		factory for generating builders that count symbol occurrences and compute distributions during EM
  * @param startEndSymbol							a unique start/end symbol used internally to mark the beginning and end of a sentence
  * @param startEndTag								a unique start/end tag used internally to mark the beginning and end of a sentence
  * @param maxIterations								maximum number of iterations to be run during EM
@@ -28,8 +30,10 @@ import scala.annotation.tailrec
  */
 class UnsupervisedHmmTaggerTrainer[Sym, Tag](
   initialUnsupervisedEmissionDist: Tag => Sym => LogNum,
-  startEndSymbol: Sym,
-  startEndTag: Tag,
+  override protected val estimatedTransitionCountsTransformer: CondCountsTransformer[Tag, Tag],
+  override protected val estimatedEmissionCountsTransformer: CondCountsTransformer[Tag, Sym],
+  override protected val startEndSymbol: Sym,
+  override protected val startEndTag: Tag,
   override protected val maxIterations: Int = 50,
   override protected val minAvgLogProbChangeForEM: Double = 0.00001)
   extends AbstractEmHmmTaggerTrainer[Sym, Tag]
@@ -83,8 +87,10 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
 class SemisupervisedHmmTaggerTrainer[Sym, Tag](
   initialTransitionCountsTransformer: CondCountsTransformer[Tag, Tag],
   initialEmissionCountsTransformer: CondCountsTransformer[Tag, Sym],
-  startEndSymbol: Sym,
-  startEndTag: Tag,
+  override protected val estimatedTransitionCountsTransformer: CondCountsTransformer[Tag, Tag],
+  override protected val estimatedEmissionCountsTransformer: CondCountsTransformer[Tag, Sym],
+  override protected val startEndSymbol: Sym,
+  override protected val startEndTag: Tag,
   override protected val maxIterations: Int = 50,
   override protected val minAvgLogProbChangeForEM: Double = 0.00001)
   extends SupervisedHmmTaggerTrainer[Sym, Tag](initialTransitionCountsTransformer, initialEmissionCountsTransformer, startEndSymbol, startEndTag)
@@ -143,6 +149,10 @@ class SemisupervisedHmmTaggerTrainer[Sym, Tag](
  * @param minAvgLogProbChangeForEM				stop iterating EM if change in average log probability is less than this threshold
  */
 trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
+  protected val estimatedTransitionCountsTransformer: CondCountsTransformer[Tag, Tag]
+  protected val estimatedEmissionCountsTransformer: CondCountsTransformer[Tag, Sym]
+  protected val startEndSymbol: Sym
+  protected val startEndTag: Tag
   protected val maxIterations: Int = 50
   protected val minAvgLogProbChangeForEM: Double = 0.00001
 
@@ -209,8 +219,8 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     // M Step: Use these probability estimates to re-estimate the 
     //         probability distributions
 
-    val transitions = CondFreqDist(DefaultedCondFreqCounts(expectedTransitionCounts.toMap))
-    val emissions = CondFreqDist(DefaultedCondFreqCounts(expectedEmmissionCounts.toMap))
+    val transitions = CondFreqDist(estimatedTransitionCountsTransformer(expectedTransitionCounts.toMap))
+    val emissions = CondFreqDist(new StartEndFixingEmissionCountsTransformer(startEndSymbol, startEndTag, estimatedEmissionCountsTransformer)(expectedEmmissionCounts.toMap))
     val hmm = HmmTagger(transitions, emissions, initialHmm.tagDict, initialHmm.startEndSymbol, initialHmm.startEndTag)
 
     LOG.info("\t" + iteration + ": " + avgLogProb)

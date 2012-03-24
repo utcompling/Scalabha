@@ -122,6 +122,8 @@ class UnsupervisedHmmTaggerTrainerTests {
             new PassthroughCountsTransformer(),
             tagDict,
             trainRaw, "<END>", "<END>").make(),
+        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
+        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
         "<END>", "<END>",
         maxIterations = 1,
         minAvgLogProbChangeForEM = 0.00001)
@@ -156,6 +158,8 @@ class UnsupervisedHmmTaggerTrainerTests {
             new PassthroughCountsTransformer(),
             tagDict,
             trainLab.map(_.map(_._1)), "<END>", "<END>").make(),
+        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
+        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -188,6 +192,8 @@ class UnsupervisedHmmTaggerTrainerTests {
             new PassthroughCountsTransformer(),
             tagDict,
             trainLab.map(_.map(_._1)), "<END>", "<END>").make(),
+        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
+        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -294,7 +300,15 @@ class UnsupervisedHmmTaggerTrainerTests {
 
     val emUnsupervisedTagger =
       (new AbstractEmHmmTaggerTrainer[String, String] {
-        override val maxIterations: Int = 1
+        override val estimatedTransitionCountsTransformer =
+          AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 0.1)
+        override val estimatedEmissionCountsTransformer =
+          StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
+            new AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 0.1,
+              StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>")))
+        override val startEndSymbol = "<END>"
+        override val startEndTag = "<END>"
+        override val maxIterations: Int = 50
         override val minAvgLogProbChangeForEM: Double = 0.00001
 
         protected override def hmmExaminationHook(hmm: HmmTagger[String, String]) {
@@ -311,8 +325,6 @@ class UnsupervisedHmmTaggerTrainerTests {
       val results = new TaggerEvaluator().evaluate(emUnsupervisedOutput, gold, tagDict)
       println(results)
     }
-
-    return
 
     val supervisedTrainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(
@@ -349,6 +361,8 @@ class UnsupervisedHmmTaggerTrainerTests {
             new PassthroughCountsTransformer(),
             tagDict,
             trainRaw, "<END>", "<END>").make(),
+        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
+        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
         "<END>", "<END>",
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001) {
