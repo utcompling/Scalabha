@@ -88,6 +88,6 @@ object CondFreqDist {
    * @tparam B	the conditioned item being counted; P(B|A).
    */
   def apply[A, B](resultCounts: DefaultedCondFreqCounts[A, B, Double]): A => B => LogNum = {
-    resultCounts.counts.mapValuesStrict(FreqDist(_))
+    resultCounts.counts.mapValuesStrict(FreqDist(_)).withDefaultValue(FreqDist.empty)
   }
 }
