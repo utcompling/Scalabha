@@ -291,41 +291,41 @@ class UnsupervisedHmmTaggerTrainerTests {
         tagDict,
         trainRaw, "<END>", "<END>").make()
     val initialUnsupervisedTagger = new HmmTagger(initialTransitions, initialEmissions, tagDictWithEnds, "<END>", "<END>")
-    val initialUnsupervisedTaggerOutput = initialUnsupervisedTagger.tag(gold.map(_.map(_._1)))
 
     {
       println("unsupervised intialization")
-      val results = new TaggerEvaluator().evaluate(initialUnsupervisedTaggerOutput, gold, tagDict)
+      val output = initialUnsupervisedTagger.tag(gold.map(_.map(_._1)))
+      val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
       println(results)
     }
 
     val emUnsupervisedTagger =
       (new AbstractEmHmmTaggerTrainer[String, String] {
         override val estimatedTransitionCountsTransformer =
-          PassthroughCondCountsTransformer[String, String]()
-//          AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 0.1)
+//          PassthroughCondCountsTransformer[String, String]()
+          AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 0.1)
         override val estimatedEmissionCountsTransformer =
-          PassthroughCondCountsTransformer[String, String]()
-//          StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
-//            new AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 0.1,
-//              StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>")))
+//          PassthroughCondCountsTransformer[String, String]()
+          StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
+            new AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 0.1,
+              StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>")))
         override val startEndSymbol = "<END>"
         override val startEndTag = "<END>"
         override val maxIterations: Int = 50
         override val minAvgLogProbChangeForEM: Double = 0.00001
 
-        protected override def hmmExaminationHook(hmm: HmmTagger[String, String]) {
-          val output = hmm.tag(gold.map(_.map(_._1)))
-          val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
-          println(results)
-        }
+//        protected override def hmmExaminationHook(hmm: HmmTagger[String, String]) {
+//          val output = hmm.tag(gold.map(_.map(_._1)))
+//          val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
+//          println(results)
+//        }
 
       }).trainWithEm(trainRaw, initialUnsupervisedTagger)
-    val emUnsupervisedOutput = emUnsupervisedTagger.tag(gold.map(_.map(_._1)))
 
     {
       println("unsupervised intialization -> EM training")
-      val results = new TaggerEvaluator().evaluate(emUnsupervisedOutput, gold, tagDict)
+      val output = emUnsupervisedTagger.tag(gold.map(_.map(_._1)))
+      val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
       println(results)
     }
 
@@ -338,12 +338,13 @@ class UnsupervisedHmmTaggerTrainerTests {
             new EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0),
               StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>"))),
         "<END>", "<END>")
+    val emUnsupervisedOutput = emUnsupervisedTagger.tag(trainRaw)
     val unsupervisedEmTagger = supervisedTrainer.trainSupervised(emUnsupervisedOutput, new SimpleTagDictFactory().make(emUnsupervisedOutput))
-    val unsupervisedEmOutput = unsupervisedEmTagger.tag(gold.map(_.map(_._1)))
 
     {
       println("unsupervised intialization -> EM training -> supervised training")
-      val results = new TaggerEvaluator().evaluate(unsupervisedEmOutput, gold, tagDict)
+      val output = unsupervisedEmTagger.tag(gold.map(_.map(_._1)))
+      val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
       println(results)
     }
 
