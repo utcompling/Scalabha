@@ -101,14 +101,9 @@ class DefaultLimitingTagDictFactory[Sym, Tag](maxNumberOfDefaultTags: Int, deleg
 
 class ExternalFileTagDictFactory(filename: String, fullTagset: Set[String]) extends TagDictFactory[String, String] {
   override def make(taggedTrainSequences: Iterable[IndexedSeq[(String, String)]]) = {
-    val entries =
-      io.Source.fromFile(filename).getLines
-        .map(_.split("\\s+"))
-        .flatMap { case Array(word, tags @ _*) => tags.map(word -> _) }
-
-    println("%s contains %d entries".format(filename, entries.size))
-
-    entries
+    io.Source.fromFile(filename).getLines
+      .map(_.split("\\s+"))
+      .flatMap { case Array(word, tags @ _*) => tags.map(word -> _) }
       .groupByKey
       .mapValuesStrict(_.toSet)
       .withDefaultValue(fullTagset)
