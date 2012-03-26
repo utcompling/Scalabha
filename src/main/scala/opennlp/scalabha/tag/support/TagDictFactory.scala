@@ -22,7 +22,7 @@ trait TagDictFactory[Sym, Tag] {
 
 /**
  * Basic TagDictFactory that maps each symbol of the labeled data to
- * the set of all tags with which it is seen in association.  
+ * the set of all tags with which it is seen in association.
  * Default for unknown symbols is the set of all seen tags.
  *
  * @tparam Sym	visible symbols in the sequences
@@ -45,11 +45,12 @@ class SimpleTagDictFactory[Sym, Tag]() extends TagDictFactory[Sym, Tag] {
  *
  * @param numSymTagPairs	the maximum number of top symbol/tag pairs to count
  */
-class TopSymTagPairTagDictFactory[Sym, Tag](numSymTagPairs: Int, fullTagset: Set[Tag]) extends TagDictFactory[Sym, Tag] {
+class TopSymTagPairTagDictFactory[Sym, Tag](numSymTagPairs: Int) extends TagDictFactory[Sym, Tag] {
   def make(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
     val wordTagPairCounts = taggedTrainSequences.flatten.counts
     val topWordTagPairs = wordTagPairCounts.toList.sortBy(-_._2).map(_._1).take(numSymTagPairs)
     val tagDict = topWordTagPairs.toSet.groupByKey
+    val fullTagset = wordTagPairCounts.keySet.map(_._2)
     tagDict.withDefaultValue(fullTagset)
   }
 }
@@ -95,5 +96,20 @@ class DefaultLimitingTagDictFactory[Sym, Tag](maxNumberOfDefaultTags: Int, deleg
         .take(maxNumberOfDefaultTags)
         .map(_._1).toSet
     delegateDict.withDefaultValue(topNTags)
+  }
+}
+
+class ExternalFileTagDictFactory(filename: String) extends TagDictFactory[String, String] {
+  override def make(taggedTrainSequences: Iterable[IndexedSeq[(String, String)]]) = {
+    val entries =
+      io.Source.fromFile(filename).getLines
+        .map(_.split("\\s+"))
+        .flatMap { case Array(word, tags @ _*) => tags.map(word -> _) }
+
+    println("%s contains %d entries".format(filename, entries.size))
+
+    entries
+      .groupByKey
+      .mapValuesStrict(_.toSet)
   }
 }
