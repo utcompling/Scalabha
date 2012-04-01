@@ -16,13 +16,13 @@ import opennlp.scalabha.tag.support._
  * @tparam L the class of labels used by the classifiers created
  * @tparam T the class of value used for the features
  */
-case class NaiveBayesClassifier[L,T](
-    val priorProb:L => LogNum,
-    val featureProb:L => T => LogNum,
-    val labels:Set[L])
-extends Classifier[L,T] {
+case class NaiveBayesClassifier[L, T](
+  val priorProb: L => LogNum,
+  val featureProb: L => T => LogNum,
+  val labels: Set[L])
+  extends Classifier[L, T] {
 
-  override def classify(document:Document[T]) =
+  override def classify(document: Instance[T]) =
     labels.map(label => {
       val prior = priorProb(label)
       val features = document.allFeatures
@@ -37,15 +37,15 @@ extends Classifier[L,T] {
  * @tparam L the class of labels used by the classifiers created
  * @tparam T the class of value used for the features
  */
-case class OnlineNaiveBayesClassifierTrainer[L,T](val lambda:Double) 
-extends ClassifierTrainer[L,T] {
+case class OnlineNaiveBayesClassifierTrainer[L, T](val lambda: Double)
+  extends ClassifierTrainer[L, T] {
 
   val labelDocCountsTransformer = PassthroughCountsTransformer[L]()
   val labelFeatureCountsTransformer =
     if (lambda == 0)
-      PassthroughCondCountsTransformer[L,T]()
+      PassthroughCondCountsTransformer[L, T]()
     else
-      AddLambdaSmoothingCondCountsTransformer[L,T](lambda)
+      AddLambdaSmoothingCondCountsTransformer[L, T](lambda)
 
   val labels = mutable.Set.empty[L]
   val labelDocCounter = mutable.Map[L, Int]().withDefaultValue(0)
@@ -57,21 +57,21 @@ extends ClassifierTrainer[L,T] {
     labelFeatureCounter.clear
   }
 
-  def train(labeledDocuments:TraversableOnce[(L,Document[T])]) = {
-    
+  def apply(labeledDocuments: TraversableOnce[(L, Instance[T])]) = {
+
     labeledDocuments.foreach {
       case (label, document) => {
         labelDocCounter(label) += 1
-        document.allFeatures.counts.foreach{
-          case (feature, count) => 
-          labelFeatureCounter.getOrElseUpdate(
-            label, 
-            mutable.Map[T, Int]().withDefaultValue(0))(feature) += count
+        document.allFeatures.counts.foreach {
+          case (feature, count) =>
+            labelFeatureCounter.getOrElseUpdate(
+              label,
+              mutable.Map[T, Int]().withDefaultValue(0))(feature) += count
         }
         labels += label
       }
     }
-    
+
     val labelDocDist = FreqDist(labelDocCountsTransformer(labelDocCounter))
     val labelFeatDist =
       CondFreqDist(labelFeatureCountsTransformer(labelFeatureCounter))

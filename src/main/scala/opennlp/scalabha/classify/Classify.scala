@@ -1,46 +1,26 @@
 package opennlp.scalabha.classify
 
 import opennlp.scalabha.util.LogNum
-
-/**
- * Trait for documents with fields and features
- * @tparam T the type of value used for features; should be immutable and
- *   serializable
- */
-trait Document[T] {
-
-  /**
-   * The possibly different fields of a document; this is to support different
-   * views of a document (e.g. link text vs. document body text) which may
-   * be treated seperately by a classifier; currently the features for each
-   * field must be of the same type
-   */
-  def fields:Iterable[(String, Iterable[T])]
-
-  /**
-   * A concatentation of the features from all the fields
-   */
-  lazy val allFeatures = fields.flatMap(_._2)
-}
+import scala.io.Source
 
 /**
  * Trait for document classifiers
  * @tparam L the class of labels used by this classifier
  * @tparam T the ypt of value used for the features
  */
-trait Classifier[L,T] {
+trait Classifier[L, T] {
 
   /** Iterate through the set of labels for this classifier */
-  def labels:Iterable[L]
+  def labels: Iterable[L]
 
-  /** 
+  /**
    * Classify a document
    * @return a sequence of labels with their double-valued scores
    */
-  def classify(document:Document[T]):Iterable[(L,LogNum)]
+  def classify(document: Instance[T]): Iterable[(L, LogNum)]
 
   /** Return the best label provided this classifier */
-  def bestLabel(document:Document[T]) = classify(document).maxBy(_._2)
+  def bestLabel(document: Instance[T]) = classify(document).maxBy(_._2)
 }
 
 /**
@@ -48,9 +28,9 @@ trait Classifier[L,T] {
  * @tparam L the class of labels used by the classifiers created
  * @tparam T the class of value used for the features
  */
-trait ClassifierTrainer[L,T] {
-  def train(documents:TraversableOnce[(L,Document[T])]):Classifier[L,T]
-}
+trait ClassifierTrainer[L, T]
+  extends (TraversableOnce[(L, Instance[T])] => Classifier[L, T])
+
 
 /**
  * Trait for classifier trainers which use distributions over the labels
@@ -58,7 +38,6 @@ trait ClassifierTrainer[L,T] {
  * @tparam L the class of labels used by the classifiers created
  * @tparam T the class of value used for the features
  */
-trait SoftClassifierTrainer[L,T] {
-  def train(documents:Iterable[(Iterable[(L,LogNum)],_ <: Document[T])])
-  :Classifier[L,T]
+trait SoftClassifierTrainer[L, T] {
+  def train(documents: Iterable[(Iterable[(L, LogNum)], _ <: Instance[T])]): Classifier[L, T]
 }
