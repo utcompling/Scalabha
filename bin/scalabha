@@ -51,8 +51,9 @@ else
 
     case $CMD in
         ccg) CLASS=opennlp.scalabha.ccg.CcgParser;;
-        check-tree) CLASS="opennlp.scalabha.tree.TagChecker"
-        ;;
+        check-tree) CLASS="opennlp.scalabha.tree.TagChecker";;
+        classify-train) CLASS=opennlp.maxent.ModelTrainer;;
+        classify-apply) CLASS=opennlp.maxent.ModelApplier;;
         run) CLASS=$1; shift;;
         help) help; exit 1;;
         *) echo "Unrecognized command: $CMD"; help; exit 1;;

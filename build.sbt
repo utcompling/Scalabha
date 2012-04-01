@@ -2,7 +2,7 @@ import AssemblyKeys._
 
 name := "Scalabha"
 
-version := "0.2.2"
+version := "0.2.3"
 
 organization := "OpenNLP"
 
@@ -18,7 +18,8 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.clapper" %% "argot" % "0.3.5",
+  "org.apache.opennlp" % "opennlp-maxent" % "3.0.2-incubating",
+  "org.clapper" %% "argot" % "0.3.8",
   "org.apache.commons" % "commons-lang3" % "3.0.1",
   "commons-logging" % "commons-logging" % "1.1.1",
   "log4j" % "log4j" % "1.2.16",
