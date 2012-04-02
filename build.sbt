@@ -52,3 +52,5 @@ libraryDependencies ++= Seq(
 seq(assemblySettings: _*)
 
 jarName in assembly := "scalabha-assembly.jar"
+
+test in assembly := {}
