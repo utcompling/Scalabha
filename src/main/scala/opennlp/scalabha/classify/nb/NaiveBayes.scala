@@ -19,16 +19,19 @@ import opennlp.scalabha.tag.support._
 case class NaiveBayesClassifier[L, T](
   val priorProb: L => LogNum,
   val featureProb: L => T => LogNum,
-  val labels: Set[L])
-  extends Classifier[L, T] {
+  val labels: Set[L]) extends Classifier[L, T] {
 
-  override def classify(document: Instance[T]) =
-    labels.map(label => {
+  override def classify(document: Instance[T]): Iterable[(L, LogNum)] = {
+    val unnormalizedScores = labels.toList.map { label =>
       val prior = priorProb(label)
       val features = document.allFeatures
       val featuresProb = features.map(featureProb(label)(_)).product
-      (label, prior * featuresProb)
-    })
+      prior * featuresProb
+    }
+    val logprobOfDoc = unnormalizedScores.reduce(_ + _)
+    val logprobs = unnormalizedScores.map(_/logprobOfDoc)
+    labels.zip(logprobs)
+  }
 }
 
 /**
@@ -75,6 +78,6 @@ case class OnlineNaiveBayesClassifierTrainer[L, T](val lambda: Double)
     val labelDocDist = FreqDist(labelDocCountsTransformer(labelDocCounter))
     val labelFeatDist =
       CondFreqDist(labelFeatureCountsTransformer(labelFeatureCounter))
-    NaiveBayesClassifier(labelDocDist, labelFeatDist, labels.toSet)
+    NaiveBayesClassifier[L, T](labelDocDist, labelFeatDist, labels.toSet)
   }
 }
