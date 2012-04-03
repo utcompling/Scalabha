@@ -1,5 +1,7 @@
 import AssemblyKeys._
 
+import com.typesafe.startscript.StartScriptPlugin
+
 name := "Scalabha"
 
 version := "0.2.3"
@@ -54,3 +56,5 @@ seq(assemblySettings: _*)
 jarName in assembly := "scalabha-assembly.jar"
 
 test in assembly := {}
+
+seq(StartScriptPlugin.startScriptForClassesSettings: _*)
