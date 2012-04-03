@@ -141,13 +141,14 @@ object BowGenerate {
               val before = tokens.slice(i - windowSize, i) // get the tokens before it
               val after = tokens.slice(i + 1, i + 1 + windowSize) // and the tokens after it
               val featuresInWindow = ((before ++ after).filter(features)).toSet.toList // keep only the features in the window
-              (token, WordCountFeature :: featuresInWindow)
-          }
+              (WordCountFeature :: featuresInWindow).map(w => ((token, w), 1))
+          }.flatten
         }
         .groupByKey
-        .combine(_.flatten.toList)
-        .mapValues(_.counts)
-        .map((word, featureCounts) => (word, featureCounts))
+        .combine(_.sum)
+        .map{ case ((token, word), count) => (token, (word, count)) }
+        .groupByKey
+        .map((token, counts_iter) => (token, counts_iter.toMap))
 
     if (LOG.isDebugEnabled) {
       LOG.debug("featureCountsByWordWithWordCountFeature")
