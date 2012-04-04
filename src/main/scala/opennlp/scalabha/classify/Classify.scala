@@ -82,7 +82,7 @@ object Classify {
 
   val lambdaOption =
     parser.option[Double](List("l", "lambda"), "<double>",
-      "smoothing amount > 0.0 (default: 1.0)") {
+      "smoothing amount > 0.0 (default: 0.0)") {
         (lambdaString, opt) =>
           val lambda = lambdaString.toDouble
           if (lambda < 0.0)
@@ -117,7 +117,7 @@ object Classify {
       case None => new BufferedWriter(new OutputStreamWriter(System.out))
     }
 
-    val lambda = lambdaOption.value.getOrElse(1.0)
+    val lambda = lambdaOption.value.getOrElse(0.0)
 
     // Train the classifier
     val trainer = nb.OnlineNaiveBayesClassifierTrainer[String, String](lambda)
@@ -144,6 +144,7 @@ object Classify {
     }
     output.flush
     output.close
+    
   }
 
 }

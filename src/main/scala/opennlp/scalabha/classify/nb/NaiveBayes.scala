@@ -21,6 +21,8 @@ case class NaiveBayesClassifier[L, T](
   val featureProb: L => T => LogNum,
   val labels: Set[L]) extends Classifier[L, T] {
 
+  val uniformProbs = List.fill(labels.size)(LogNum.one / LogNum(labels.size))
+
   override def classify(document: Instance[T]): Iterable[(L, LogNum)] = {
     val unnormalizedScores = labels.toList.map { label =>
       val prior = priorProb(label)
@@ -29,7 +31,10 @@ case class NaiveBayesClassifier[L, T](
       prior * featuresProb
     }
     val logprobOfDoc = unnormalizedScores.reduce(_ + _)
-    val logprobs = unnormalizedScores.map(_/logprobOfDoc)
+    val logprobs =
+      if (logprobOfDoc == LogNum.zero) uniformProbs
+      else unnormalizedScores.map(_ / logprobOfDoc)
+
     labels.zip(logprobs)
   }
 }

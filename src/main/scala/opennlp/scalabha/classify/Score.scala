@@ -23,7 +23,7 @@ object ClassifyScorer {
 
   val predictedSourceOption =
     parser.option[Source](
-      List("p", "predicted"), "<file>", "file w/ predicted labels") {
+      List("p", "predict"), "<file>", "file w/ predicted labels") {
         (filename, opt) =>
           val file = new File(filename)
           if (!file.exists)
