@@ -1,3 +1,17 @@
+v 0.2.3
+-------
+ 
+ - Added naive Bayes implementation. (E. Ponvert)
+ 
+ - Added hooks for OpenNLP Maxent in bin/scalabha. (J. Baldridge)
+ 
+ - Added data for classification examples, plus code for scoring. (J. Baldridge)
+ 
+ - Many improvements and extensions to HMM infrastructure, especially wrt clean implementation of 
+   counters and smoothing. (D. Garrette)
+
+ - Added Porter stemmer. (J. Baldridge)
+
 v 0.2.2
 -------
 
