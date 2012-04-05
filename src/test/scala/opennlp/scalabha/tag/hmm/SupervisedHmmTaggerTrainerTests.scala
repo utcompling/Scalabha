@@ -158,7 +158,7 @@ class SupervisedHmmTaggerTrainerTests {
   private def runSupervisedTrainingTest(tagDict: Map[String, Set[String]], trainLab: Seq[IndexedSeq[(String, String)]]) = {
     val gold = TaggedFile("data/postag/english/entest")
 
-    LOG.debug("tagDictTrain.size = " + tagDict.flattenOver.size)
+    LOG.debug("tagDictTrain.size = " + tagDict.ungroup.size)
     LOG.debug("labeledTrain.size = " + trainLab.size)
     LOG.debug("rawTrain.size     = " + 0)
 

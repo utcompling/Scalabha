@@ -16,8 +16,8 @@ import opennlp.scalabha.util.LogNum
  * HOW TO RUN:
  * sbt assembly
  * hadoop fs -put /scratch/01899/dhg1/nytgiga.lem nytgiga.lem
- * hadoop jar target/mln-semantics-assembly-0.0.1.jar utcompling.vectorspace.vecspace.BowGenerate nytgiga.lem
- * hadoop fs -getmerge nytgiga.lem.vc.out /scratch/01899/dhg1/nytgiga.lem.vc
+ * hadoop jar target/scalabha-assembly.jar opennlp.scalabha.vecspace.BowGenerate nytgiga.lem
+ * hadoop fs -getmerge nytgiga.lem.vc.f2000.m50.wInf.txt /scratch/01899/dhg1/nytgiga.lem.vc.f2000.m50.wInf.txt
  */
 object BowGenerate {
   val LOG = LogFactory.getLog(BowGenerate.getClass)
@@ -46,7 +46,7 @@ object BowGenerate {
       throw new RuntimeException("Expected arguments: inputFile, numFeatures, minWordCount, windowSize")
 
     val List(inputFile, numFeaturesString, minWordCountString, windowSizeString) = args.toList ++ additionalArgs
-    val outputFile = "%s.vc.f%s.m%s.w%s".format(inputFile, numFeaturesString, minWordCountString, windowSizeString)
+    val outputFile = "%s.vc.f%s.m%s.w%s.txt".format(inputFile, numFeaturesString, minWordCountString, windowSizeString)
     val numFeatures = numFeaturesString.toInt
     val minWordCount = minWordCountString.toInt
     val windowSize = windowSizeString.toLowerCase match { case "inf" => 10000; case s => s.toInt }
@@ -135,7 +135,7 @@ object BowGenerate {
     val featureCountsByWordWithWordCountFeature =
       inputLines
         .flatMap { line => // take the line
-          val tokens = line.split(" ").toList // split into individual tokens
+          val tokens = line.split("\\s+").toList // split into individual tokens
           tokens.zipWithIndex.collect {
             case (token, i) if validWords(token) => // for each token that meets the cutoff
               val before = tokens.slice(i - windowSize, i) // get the tokens before it

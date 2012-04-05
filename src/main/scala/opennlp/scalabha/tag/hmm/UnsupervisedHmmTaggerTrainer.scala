@@ -335,7 +335,7 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
           val currForward =
             hmm.tagDict(tok).mapTo { currTag => // each legal tag for the current token
               val tProb =
-                prevForward.sumMap {
+                prevForward.sumBy {
                   case (prevTag, prevFwdScore) => prevFwdScore * hmm.transitions(prevTag)(currTag)
                 }
               val eProb = hmm.emissions(currTag)(tok)
@@ -375,7 +375,7 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
         case (tok, (nextBackwrd, otherBackwrds, nextTok)) =>
           val currBackwrd =
             hmm.tagDict(tok).mapTo { currTag =>
-              nextBackwrd.sumMap {
+              nextBackwrd.sumBy {
                 case (nextTag, nextBkwdScore) =>
                   hmm.transitions(currTag)(nextTag) * hmm.emissions(nextTag)(nextTok) * nextBkwdScore
               }

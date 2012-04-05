@@ -88,7 +88,7 @@ class DefaultLimitingTagDictFactory[Sym, Tag](maxNumberOfDefaultTags: Int, deleg
     val delegateDict = delegate.make(taggedTrainSequences)
     val topNTags =
       delegateDict
-        .flattenOver
+        .ungroup
         .map(_.swap).toSet
         .groupByKey
         .mapValuesStrict(_.size).toList
