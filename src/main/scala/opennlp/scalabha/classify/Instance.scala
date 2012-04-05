@@ -16,10 +16,9 @@ trait Instance[T] {
    * attribute must be of the same type.
    */
   def fields: Iterable[(String, Iterable[T])]
-  //def features: Iterable[AttrVal[T]]
 
   /**
-   * A concatentation of the features from all the fields
+   * A concatenation of the features from all the fields
    */
   lazy val allFeatures = fields.flatMap(_._2)
 }
@@ -48,3 +47,8 @@ class CsvLabeledInstanceSource(inputSource: Source)
     }
   }
 }
+
+case class AttrVal(val attr: String, val value: String) {
+  override def toString = attr + "=" + value
+}
+

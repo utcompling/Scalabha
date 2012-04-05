@@ -49,6 +49,7 @@ trait SoftClassifierTrainer[L, T] {
 object Classify {
 
   import org.clapper.argot._
+  import org.clapper.argot.ArgotConverters._
   import java.io.File
 
   val parser =
@@ -75,9 +76,13 @@ object Classify {
           Source.fromFile(file)
       }
 
+  val outputOption =
+    parser.option[String](
+      List("o", "out"), "<file>", "file to output predictions to")
+
   val lambdaOption =
     parser.option[Double](List("l", "lambda"), "<double>",
-      "smoothing amount > 0.0 (default: 1.0)") {
+      "smoothing amount > 0.0 (default: 0.0)") {
         (lambdaString, opt) =>
           val lambda = lambdaString.toDouble
           if (lambda < 0.0)
@@ -87,6 +92,9 @@ object Classify {
 
   def main(args: Array[String]) {
     import opennlp.scalabha.util.CollectionUtils._
+    import java.io.BufferedWriter
+    import java.io.FileWriter
+    import java.io.OutputStreamWriter
 
     try { parser.parse(args) }
     catch { case e: ArgotUsageException => println(e.message); System.exit(0) }
@@ -102,7 +110,14 @@ object Classify {
       case None => parser.usage("No input file provided.")
     }
 
-    val lambda = lambdaOption.value.getOrElse(1.0)
+    // If the output file is given via the option, create and write to that 
+    // file; otherwise, use stdout.
+    val output: BufferedWriter = outputOption.value match {
+      case Some(outfile) => new BufferedWriter(new FileWriter(outfile))
+      case None => new BufferedWriter(new OutputStreamWriter(System.out))
+    }
+
+    val lambda = lambdaOption.value.getOrElse(0.0)
 
     // Train the classifier
     val trainer = nb.OnlineNaiveBayesClassifierTrainer[String, String](lambda)
@@ -118,14 +133,18 @@ object Classify {
 
     // Output the predictions in reverse sorted order, space separated
     predictions.foreach { prediction =>
-      println(
+      output.write(
         prediction
           .toList
           .sortBy(_._2)
           .reverse
           .map { case (l, p) => l + " " + p.toDouble }
-          .mkString(" "))
+          .mkString(" ")
+          + "\n")
     }
+    output.flush
+    output.close
+    
   }
 
 }
