@@ -4,7 +4,7 @@ import com.typesafe.startscript.StartScriptPlugin
 
 name := "Scalabha"
 
-version := "0.2.3"
+version := "0.2.4"
 
 organization := "OpenNLP"
 
@@ -20,7 +20,7 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.apache.opennlp" % "opennlp-maxent" % "3.0.2-incubating",
+  "org.apache.opennlp" % "opennlp-tools" % "1.5.2-incubating",
   "org.clapper" %% "argot" % "0.3.8",
   "org.apache.commons" % "commons-lang3" % "3.0.1",
   "commons-logging" % "commons-logging" % "1.1.1",

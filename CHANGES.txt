@@ -1,3 +1,10 @@
+v 0.2.4
+-------
+
+ - Added OpenNLP Tools as a dependency and created example for using
+   it to to do sentence detection, tokenization, and
+   tagging. (J. Baldridge)
+
 v 0.2.3
 -------
  
