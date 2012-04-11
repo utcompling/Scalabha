@@ -12,7 +12,8 @@ crossPaths := false
 
 resolvers ++= Seq(
   "Cloudera Hadoop Releases" at "https://repository.cloudera.com/content/repositories/releases/",
-  "Thrift location" at "http://people.apache.org/~rawson/repo/"
+  "Thrift location" at "http://people.apache.org/~rawson/repo/",
+  "opennlp sourceforge repo" at "http://opennlp.sourceforge.net/maven2"
 )
 
 libraryDependencies ++= Seq(
