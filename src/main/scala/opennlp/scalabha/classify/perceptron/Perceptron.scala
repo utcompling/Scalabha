@@ -1,4 +1,4 @@
-package opennlp.textgrounder.perceptron
+package opennlp.scalabha.classify.perceptron
 
 /**
  * A perceptron for binary classification.
@@ -6,7 +6,8 @@ package opennlp.textgrounder.perceptron
  * @author Ben Wing
  */
 
-import util.control.Breaks._
+import scala.util.control.Breaks._
+import collection.mutable
 
 /**
  * A vector of real-valued features.  Defined as an abstract class because
@@ -14,49 +15,78 @@ import util.control.Breaks._
  * rather than store an actual vector of values.
  */
 abstract class FeatureVector {
-  /** Return the length of the feature vector. */
+  /** Return the length of the feature vector.  This is the number of weights
+    * that need to be created -- not necessarily the actual number of items
+    * stored in the vector (which will be different especially in the case
+    * of sparse vectors). */
   def length: Int
 
   /** Return the value at index `i`. */
   def apply(i: Int): Double
 
-  /** Return the value at index `i`, for class `c`. */
-  def apply(i: Int, c: Int): Double = apply(i)
+  /** Return the value at index `i`, for class `label`. */
+  def apply(i: Int, label: Int): Double = apply(i)
 
+  /** Return the squared magnitude of the feature vector for class `label`,
+    * i.e. dot product of feature vector with itself */
+  def squared_magnitude(label: Int): Double
+
+  /** Return the squared magnitude of the difference between the values of
+    * this feature vector for the two labels `label1` and `label2`. */
+  def diff_squared_magnitude(label1: Int, label2: Int): Double
+
+  /** Return the dot product of the given weight vector with the feature
+    * vector for class `label`. */
+  def dot_product(weights: WeightVector, label: Int): Double
+
+  /** Update a weight vector by adding a scaled version of the feature vector,
+    * with class `label`. */
+  def update_weights(weights: WeightVector, scale: Double, label: Int)
+}
+
+abstract class DenseFeatureVector extends FeatureVector {
   /** Add two feature vectors. */
   def +(other: FeatureVector) = {
     val len = length
-    val res = new Array[Double](len)
+    val res = new WeightVector(len)
     for (i <- 0 until len)
       res(i) = this(i) + other(i)
-    new RawBasicVector(res)
+    new RawArrayFeatureVector(res)
   }
   
   /** Subtract two feature vectors. */
   def -(other: FeatureVector) = {
     val len = length
-    val res = new Array[Double](len)
+    val res = new WeightVector(len)
     for (i <- 0 until len)
       res(i) = this(i) - other(i)
-    new RawBasicVector(res)
+    new RawArrayFeatureVector(res)
   }
 
   /** Scale a feature vector. */
   def *(scalar: Double) = {
     val len = length
-    val res = new Array[Double](len)
+    val res = new WeightVector(len)
     for (i <- 0 until len)
       res(i) = this(i)*scalar
-    new RawBasicVector(res)
+    new RawArrayFeatureVector(res)
   }
 
   /** Compute the dot product of the feature vector with a set of weights,
-    * for class c. */
-  def dot_product(weights: Array[Double], c: Int = 1) =
-    (for (i <- 0 until length) yield apply(i, c)*weights(i)).sum
+    * for class `label`. */
+  def dot_product(weights: WeightVector, label: Int) =
+    (for (i <- 0 until length) yield apply(i, label)*weights(i)).sum
 
-  def squared_magnitude =
-    (for (i <- 0 until length; va = apply(i)) yield va*va).sum
+  def squared_magnitude(label: Int) =
+    (for (i <- 0 until length; va = apply(i, label)) yield va*va).sum
+
+  def diff_squared_magnitude(label1: Int, label2: Int) =
+    (for (i <- 0 until length; va = apply(i, label1) - apply(i, label2))
+       yield va*va).sum
+
+  def update_weights(weights: WeightVector, scale: Double, label: Int) {
+    (0 until length).foreach(i => { weights(i) += scale*apply(i, label) })
+  }
 }
 
 /**
@@ -64,9 +94,9 @@ abstract class FeatureVector {
  * are used exactly as the values of the feature; no additional term is
  * inserted to handle a "bias" or "intercept" weight.
  */
-class RawBasicVector(
-  values: Array[Double]
-) extends FeatureVector {
+class RawArrayFeatureVector(
+  values: WeightVector
+) extends DenseFeatureVector {
   /** Return the length of the feature vector. */
   def length = values.length
 
@@ -80,9 +110,9 @@ class RawBasicVector(
  * A vector of real-valued features, stored explicitly.  An additional value
  * set to a constant 1 is automatically stored at the end of the vector.
  */
-class BasicVector(
-  values: Array[Double]
-) extends FeatureVector {
+class ArrayFeatureVector(
+  values: WeightVector
+) extends DenseFeatureVector {
   /** Return the length of the feature vector; + 1 including the extra bias
     * term. */
   def length = values.length + 1
@@ -105,11 +135,50 @@ class BasicVector(
 }
 
 /**
+ * A feature vector built up out of nominal strings.  A global mapping table
+ * is maintained to convert between strings and array indices into a
+ * logical vector.  NOTE: The vectors thus built up are not sparse.
+ * If the number of features becomes very large and memory becomes an issue,
+ * a sparse representation could also be created.  However, that will require
+ * some changes to the perceptron implementations -- in particular, it will
+ * be necessary to abstract out the concept of "weight vector" to be
+ * sparse, and implement the necessary update operations as abstract
+ * operations on this weight vector.
+ */
+class NominalFeatureVector extends FeatureVector {
+  val features = mutable.Set[Int](0)
+  def add(feat: String) {
+    val index = NominalFeatureVector.feature_mapper.memoize_string(feat)
+    features += index
+  }
+
+  def length = NominalFeatureVector.feature_mapper.maximum_index + 1
+
+  def apply(i: Int) = {
+    if (features contains i) 1 else 0
+  }
+
+  def squared_magnitude(label: Int) = features.size
+
+  def diff_squared_magnitude(label1: Int, label2: Int) = 0
+
+  def dot_product(weights: WeightVector, label: Int) =
+    features.map(weights(_)).sum
+
+  def update_weights(weights: WeightVector, scale: Double, label: Int) =
+    features.map(i => weights(i) += scale)
+}
+
+object NominalFeatureVector {
+  val feature_mapper = new IntStringMemoizer
+}
+
+/**
  * A binary perceptron, created from an array of weights.  Normally
  * created automatically by one of the trainer classes.
  */
 class BinaryPerceptron (
-  val weights: Array[Double]
+  val weights: WeightVector
 ) {
   /** Classify a given instance, returning the class, either -1 or 1. */
   def classify(instance: FeatureVector) = {
@@ -119,7 +188,7 @@ class BinaryPerceptron (
 
   /** Score a given instance.  If the score is &gt; 0, 1 is predicted,
     * else -1. */
-  def score(instance: FeatureVector) = instance.dot_product(weights)
+  def score(instance: FeatureVector) = instance.dot_product(weights, 1)
 }
 
 /**
@@ -152,7 +221,7 @@ class BinaryPerceptron (
 abstract class PerceptronTrainer {
   /** Create and initialize a vector of weights of length `len`.
     * By default, initialized to all 0's, but could be changed. */
-  def new_weights(len: Int) = new Array[Double](len)
+  def new_weights(len: Int) = new WeightVector(len)
 
   /** Check that all instances have the same length. */
   def check_sequence_lengths(data: Iterable[(FeatureVector, Int)]) {
@@ -209,10 +278,9 @@ abstract class BinaryPerceptronTrainer(
     while (iter < max_iterations) {
       var total_error = 0.0
       for ((inst, label) <- data) {
-        val score = inst.dot_product(weights)
+        val score = inst.dot_product(weights, 1)
         val scale = get_scale_factor(inst, label, score)
-        for (i <- 0 until len)
-          weights(i) += scale*inst(i)
+        inst.update_weights(weights, scale, 1)
         total_error += math.abs(scale)
       }
       if (total_error < error_threshold)
@@ -303,7 +371,7 @@ class PassiveAggressiveBinaryPerceptronTrainer(
   val _variant = variant; val _aggressiveness_param = aggressiveness_param
   def get_scale_factor(inst: FeatureVector, label: Int, score: Double) = {
     val loss = 0.0 max (1.0 - label*score)
-    val sqmag = inst.squared_magnitude
+    val sqmag = inst.squared_magnitude(1)
     compute_update_factor(loss, sqmag)
   }
 }
@@ -341,7 +409,7 @@ object Maxutil {
  * automatically through this mechanism.
  */
 class SingleWeightMultiClassPerceptron (
-  val weights: Array[Double],
+  val weights: WeightVector,
   val num_classes: Int
 ) {
   assert(num_classes >= 2)
@@ -365,7 +433,7 @@ class SingleWeightMultiClassPerceptron (
  * requested.
  */
 class MultiClassPerceptron (
-  val weights: IndexedSeq[Array[Double]]
+  val weights: IndexedSeq[WeightVector]
 ) {
   val num_classes = weights.length
   assert (num_classes >= 2)
@@ -442,11 +510,10 @@ class PassiveAggressiveSingleWeightMultiClassPerceptronTrainer(
         val (s,sscore) = Maxutil.argandmax[Int](nolabs, dotprod(_))
         val margin = rscore - sscore
         val loss = 0.0 max (1.0 - margin)
-        val sqmagdiff = ((0 until len).map(i => {
-          val diff = inst(i, r) - inst(i, s); diff*diff })).sum
+        val sqmagdiff = inst.diff_squared_magnitude(r, s)
         val scale = compute_update_factor(loss, sqmagdiff)
-        (0 until len).foreach(i => {
-           weights(i) += scale*(inst(i, r) - inst(i, s)) })
+        inst.update_weights(weights, scale, r)
+        inst.update_weights(weights, -scale, s)
         total_error += math.abs(scale)
       }
       if (total_error < error_threshold)
@@ -474,7 +541,7 @@ abstract class MultiClassPerceptronTrainer(
     for ((inst, label) <- data)
       assert(label >= 0 && label < num_classes)
     val len = data.head._1.length
-    IndexedSeq[Array[Double]](
+    IndexedSeq[WeightVector](
       (for (i <- 0 until num_classes) yield new_weights(len)) :_*)
   }
 
@@ -517,14 +584,12 @@ class PassiveAggressiveMultiClassPerceptronTrainer(
         val (s,sscore) = Maxutil.argandmax[Int](nolabs, dotprod(_))
         val margin = rscore - sscore
         val loss = 0.0 max (1.0 - margin)
-        val rmag = ((0 until len).map(i => { val x = inst(i, r); x*x })).sum
-        val smag = ((0 until len).map(i => { val x = inst(i, s); x*x })).sum
+        val rmag = inst.squared_magnitude(r)
+        val smag = inst.squared_magnitude(s)
         val sqmagdiff = rmag + smag
         val scale = compute_update_factor(loss, sqmagdiff)
-        val rweights = weights(r)
-        (0 until len).foreach(i => { rweights(i) += scale*inst(i, r) })
-        val sweights = weights(s)
-        (0 until len).foreach(i => { sweights(i) -= scale*inst(i, s) })
+        inst.update_weights(weights(r), scale, r)
+        inst.update_weights(weights(s), -scale, s)
         total_error += math.abs(scale)
       }
       if (total_error < error_threshold)
@@ -588,11 +653,10 @@ abstract class PassiveAggressiveCostSensitiveSingleWeightMultiClassPerceptronTra
               x=>(dotprod(x) - goldscore + math.sqrt(cost(label, x))))
         val loss = dotprod(predlab) - goldscore +
           math.sqrt(cost(label, predlab))
-        val sqmagdiff = ((0 until len).map(i => {
-          val diff = inst(i, label) - inst(i, predlab); diff*diff })).sum
+        val sqmagdiff = inst.diff_squared_magnitude(label, predlab)
         val scale = compute_update_factor(loss, sqmagdiff)
-        (0 until len).foreach(i => {
-           weights(i) += scale*(inst(i, label) - inst(i, predlab)) })
+        inst.update_weights(weights, scale, label)
+        inst.update_weights(weights, -scale, predlab)
         total_error += math.abs(scale)
       }
       if (total_error < error_threshold)
@@ -656,16 +720,12 @@ abstract class PassiveAggressiveCostSensitiveMultiClassPerceptronTrainer(
               x=>(dotprod(x) - goldscore + math.sqrt(cost(label, x))))
         val loss = dotprod(predlab) - goldscore +
           math.sqrt(cost(label, predlab))
-        val rmag =
-          ((0 until len).map(i => { val x = inst(i, label); x*x })).sum
-        val smag =
-          ((0 until len).map(i => { val x = inst(i, predlab); x*x })).sum
+        val rmag = inst.squared_magnitude(label)
+        val smag = inst.squared_magnitude(predlab)
         val sqmagdiff = rmag + smag
         val scale = compute_update_factor(loss, sqmagdiff)
-        val rweights = weights(label)
-        (0 until len).foreach(i => { rweights(i) += scale*inst(i, label) })
-        val sweights = weights(predlab)
-        (0 until len).foreach(i => { sweights(i) -= scale*inst(i, predlab) })
+        inst.update_weights(weights(label), scale, label)
+        inst.update_weights(weights(predlab), -scale, predlab)
         total_error += math.abs(scale)
       }
       if (total_error < error_threshold)
