@@ -45,17 +45,16 @@ abstract class Memoizer {
 }
 
 /**
- * The memoizer we actually use.  Maps word strings to Ints.  Uses Trove
- * for extremely fast and memory-efficient hash tables, making use of the
- * Trove-Scala interface for easy access to the Trove hash tables.
+ * The memoizer we actually use.  Maps word strings to Ints.
+ *
+ * @param minimum_index Minimum index used, usually either 0 or 1.
  */
-class IntStringMemoizer extends Memoizer {
+class IntStringMemoizer(val minimum_index: Int = 0) extends Memoizer {
   type Word = Int
-  val invalid_word: Word = 0
 
-  protected var next_word_count: Word = 1
+  protected var next_word_count: Word = minimum_index
 
-  def maximum_index = next_word_count - 1
+  def number_of_entries = next_word_count - minimum_index
 
   // For replacing strings with ints.  This should save space on 64-bit
   // machines (string pointers are 8 bytes, ints are 4 bytes) and might
@@ -68,8 +67,9 @@ class IntStringMemoizer extends Memoizer {
   //protected val id_word_map = trovescala.IntObjectMap[String]()
 
   def memoize_string(word: String) = {
-    val index = word_id_map.getOrElse(word, 0)
-    if (index != 0) index
+    val index = word_id_map.getOrElse(word, -1)
+    // println("Saw word=%s, index=%s" format (word, index))
+    if (index != -1) index
     else {
       val newind = next_word_count
       next_word_count += 1
@@ -90,3 +90,19 @@ class IntStringMemoizer extends Memoizer {
   def create_word_double_map() = mutable.Map[Word,Double]()
   type WordDoubleMap = mutable.Map[Word,Double]
 }
+
+// /**
+//  * Version that uses Trove for extremely fast and memory-efficient hash
+//  * tables, making use of the Trove-Scala interface for easy access to the
+//  * Trove hash tables.
+//  */
+// class TroveIntStringMemoizer(
+//   minimum_index: Int = 0
+// ) extends IntStringMemoizer(minimum_index) {
+//   override protected val word_id_map = trovescala.ObjectIntMap[String]()
+//   override protected val id_word_map = trovescala.IntObjectMap[String]()
+//   override def create_word_int_map() = trovescala.IntIntMap()
+//   override type WordIntMap = trovescala.IntIntMap
+//   override def create_word_double_map() = trovescala.IntDoubleMap()
+//   override type WordDoubleMap = trovescala.IntDoubleMap
+// }

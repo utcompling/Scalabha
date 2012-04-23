@@ -80,14 +80,48 @@ object Classify {
     parser.option[String](
       List("o", "out"), "<file>", "file to output predictions to")
 
+  val methodOption =
+    parser.option[String](
+      List("m", "method"), "<method>", "classification method (naive-bayes, perceptron, pa-perceptron), default naive-bayes") {
+        (method, opt) =>
+          method match {
+            case "nb" => "naive-bayes"
+            case "naive-bayes" => "naive-bayes"
+            case "perceptron" => "perceptron"
+            case "pa-perceptron" => "pa-perceptron"
+            case _ =>
+              parser.usage("Method should be 'naive-bayes', 'perceptron' or 'pa-perceptron'.")
+          }
+      }
+
   val lambdaOption =
     parser.option[Double](List("l", "lambda"), "<double>",
-      "smoothing amount > 0.0 (default: 0.0)") {
+      "for Naive Bayes: smoothing amount >= 0.0 (default: 0.0)") {
         (lambdaString, opt) =>
           val lambda = lambdaString.toDouble
           if (lambda < 0.0)
-            parser.usage("Lambda value should be greater than zero.")
+            parser.usage("Lambda value should be greater than or equal to zero.")
           lambda
+      }
+
+  val variantOption =
+    parser.option[Int](List("v", "variant"), "<int>",
+      "for perceptron: passive-aggressive variant (0, 1, 2, default: 0)") {
+        (variantString, opt) =>
+          val variant = variantString.toInt
+          if (variant < 0 || variant > 2)
+            parser.usage("Variant should be 0, 1 or 2.")
+          variant
+      }
+
+  val aggressivenessOption =
+    parser.option[Double](List("a", "aggressiveness"), "<double>",
+      "for perceptron: aggressiveness factor > 0.0 (default: 20.0)") {
+        (aggressivenessString, opt) =>
+          val aggressiveness = aggressivenessString.toDouble
+          if (aggressiveness <= 0.0)
+            parser.usage("Aggressiveness value should be strictly greater than zero.")
+          aggressiveness
       }
 
   def main(args: Array[String]) {
@@ -117,34 +151,82 @@ object Classify {
       case None => new BufferedWriter(new OutputStreamWriter(System.out))
     }
 
+    val method = methodOption.value match {
+      case Some(meth) => meth
+      case None => "naive-bayes"
+    }
+
     val lambda = lambdaOption.value.getOrElse(0.0)
+    val aggressiveness = aggressivenessOption.value.getOrElse(20.0)
+    val variant = variantOption.value.getOrElse(0)
 
-    // Train the classifier
-    val trainer = nb.OnlineNaiveBayesClassifierTrainer[String, String](lambda)
-    val classifier =
-      trainer(new CsvLabeledInstanceSource(trainSource).getLabeledInstances)
+    if (method == "naive-bayes") {
+      // Train the classifier
+      val trainer = nb.OnlineNaiveBayesClassifierTrainer[String, String](lambda)
+      val classifier =
+        trainer(new CsvLabeledInstanceSource(trainSource).getLabeledInstances)
 
-    // Run classifier on each instance to get the predictions
-    val predictions =
-      new CsvLabeledInstanceSource(predictSource)
-        .getLabeledInstances
-        .map(_._2)
-        .map(instance => classifier.classify(instance))
+      // Run classifier on each instance to get the predictions
+      val predictions =
+        new CsvLabeledInstanceSource(predictSource)
+          .getLabeledInstances
+          .map(_._2)
+          .map(instance => classifier.classify(instance))
 
-    // Output the predictions in reverse sorted order, space separated
-    predictions.foreach { prediction =>
-      output.write(
-        prediction
-          .toList
-          .sortBy(_._2)
-          .reverse
-          .map { case (l, p) => l + " " + p.toDouble }
-          .mkString(" ")
-          + "\n")
+      // Output the predictions in reverse sorted order, space separated
+      predictions.foreach { prediction =>
+        output.write(
+          prediction
+            .toList
+            .sortBy(_._2)
+            .reverse
+            .map { case (l, p) => l + " " + p.toDouble }
+            .mkString(" ")
+            + "\n")
+      }
+    } else {
+      // Train the classifier
+      val factory = new perceptron.SparseNominalInstanceFactory
+      val training_instances =
+        factory.get_csv_labeled_instances(trainSource).toList
+      val test_instances =
+        factory.get_csv_labeled_instances(predictSource).toList
+      val numlabs = factory.number_of_labels
+      if (numlabs < 2) {
+        println("Found %d different labels, when at least 2 are needed." format
+          numlabs)
+        System.exit(0)
+      }
+
+      // Train a classifer
+      val trainer =
+        if (numlabs > 2)
+          new perceptron.PassiveAggressiveMultiClassPerceptronTrainer(variant,
+            aggressiveness)
+        else if (method == "pa-perceptron")
+          new perceptron.PassiveAggressiveBinaryPerceptronTrainer(variant,
+            aggressiveness)
+        else
+          new perceptron.BasicBinaryPerceptronTrainer(aggressiveness)
+      val classifier = trainer(training_instances, numlabs)
+
+      // Run classifier on each instance to get the predictions, and output
+      // them in reverse sorted order, space separated
+      for ((inst, label) <- test_instances) {
+        // Mapping from labels to scores
+        val scores = ((0 until numlabs).map(factory.index_to_label(_)) zip
+          classifier.score(inst))
+        // Output in reverse sorted order
+        val outstr = scores
+            .sortBy(_._2)
+            .reverse
+            .map { case (l, p) => l + " " + p }
+            .mkString(" ")
+        output.write(outstr + "\n")
+      }
     }
     output.flush
     output.close
-    
   }
 
 }
