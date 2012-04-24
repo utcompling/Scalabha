@@ -23,6 +23,8 @@ resolvers ++= Seq(
 libraryDependencies ++= Seq(
   "org.apache.opennlp" % "opennlp-tools" % "1.5.2-incubating",
   "org.clapper" %% "argot" % "0.3.8",
+  "net.sf.opencsv" % "opencsv" % "2.1",
+  "com.codecommit" %% "anti-xml" % "0.3",
   "org.apache.commons" % "commons-lang3" % "3.0.1",
   "commons-logging" % "commons-logging" % "1.1.1",
   "log4j" % "log4j" % "1.2.16",
