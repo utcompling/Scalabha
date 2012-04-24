@@ -187,8 +187,8 @@ class SparseNominalFeatureVector(
 
   override def toString = {
     "SparseNominalFeatureVector(%s)" format
-      features.filter(_ > 0).
-        map(SparseNominalFeatureVector.feature_mapper.unmemoize_string(_)).
+      features.filter(_ > 0).toSeq.sorted.
+      map(x => "%s:%s" format (x, SparseNominalFeatureVector.feature_mapper.unmemoize_string(x))).
         mkString(",")
   }
 }
@@ -366,8 +366,9 @@ abstract class BinaryPerceptronTrainer(
     val debug = false
     val weights = initialize(data)
     def print_weights() {
-      println("Weights: length=%s,max=%s,min=%s" format
+      Console.err.println("Weights: length=%s,max=%s,min=%s" format
         (weights.length, weights.max, weights.min))
+      // Console.err.println("Weights: [%s]" format weights.mkString(","))
     }
     val len = weights.length
     var iter = 0
@@ -376,17 +377,17 @@ abstract class BinaryPerceptronTrainer(
     breakable {
       while (iter < max_iterations) {
         if (debug)
-          println("Iteration %s" format iter)
+          Console.err.println("Iteration %s" format iter)
         var total_error = 0.0
         for ((inst, label) <- data) {
           if (debug)
-            println("Instance %s, label %s" format (inst, label))
+            Console.err.println("Instance %s, label %s" format (inst, label))
           val score = inst.dot_product(weights, 1)
           if (debug)
-            println("Score %s" format score)
+            Console.err.println("Score %s" format score)
           val scale = get_scale_factor(inst, label, score)
           if (debug)
-            println("Scale %s" format scale)
+            Console.err.println("Scale %s" format scale)
           inst.update_weights(weights, scale, 1)
           if (debug)
             print_weights()
