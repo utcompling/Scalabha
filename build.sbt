@@ -12,6 +12,8 @@ scalaVersion := "2.9.1"
 
 crossPaths := false
 
+retrieveManaged := true
+
 resolvers ++= Seq(
   "Cloudera Hadoop Releases" at "https://repository.cloudera.com/content/repositories/releases/",
   "Thrift location" at "http://people.apache.org/~rawson/repo/",

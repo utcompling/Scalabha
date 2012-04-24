@@ -10,6 +10,11 @@ fi
 SBT_BUILD_CMD="java -Dfile.encoding=UTF8 -Xmx1536M -Xss1M -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m ${SBT_OPTS} -jar $SCALABHA_DIR/bin/sbt-launch-*.jar"
 SBT_RUN_CMD="java $JAVA_MEM_FLAG -jar $SCALABHA_DIR/bin/sbt-launch-*.jar"
 
+JARS="`echo $SCALABHA_DIR/lib/*.jar $SCALABHA_DIR/lib_managed/*/*.jar $SCALABHA_DIR/lib_managed/*/*/*.jar $SCALABHA_DIR/lib_managed/*/*/*/*.jar $SCALABHA_DIR/output/*.jar $SCALABHA_DIR/target/*.jar | tr ' ' ':'`"
+SCALA_LIB="$HOME/.sbt/boot/scala-2.9.1/lib/scala-library.jar"
+CP="$SCALABHA_DIR/target/classes:$SCALA_LIB:$JARS:$CLASSPATH"
+JAVA="$JAVA_HOME/bin/java"
+JAVA_COMMAND="$JAVA -classpath $CP"
 
 CMD=$1
 shift
@@ -50,7 +55,8 @@ else
         *) echo "Unrecognized command: $CMD"; help; exit 1;;
     esac
 
-    $SBT_RUN_CMD "run-main $CLASS $*"
+    #$SBT_RUN_CMD "run-main $CLASS $*"
+    $JAVA_COMMAND $CLASS ${1+"$@"}
     (( EXIT_CODE += $? ))
 
 fi
