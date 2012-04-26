@@ -300,9 +300,7 @@ class UnsupervisedHmmTaggerTrainerTests {
           AddLambdaSmoothingCondCountsTransformer[Option[String], Option[String]](lambda = 0.1)
         override val estimatedEmissionCountsTransformer =
           //          PassthroughCondCountsTransformer[Option[String], Option[String]]()
-          StartEndFixingEmissionCountsTransformer[String, String](
-            new AddLambdaSmoothingCondCountsTransformer[Option[String], Option[String]](lambda = 0.1,
-              StartEndFixingEmissionCountsTransformer[String, String]()))
+          AddLambdaSmoothingCondCountsTransformer[Option[String], Option[String]](lambda = 0.1)
         override val maxIterations: Int = 50
         override val minAvgLogProbChangeForEM: Double = 0.00001
 
@@ -326,9 +324,7 @@ class UnsupervisedHmmTaggerTrainerTests {
         transitionCountsTransformer =
           EisnerSmoothingCondCountsTransformer[Option[String], Option[String]](lambda = 1.0, ItemDroppingCountsTransformer(None)),
         emissionCountsTransformer =
-          StartEndFixingEmissionCountsTransformer[String, String](
-            new EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0),
-              StartEndFixingEmissionCountsTransformer[String, String]())))
+          EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0)))
     val emUnsupervisedOutput = emUnsupervisedTagger.tag(trainRaw)
     val unsupervisedEmTagger = supervisedTrainer.trainSupervised(emUnsupervisedOutput, new SimpleTagDictFactory().make(emUnsupervisedOutput))
 

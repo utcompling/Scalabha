@@ -48,11 +48,9 @@ class SupervisedHmmTaggerTrainerTests {
     val trainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(
         transitionCountsTransformer =
-          EisnerSmoothingCondCountsTransformer[Option[String], Option[String]](lambda = 1.0, ItemDroppingCountsTransformer(None)),
+          EisnerSmoothingCondCountsTransformer(lambda = 1.0, ItemDroppingCountsTransformer(None)),
         emissionCountsTransformer =
-          StartEndFixingEmissionCountsTransformer[String, String](
-            new EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0),
-              StartEndFixingEmissionCountsTransformer[String, String]())))
+          EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0)))
     val tagDict = new SimpleTagDictFactory().make(train)
     val tagger: Tagger[String, String] = trainer.trainSupervised(train, tagDict)
     assertEquals(List("D", "N", "V", "."), tagger.tagSequence("the dog walks . ".split(" ")))
@@ -163,11 +161,9 @@ class SupervisedHmmTaggerTrainerTests {
     val trainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(
         transitionCountsTransformer =
-          EisnerSmoothingCondCountsTransformer[Option[String], Option[String]](lambda = 1.0, ItemDroppingCountsTransformer(None)),
+          EisnerSmoothingCondCountsTransformer(lambda = 1.0, ItemDroppingCountsTransformer(None)),
         emissionCountsTransformer =
-          StartEndFixingEmissionCountsTransformer[String, String](
-            new EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0),
-              StartEndFixingEmissionCountsTransformer[String, String]())))
+          EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0)))
     val tagger = trainer.trainSupervised(trainLab, tagDict)
     val output = tagger.tag(gold.map(_.map(_._1)))
     val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)

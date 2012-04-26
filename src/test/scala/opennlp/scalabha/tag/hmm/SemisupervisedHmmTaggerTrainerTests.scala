@@ -37,7 +37,7 @@ class SemisupervisedHmmTaggerTrainerTests {
     	""", results)
   }
 
-  private def runUnsupervisedTrainingTest(tagDict: TagDict[String,String], trainLab: Seq[IndexedSeq[(String, String)]]) = {
+  private def runUnsupervisedTrainingTest(tagDict: TagDict[String, String], trainLab: Seq[IndexedSeq[(String, String)]]) = {
     val trainRaw = RawFile("data/postag/english/enraw20k")
     val gold = TaggedFile("data/postag/english/entest")
 
@@ -48,11 +48,9 @@ class SemisupervisedHmmTaggerTrainerTests {
     val trainer: SemisupervisedTaggerTrainer[String, String] =
       new SemisupervisedHmmTaggerTrainer(
         initialTransitionCountsTransformer =
-          EisnerSmoothingCondCountsTransformer[Option[String], Option[String]](lambda = 1.0, ItemDroppingCountsTransformer(None)),
+          EisnerSmoothingCondCountsTransformer(lambda = 1.0, ItemDroppingCountsTransformer(None)),
         initialEmissionCountsTransformer =
-          StartEndFixingEmissionCountsTransformer[String, String](
-            new EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0),
-              StartEndFixingEmissionCountsTransformer[String, String]())),
+          EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0)),
         estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
         estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
         maxIterations = 20,
