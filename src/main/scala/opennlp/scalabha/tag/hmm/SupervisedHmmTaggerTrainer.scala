@@ -23,26 +23,17 @@ import scala.collection.mutable.ListBuffer
  *
  * @param transitionCountsTransformer	factory for generating builders that count tag occurrences and compute distributions
  * @param emissionCountsTransformer		factory for generating builders that count symbol occurrences and compute distributions
- * @param startEndSymbol				a unique start/end symbol used internally to mark the beginning and end of a sentence
- * @param startEndTag					a unique start/end tag used internally to mark the beginning and end of a sentence
  */
 class SupervisedHmmTaggerTrainer[Sym, Tag](
-  transitionCountsTransformer: CondCountsTransformer[Tag, Tag],
-  emissionCountsTransformer: CondCountsTransformer[Tag, Sym],
-  startEndSymbol: Sym,
-  startEndTag: Tag)
+  transitionCountsTransformer: CondCountsTransformer[Option[Tag], Option[Tag]],
+  emissionCountsTransformer: CondCountsTransformer[Option[Tag], Option[Sym]])
   extends SupervisedTaggerTrainer[Sym, Tag] {
 
   private val LOG = LogFactory.getLog(classOf[SupervisedHmmTaggerTrainer[Sym, Tag]]);
 
   /**
    * Train a Hidden Markov Model tagger directly from labeled data.
-   *
-   * Main features:
-   * <ul>
-   *   <li> Constructs a tag dictionary directly from labeled data using tagDictFactory.
-   *   <li> Uses transition and emission counters to compute distributions based on labeled data.
-   * </ul>
+   * Uses transition and emission counters to compute distributions based on labeled data.
    *
    * @param taggedTrainSequences	labeled sequences to use for training the model
    * @param tagDict					tag dictionary
@@ -52,7 +43,8 @@ class SupervisedHmmTaggerTrainer[Sym, Tag](
     val (transitionCounts, emissionCounts) = getCountsFromTagged(taggedTrainSequences)
     val transitionDist = CondFreqDist(transitionCountsTransformer(transitionCounts))
     val emissionDist = CondFreqDist(emissionCountsTransformer(emissionCounts))
-    new HmmTagger(transitionDist, emissionDist, tagDict + (startEndSymbol -> Set(startEndTag)), startEndSymbol, startEndTag)
+    val tagDictWithEnds = OptionalTagDict(tagDict)
+    new HmmTagger(transitionDist, emissionDist, tagDictWithEnds)
   }
 
   /**
@@ -62,7 +54,7 @@ class SupervisedHmmTaggerTrainer[Sym, Tag](
    */
   protected def getCountsFromTagged(taggedSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
     // Separate symbols from tags.  Add start/final symbols and tags to each sequence
-    val endedSequences = taggedSequences.map(((startEndSymbol -> startEndTag) +: _ :+ (startEndSymbol -> startEndTag)))
+    val endedSequences = taggedSequences.map(((None -> None) +: _.map { case (s, t) => Some(s) -> Some(t) } :+ (None -> None)))
 
     // Get the tag transitions, including start/final tags
     val tagPairs = endedSequences.map(_.map(_._2).sliding2).flatten

@@ -43,17 +43,17 @@ class UnsupervisedEmissionDistTests {
       new EstimatedRawCountUnsupervisedEmissionDistFactory[Symbol, String](
         new PassthroughCountsTransformer(),
         tagDict,
-        rawData, startEndSymbol = "<END>", startEndTag = 'END).make()
+        rawData).make()
 
-    for (w <- List("aardvark", "meanders", "horse", "unseen word", "dog", "the"))
-      for (t <- List('N, 'V, 'R, 'D))
+    for (w <- List("aardvark", "meanders", "horse", "unseen word", "dog", "the").map(Option(_)))
+      for (t <- List('N, 'V, 'R, 'D).map(Option(_)))
         println("p(%s|%s) = %s".format(w, t, d(t)(w).logValue))
 
     println
-    println(d('N)("aardvark") / d('V)("aardvark"))
-    println(d('N)("meanders") / d('V)("meanders"))
+    println(d(Some('N))(Some("aardvark")) / d(Some('V))(Some("aardvark")))
+    println(d(Some('N))(Some("meanders")) / d(Some('V))(Some("meanders")))
 
-    assertEqualsProb(LogNum(1. / 5.), d('N)("bird"))
+    assertEqualsProb(LogNum(1. / 5.), d(Some('N))(Some("bird")))
   }
 
   def assertEqualsProb(a: LogNum, b: LogNum) {

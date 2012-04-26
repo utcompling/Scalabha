@@ -31,18 +31,16 @@ trait UnsupervisedEmissionDistFactory[Tag, Sym] {
 class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
   countsTransformer: CountsTransformer[Sym],
   tagDict: Map[Sym, Set[Tag]],
-  rawData: Iterable[Iterable[Sym]],
-  startEndSymbol: Sym,
-  startEndTag: Tag)
-  extends UnsupervisedEmissionDistFactory[Tag, Sym] {
-  
+  rawData: Iterable[Iterable[Sym]])
+  extends UnsupervisedEmissionDistFactory[Option[Tag], Option[Sym]] {
+
   protected val LOG = LogFactory.getLog(classOf[EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym]])
 
-  override def make(): Tag => Sym => LogNum = {
+  override def make(): Option[Tag] => Option[Sym] => LogNum = {
     val DefaultedFreqCounts(rawCounts, totalAddition, defaultCount) = countsTransformer(rawData.flatten.counts)
 
-    val rawSymbolCounts = (rawCounts - startEndSymbol).withDefaultValue(defaultCount) // number of times each symbol appears in the raw data
-    val tagToSymbolDict = (tagDict.ungroup.map(_.swap).toSet.groupByKey - startEndTag).mapValuesStrict(_ - startEndSymbol) // a reversed tag dict; Tag -> Set[Symbol]
+    val rawSymbolCounts = rawCounts.withDefaultValue(defaultCount) // number of times each symbol appears in the raw data
+    val tagToSymbolDict = tagDict.ungroup.map(_.swap).toSet.groupByKey // a reversed tag dict; Tag -> Set[Symbol]
 
     val vocabRaw = rawSymbolCounts.keySet // set of all symbols in raw data
     val vocabKnown = tagDict.keySet // set of all symbols in tag dict (known symbols)
@@ -103,6 +101,15 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
     val totalEstKnown = counts.values.map(_.simpleCounts.filter(x => vocabKnown(x._1)).values.sum).sum; LOG.debug("totalEstWordCount (known)   = " + totalEstKnown)
     val totalEstUnkwn = counts.values.map(_.simpleCounts.filter(x => vocabUnknown(x._1)).values.sum).sum; LOG.debug("totalEstWordCount (unknown) = " + totalEstUnkwn)
     LOG.debug("totalEstWordCount (known + unknown) = " + (totalEstKnown + totalEstUnkwn))
-    CondFreqDist(new DefaultedCondFreqCounts(counts + (startEndTag -> DefaultedFreqCounts(Map(startEndSymbol -> 1.)))))
+
+    val liftedCounts =
+      counts.map {
+        case (tag, DefaultedFreqCounts(a, b, c)) =>
+          (Option(tag), DefaultedFreqCounts(a.mapKeys(Option(_)), b, c))
+      }
+    val startEnd: (Option[Tag], DefaultedFreqCounts[Option[Sym], Double]) =
+      (None -> DefaultedFreqCounts(Map(None -> 1.)))
+
+    CondFreqDist(new DefaultedCondFreqCounts(liftedCounts + startEnd))
   }
 }
