@@ -51,8 +51,8 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
     val tagDictWithEnds = OptionalTagDict(tagDict)
 
     // Create the initial distributions
-    val allTags = tagDictWithEnds.allTags + None
-    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.0).toMap).toMap))
+    val allTags = tagDictWithEnds.allTags
+    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapTo(_ => (allTags + None).mapTo(_ => 1.).toMap).toMap + (None -> allTags.mapTo(_ => 1.).toMap)))
     val initialEmissions = initialUnsupervisedEmissionDist
     val initialHmm = new HmmTagger(initialTransitions, initialEmissions, tagDictWithEnds)
 
@@ -263,8 +263,7 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
             (estTrCounts, estEmCounts, seqProb.logValue, 1) // number of sentences == 1
         }
         .fold((CondFreqCounts[OTag, OTag, Double](), CondFreqCounts[OTag, OSym, Double](), 0., 0)) {
-          case ((aTC, aEC, aP, aN), (bTC, bEC, bP, bN)) =>
-            (aTC ++ bTC, aEC ++ bEC, aP + bP, aN + bN) // sum up all the components
+          case ((aTC, aEC, aP, aN), (bTC, bEC, bP, bN)) => (aTC ++ bTC, aEC ++ bEC, aP + bP, aN + bN) // sum up all the components
         }
 
     (expectedTransitionCounts ++ initialTransitionCounts, expectedEmissionCounts ++ initialEmissionCounts, totalSeqProb / numSequences)
@@ -281,7 +280,7 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     val (forwards, forwardProb) = forwardProbabilities(sequence, hmm)
     val (backwrds, backwrdProb) = backwrdProbabilities(sequence, hmm)
     assert(forwardProb approx backwrdProb, "forward=%s, backward=%s".format(forwardProb.logValue, backwrdProb.logValue))
-    val seqProb = forwardProb // P(sequence | transition,emissions)
+    val seqProb = forwardProb // P(sequence | hmm)
 
     // Get expected transition counts based on forward-backward probabilities
     //        Let expectedTransitionCounts(t)(i)(j) be the probability of being in 
