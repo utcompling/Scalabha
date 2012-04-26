@@ -179,7 +179,7 @@ class EisnerSmoothingCondCountsTransformer[A, B](lambda: Double, backoffCountsTr
           // Replace any missing counts with the default
           val defaultCounts = FreqCounts((allBs -- aCounts.keySet).mapTo(_ => aDefault).toMap)
           val countsWithDefaults = (FreqCounts(aCounts) ++ defaultCounts).toMap
-          
+
           val numSingleCountItems = countsWithDefaults.count(_._2 < 2.0)
           val smoothedLambda = lambda * (1e-100 + numSingleCountItems)
           val smoothedBackoff = FreqCounts(backoffDist.mapValuesStrict(_ * smoothedLambda))
@@ -187,29 +187,6 @@ class EisnerSmoothingCondCountsTransformer[A, B](lambda: Double, backoffCountsTr
           val smoothedCounts = FreqCounts(countsWithDefaults) ++ smoothedBackoff
           val smoothedDefaultCount = aDefault + smoothedBackoffDefault
           val smoothedTotalAddition = aTotalAdd + smoothedBackoffDefault
-
-          if (LOG.isDebugEnabled && Set("NN", "DT", "N", "D").contains(a.asInstanceOf[String])) {
-            LOG.debug(a + ":")
-            LOG.debug("    aCounts = " + countsWithDefaults.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
-            LOG.debug("    smoothedLambda = " + smoothedLambda)
-            LOG.debug("    smoothedBackoff = " + smoothedBackoff.toMap.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
-            LOG.debug("    smoothedCounts  = " + smoothedCounts.toMap.asInstanceOf[Map[String, Double]].toList.sorted.takeRight(10).map { case (k, v) => "%s -> %.2f".format(k, v) })
-            LOG.debug("    smoothedDefaultCount = " + smoothedDefaultCount)
-
-            LOG.debug("")
-
-            if (backoffDist contains "the".asInstanceOf[B]) {
-              for (w <- List("the", "company").map(_.asInstanceOf[B])) {
-                LOG.debug("    c(%s,%s) + sing(%s) * p_back(%s) = %.2f + %.2f * %.2f = %.2f"
-                  .format(
-                    a, w, a, w,
-                    countsWithDefaults.getOrElse(w, 0.), smoothedLambda, backoffDist(w),
-                    smoothedCounts.toMap(w)))
-              }
-              LOG.debug("    smoothedDefaultCount = " + smoothedDefaultCount)
-              LOG.debug("")
-            }
-          }
 
           (a, DefaultedFreqCounts(smoothedCounts.toMap, smoothedTotalAddition, smoothedDefaultCount))
       })

@@ -165,17 +165,6 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     initialTransitionCounts: CondFreqCounts[OTag, OTag, Double],
     initialEmissionCounts: CondFreqCounts[OTag, OSym, Double]): HmmTagger[Sym, Tag] = {
 
-    //    if (LOG.isDebugEnabled) {
-    //      val unknownWord = (rawTrainSequences.flatten.toSet -- initialHmm.tagDict.keySet).headOption
-    //
-    //      LOG.debug("    initialEmissions")
-    //      for (w <- List(unknownWord, Some("company"), Some("the")).flatten.map(_.asInstanceOf[Sym])) {
-    //        val probs = initialHmm.tagDict.values.flatten.toSet.mapTo(initialHmm.emissions(_)(w).logValue)
-    //        for ((t, p) <- probs.toList.sortBy(-_._2))
-    //          LOG.debug("        p(%s|%s) = %.2f".format(if (w == unknownWord) "unk" else w, t, p))
-    //      }
-    //    }
-
     reestimateLogNumDistributions(
       rawTrainSequences,
       initialHmm,
