@@ -1,13 +1,13 @@
 package opennlp.scalabha.tag.hmm
 
 import scala.annotation.tailrec
-
 import opennlp.scalabha.tag.Tagger
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.Pattern
 import opennlp.scalabha.util.Pattern.{ -> }
 import opennlp.scalabha.util.LogNum._
 import opennlp.scalabha.util.LogNum
+import opennlp.scalabha.tag.OptionalTagDict
 
 /**
  * Hidden Markov Model for tagging.
@@ -24,7 +24,7 @@ import opennlp.scalabha.util.LogNum
 case class HmmTagger[Sym, Tag](
   val transitions: Option[Tag] => Option[Tag] => LogNum,
   val emissions: Option[Tag] => Option[Sym] => LogNum,
-  val tagDict: Map[Option[Sym], Set[Option[Tag]]])
+  val tagDict: OptionalTagDict[Sym, Tag])
   extends Tagger[Sym, Tag] {
 
   /**

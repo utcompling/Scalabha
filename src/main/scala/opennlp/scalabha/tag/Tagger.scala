@@ -1,5 +1,6 @@
 package opennlp.scalabha.tag
 
+
 /**
  * Tag sequences of symbols.
  *
@@ -42,7 +43,7 @@ trait SupervisedTaggerTrainer[Sym, Tag] {
    * @param tagDict					a tag dictionary
    * @return						a trained Tagger
    */
-  def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]], tagDict: Map[Sym, Set[Tag]]): Tagger[Sym, Tag]
+  def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]], tagDict: TagDict[Sym, Tag]): Tagger[Sym, Tag]
 
 }
 
@@ -62,7 +63,7 @@ trait UnsupervisedTaggerTrainer[Sym, Tag] {
    * @param rawTrainSequences		unlabeled sequences to be used as unsupervised training data
    * @return						a trained Tagger
    */
-  def trainUnsupervised(tagDict: Map[Sym, Set[Tag]], rawTrainSequences: Iterable[IndexedSeq[Sym]]): Tagger[Sym, Tag]
+  def trainUnsupervised(tagDict: TagDict[Sym, Tag], rawTrainSequences: Iterable[IndexedSeq[Sym]]): Tagger[Sym, Tag]
 
 }
 
@@ -84,6 +85,6 @@ trait SemisupervisedTaggerTrainer[Sym, Tag] {
    * @param taggedTrainSequences	labeled sequences to be used as supervised training data
    * @return						a trained tagger
    */
-  def trainSemisupervised(tagDict: Map[Sym, Set[Tag]], rawTrainSequences: Iterable[IndexedSeq[Sym]], taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag]
+  def trainSemisupervised(tagDict: TagDict[Sym, Tag], rawTrainSequences: Iterable[IndexedSeq[Sym]], taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag]
 
 }

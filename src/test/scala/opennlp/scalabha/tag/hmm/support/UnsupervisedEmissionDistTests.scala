@@ -9,6 +9,7 @@ import org.apache.log4j.Logger
 import org.apache.log4j.Level
 import org.junit.Test
 import org.junit.Assert._
+import opennlp.scalabha.tag.SimpleTagDict
 
 class UnsupervisedEmissionDistTests {
 
@@ -26,7 +27,7 @@ class UnsupervisedEmissionDistTests {
       "the aardvark walks",
       "the aardvark meanders").map(_.split(" ").toList)
 
-    val tagDict = Map(
+    val tagDict = SimpleTagDict(Map(
       "bird" -> Set('N),
       "cat" -> Set('N),
       "dog" -> Set('N),
@@ -37,7 +38,7 @@ class UnsupervisedEmissionDistTests {
       "saw" -> Set('N, 'V),
       "sings" -> Set('V),
       "the" -> Set('D),
-      "walks" -> Set('V))
+      "walks" -> Set('V)))
 
     val d =
       new EstimatedRawCountUnsupervisedEmissionDistFactory[Symbol, String](

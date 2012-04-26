@@ -5,6 +5,7 @@ import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.tag.support._
 import org.apache.commons.logging.LogFactory
+import opennlp.scalabha.tag.TagDict
 
 /**
  * Produce a conditional frequency distribution without labeled training data.
@@ -30,7 +31,7 @@ trait UnsupervisedEmissionDistFactory[Tag, Sym] {
  */
 class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
   countsTransformer: CountsTransformer[Sym],
-  tagDict: Map[Sym, Set[Tag]],
+  tagDict: TagDict[Sym, Tag],
   rawData: Iterable[Iterable[Sym]])
   extends UnsupervisedEmissionDistFactory[Option[Tag], Option[Sym]] {
 
@@ -40,10 +41,10 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
     val DefaultedFreqCounts(rawCounts, totalAddition, defaultCount) = countsTransformer(rawData.flatten.counts)
 
     val rawSymbolCounts = rawCounts.withDefaultValue(defaultCount) // number of times each symbol appears in the raw data
-    val tagToSymbolDict = tagDict.ungroup.map(_.swap).toSet.groupByKey // a reversed tag dict; Tag -> Set[Symbol]
+    val tagToSymbolDict = tagDict.iterator.ungroup.map(_.swap).toSet.groupByKey // a reversed tag dict; Tag -> Set[Symbol]
 
     val vocabRaw = rawSymbolCounts.keySet // set of all symbols in raw data
-    val vocabKnown = tagDict.keySet // set of all symbols in tag dict (known symbols)
+    val vocabKnown = tagDict.symbols // set of all symbols in tag dict (known symbols)
     val vocabUnknown = vocabRaw -- vocabKnown // set of all symbols NOT found in tag dict (unknown symbols)
 
     val rawKnownCountByWord = rawSymbolCounts.filter(x => vocabKnown(x._1)) // counts of each known type from raw data

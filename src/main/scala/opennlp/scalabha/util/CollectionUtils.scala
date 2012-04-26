@@ -517,16 +517,16 @@ object CollectionUtils {
   //     where each key is paired with each item in its value collection
   //////////////////////////////////////////////////////
 
-  class Enrich_ungroup_GenTraversableOnce[A, B](self: GenMap[A, GenTraversableOnce[B]]) {
+  class Enriched_ungroup_GenTraversableOnce[A, B](self: GenTraversableOnce[(A, GenTraversableOnce[B])]) {
     /**
      * For a map with collections for values, return an iterator of pairs
      * where each key is paired with each item in its value collection.
      *
      * @return an iterator of pairs
      */
-    def ungroup() = self.iterator.flatMap { case (a, bs) => bs.toIterator.map((a, _)) }
+    def ungroup() = self.toIterator.flatMap { case (a, bs) => bs.toIterator.map((a, _)) }
   }
-  implicit def enrich_ungroup_GenTraversableOnce[A, B](self: GenMap[A, GenTraversableOnce[B]]) = new Enrich_ungroup_GenTraversableOnce(self)
+  implicit def enrich_ungroup_GenTraversableOnce[A, B](self: GenTraversableOnce[(A, GenTraversableOnce[B])]) = new Enriched_ungroup_GenTraversableOnce(self)
 
   //////////////////////////////////////////////////////
   // takeSub[GenIterable[B]](n: Int): Repr[GenIterable[B]]

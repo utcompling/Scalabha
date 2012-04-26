@@ -43,15 +43,15 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
    * @param rawTrainSequences		unlabeled sequences to be used as unsupervised training data
    * @return						a trained tagger
    */
-  override def trainUnsupervised(tagDict: Map[Sym, Set[Tag]], rawTrainSequences: Iterable[IndexedSeq[Sym]]): Tagger[Sym, Tag] = {
+  override def trainUnsupervised(tagDict: TagDict[Sym, Tag], rawTrainSequences: Iterable[IndexedSeq[Sym]]): Tagger[Sym, Tag] = {
     LOG.info("Beginning unsupervised training")
-    LOG.info("Tag dict: %d symbols, %.3f avg tags/symbol".format(tagDict.size, tagDict.values.map(_.size).avg))
+    //LOG.info("Tag dict: %d symbols, %.3f avg tags/symbol".format(tagDict.size, tagDict.values.map(_.size).avg))
 
     // Correct tag dictionary for start/final symbols
     val tagDictWithEnds = OptionalTagDict(tagDict)
 
     // Create the initial distributions
-    val allTags = tagDictWithEnds.values.flatten.toSet
+    val allTags = tagDictWithEnds.allTags + None
     val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.0).toMap).toMap))
     val initialEmissions = initialUnsupervisedEmissionDist
     val initialHmm = new HmmTagger(initialTransitions, initialEmissions, tagDictWithEnds)
@@ -100,12 +100,9 @@ class SemisupervisedHmmTaggerTrainer[Sym, Tag](
    * @return						a trained tagger
    */
   override def trainSemisupervised(
-    tagDict: Map[Sym, Set[Tag]],
+    tagDict: TagDict[Sym, Tag],
     rawTrainSequences: Iterable[IndexedSeq[Sym]],
     taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag] = {
-
-    // Correct tag dictionary for start/final symbols
-    val tagDictWithEnds = OptionalTagDict(tagDict)
 
     // Get initial counts and probability distributions from the labeled data alone
     val (initialTransitionCounts, initialEmissionCounts) = getCountsFromTagged(taggedTrainSequences)
@@ -113,7 +110,7 @@ class SemisupervisedHmmTaggerTrainer[Sym, Tag](
     // Create the initial HMM
     val initialTransitions = CondFreqDist(initialTransitionCountsTransformer(initialTransitionCounts))
     val initialEmissions = CondFreqDist(initialEmissionCountsTransformer(initialEmissionCounts))
-    val initialHmm = new HmmTagger(initialTransitions, initialEmissions, tagDictWithEnds)
+    val initialHmm = new HmmTagger(initialTransitions, initialEmissions, OptionalTagDict(tagDict))
 
     hmmExaminationHook(initialHmm)
 
@@ -429,10 +426,12 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     //       always the case that P(endSym|endTag)=1
     val fullSeq = None +: sequence :+ None
 
+    val tagDict = hmm.tagDict
+    
     val expectedEmissionCounts =
       (fullSeq zipEqual forwards zipEqual backwrds).map {
         case ((tok, forward), backwrd) =>
-          hmm.tagDict(tok).mapTo(tag =>
+          tagDict(tok).mapTo(tag =>
             Map(tok -> (forward(tag) * backwrd(tag) / seqProb).toDouble)).toMap
       }
 
