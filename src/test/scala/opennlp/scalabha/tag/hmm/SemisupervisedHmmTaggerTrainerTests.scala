@@ -48,11 +48,13 @@ class SemisupervisedHmmTaggerTrainerTests {
     val trainer: SemisupervisedTaggerTrainer[String, String] =
       new SemisupervisedHmmTaggerTrainer(
         initialTransitionCountsTransformer =
-          EisnerSmoothingCondCountsTransformer(lambda = 1.0, ItemDroppingCountsTransformer(None)),
+          new TransitionCountsTransformer(tagDict,
+            EisnerSmoothingCondCountsTransformer(lambda = 1.0)),
         initialEmissionCountsTransformer =
-          EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0)),
-        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
-        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
+          new EmissionCountsTransformer(tagDict,
+            EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))),
+        estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
+        estimatedEmissionCountsTransformer = EmissionCountsTransformer(tagDict),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
     val tagger = trainer.trainSemisupervised(tagDict, trainRaw, trainLab)

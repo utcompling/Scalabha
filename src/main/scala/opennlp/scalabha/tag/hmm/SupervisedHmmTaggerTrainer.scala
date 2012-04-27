@@ -25,8 +25,8 @@ import scala.collection.mutable.ListBuffer
  * @param emissionCountsTransformer		factory for generating builders that count symbol occurrences and compute distributions
  */
 class SupervisedHmmTaggerTrainer[Sym, Tag](
-  transitionCountsTransformer: CondCountsTransformer[Option[Tag], Option[Tag]],
-  emissionCountsTransformer: CondCountsTransformer[Option[Tag], Option[Sym]])
+  transitionCountsTransformer: TransitionCountsTransformer[Tag, Sym],
+  emissionCountsTransformer: EmissionCountsTransformer[Tag, Sym])
   extends SupervisedTaggerTrainer[Sym, Tag] {
 
   private val LOG = LogFactory.getLog(classOf[SupervisedHmmTaggerTrainer[Sym, Tag]]);

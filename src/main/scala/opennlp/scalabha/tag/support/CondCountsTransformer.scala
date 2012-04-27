@@ -79,7 +79,6 @@ case class ConstrainingCondCountsTransformer[A, B](validEntries: Map[A, Set[B]],
   override def apply(counts: DefaultedCondFreqCounts[A, B, Double]) = {
     val resultCounts = delegate(counts)
     val zeroCountAs = DefaultedCondFreqCounts(validEntries.mapValuesStrict(_ => Map[B, Double]())) // a count for every A in validEntries
-    //val allCountAs = resultCounts ++ zeroCountAs
     val allBs = (validEntries.values.flatten ++ resultCounts.counts.values.flatMap(_.counts.keySet)).toSet
     val zeroCountBs = FreqCounts(allBs.map(_ -> 0.).toMap)
     DefaultedCondFreqCounts(
@@ -164,7 +163,7 @@ class EisnerSmoothingCondCountsTransformer[A, B](lambda: Double, backoffCountsTr
     val resultCounts = delegate(counts).counts
 
     // Compute backoff: probability of B regardless of A
-    val totalBackoffCounts = resultCounts.values.flatMap(c => c.simpleCounts).groupByKey.mapValuesStrict(_.sum)
+    val totalBackoffCounts = resultCounts.values.flatMap(_.simpleCounts).groupByKey.mapValuesStrict(_.sum)
     val transformedBackoffCounts = backoffCountsTransformer(totalBackoffCounts)
     val DefaultedFreqCounts(backoffCounts, backoffTotalAddition, backoffDefaultCount) = transformedBackoffCounts
     val backoffTotal = backoffCounts.values.sum + backoffTotalAddition
@@ -196,6 +195,10 @@ class EisnerSmoothingCondCountsTransformer[A, B](lambda: Double, backoffCountsTr
 object EisnerSmoothingCondCountsTransformer {
   def apply[A, B](lambda: Double, backoffCountsTransformer: CountsTransformer[B]): EisnerSmoothingCondCountsTransformer[A, B] =
     new EisnerSmoothingCondCountsTransformer(lambda, backoffCountsTransformer, PassthroughCondCountsTransformer[A, B]())
+  def apply[A, B](lambda: Double): EisnerSmoothingCondCountsTransformer[A, B] =
+    EisnerSmoothingCondCountsTransformer(lambda, PassthroughCountsTransformer[B]())
+  def apply[A, B](): EisnerSmoothingCondCountsTransformer[A, B] =
+    EisnerSmoothingCondCountsTransformer(1.)
 }
 
 //////////////////////////////////////
