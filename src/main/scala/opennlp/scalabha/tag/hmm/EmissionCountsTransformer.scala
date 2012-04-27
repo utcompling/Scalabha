@@ -11,18 +11,14 @@ class EmissionCountsTransformer[Tag, Sym](tagDict: TagDict[Sym, Tag], delegate: 
   private val optionalTagDict = OptionalTagDict(tagDict)
 
   override def apply(counts: DefaultedCondFreqCounts[Option[Tag], Option[Sym], Double]) = {
-    //val endTag = None -> DefaultedFreqCounts[Option[Sym], Double](Map(None -> 1.), 0., 0.)
     new DefaultedCondFreqCounts(
       delegate(counts).counts.map {
         case (tag, DefaultedFreqCounts(c, t, d)) =>
           val filtered = c.filterKeys(sym => optionalTagDict(sym)(tag))
-          val result =
-            tag -> (tag match {
-              case None => DefaultedFreqCounts(filtered, 0., 0.)
-              case _ => DefaultedFreqCounts(filtered, t, d)
-            })
-          println(result)
-          result
+          tag -> (tag match {
+            case None => DefaultedFreqCounts(filtered, 0., 0.)
+            case _ => DefaultedFreqCounts(filtered, t, d)
+          })
       })
   }
 
