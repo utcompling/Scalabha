@@ -5,7 +5,35 @@ import opennlp.scalabha.tag.support.DefaultedCondFreqCounts
 import opennlp.scalabha.tag.support._
 import opennlp.scalabha.tag._
 
-class EmissionCountsTransformer[Tag, Sym](tagDict: TagDict[Sym, Tag], delegate: CondCountsTransformer[Option[Tag], Option[Sym]])
+/**
+ *
+ */
+class EmissionCountsTransformer[Tag, Sym](delegate: CondCountsTransformer[Option[Tag], Option[Sym]])
+  extends CondCountsTransformer[Option[Tag], Option[Sym]] {
+
+  override def apply(counts: DefaultedCondFreqCounts[Option[Tag], Option[Sym], Double]) = {
+    new DefaultedCondFreqCounts(
+      delegate(counts).counts.map {
+        case (tag, DefaultedFreqCounts(c, t, d)) =>
+          //val results =
+          tag -> (tag match {
+            case None => DefaultedFreqCounts(c.filterKeys(Set(None)), 0., 0.)
+            case _ => DefaultedFreqCounts(c + (None -> 0.), t, d)
+          })
+        //println(results)
+        //results
+      })
+  }
+
+}
+
+object EmissionCountsTransformer {
+  def apply[Tag, Sym]() = {
+    new EmissionCountsTransformer(PassthroughCondCountsTransformer[Option[Tag], Option[Sym]]())
+  }
+}
+
+class TagDictConstrainedEmissionCountsTransformer[Tag, Sym](tagDict: TagDict[Sym, Tag], delegate: CondCountsTransformer[Option[Tag], Option[Sym]])
   extends CondCountsTransformer[Option[Tag], Option[Sym]] {
 
   private val optionalTagDict = OptionalTagDict(tagDict)
@@ -24,8 +52,8 @@ class EmissionCountsTransformer[Tag, Sym](tagDict: TagDict[Sym, Tag], delegate: 
 
 }
 
-object EmissionCountsTransformer {
+object TagDictConstrainedEmissionCountsTransformer {
   def apply[Tag, Sym](tagDict: TagDict[Sym, Tag]) = {
-    new EmissionCountsTransformer(tagDict, PassthroughCondCountsTransformer[Option[Tag], Option[Sym]]())
+    new TagDictConstrainedEmissionCountsTransformer(tagDict, PassthroughCondCountsTransformer[Option[Tag], Option[Sym]]())
   }
 }

@@ -122,7 +122,7 @@ class UnsupervisedHmmTaggerTrainerTests {
             tagDict,
             trainRaw).make(),
         estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
-        estimatedEmissionCountsTransformer = EmissionCountsTransformer(tagDict),
+        estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 1,
         minAvgLogProbChangeForEM = 0.00001)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainRaw)
@@ -157,7 +157,7 @@ class UnsupervisedHmmTaggerTrainerTests {
             tagDict,
             trainLab.map(_.map(_._1))).make(),
         estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
-        estimatedEmissionCountsTransformer = EmissionCountsTransformer(tagDict),
+        estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._1)))
@@ -190,7 +190,7 @@ class UnsupervisedHmmTaggerTrainerTests {
             tagDict,
             trainLab.map(_.map(_._1))).make(),
         estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
-        estimatedEmissionCountsTransformer = EmissionCountsTransformer(tagDict),
+        estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._1)))
@@ -283,7 +283,7 @@ class UnsupervisedHmmTaggerTrainerTests {
             tagDict,
             trainRaw).make(),
         estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
-        estimatedEmissionCountsTransformer = EmissionCountsTransformer(tagDict),
+        estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001) {
 

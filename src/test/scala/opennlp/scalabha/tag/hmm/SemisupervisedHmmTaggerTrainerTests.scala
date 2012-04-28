@@ -51,10 +51,10 @@ class SemisupervisedHmmTaggerTrainerTests {
           new TransitionCountsTransformer(tagDict,
             EisnerSmoothingCondCountsTransformer(lambda = 1.0)),
         initialEmissionCountsTransformer =
-          new EmissionCountsTransformer(tagDict,
+          new EmissionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))),
         estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
-        estimatedEmissionCountsTransformer = EmissionCountsTransformer(tagDict),
+        estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
     val tagger = trainer.trainSemisupervised(tagDict, trainRaw, trainLab)
