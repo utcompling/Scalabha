@@ -17,7 +17,8 @@ retrieveManaged := true
 resolvers ++= Seq(
   "Cloudera Hadoop Releases" at "https://repository.cloudera.com/content/repositories/releases/",
   "Thrift location" at "http://people.apache.org/~rawson/repo/",
-  "opennlp sourceforge repo" at "http://opennlp.sourceforge.net/maven2"
+  "opennlp sourceforge repo" at "http://opennlp.sourceforge.net/maven2",
+  "repo.codahale.com" at "http://repo.codahale.com"
 )
 
 libraryDependencies ++= Seq(
@@ -25,6 +26,7 @@ libraryDependencies ++= Seq(
   "org.clapper" %% "argot" % "0.3.8",
   "net.sf.opencsv" % "opencsv" % "2.1",
   "com.codecommit" %% "anti-xml" % "0.3",
+  "com.codahale" % "jerkson_2.9.1" % "0.5.0",
   "org.apache.commons" % "commons-lang3" % "3.0.1",
   "commons-logging" % "commons-logging" % "1.1.1",
   "log4j" % "log4j" % "1.2.16",
