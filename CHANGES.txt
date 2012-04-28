@@ -5,6 +5,11 @@ v 0.2.4
    it to to do sentence detection, tokenization, and
    tagging. (J. Baldridge)
 
+ - Added ConfusionMatrix for evaluation. (J. Baldridge)
+
+ - Added perceptrons in many varieties, including
+   passive-aggressive. (B. Wing)
+
 v 0.2.3
 -------
  
