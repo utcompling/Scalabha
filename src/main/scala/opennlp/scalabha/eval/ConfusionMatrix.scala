@@ -6,7 +6,10 @@ package opennlp.scalabha.eval
  * @param goldLabels	the set of labels
  * @param counts the matrix, where each cell is the number of data points that had a given gold label and predicted label
  */
-class ConfusionMatrix(labels: Seq[String], counts: Seq[Seq[Int]]) {
+class ConfusionMatrix(
+  labels: Seq[String], 
+  counts: Seq[Seq[Int]],
+  examples: Seq[Seq[Seq[String]]]) {
 
   lazy val numLabels = labels.length
 
@@ -55,6 +58,24 @@ class ConfusionMatrix(labels: Seq[String], counts: Seq[Seq[Int]]) {
       + formatPercent(fscoreAverage) + "\tAverage")
   }
 
+  lazy val detailedOutput = {
+    val sep = "-"*80 + "\n"
+    val correct = 
+      for (i <- 0 until numLabels) yield
+	"Correctly labeled: " + labels(i) + "\n" + sep + examples(i)(i).mkString("\n\n")
+
+    val incorrect = 
+      for (i <- 0 until numLabels;
+	   j <- 0 until numLabels;
+	   if i != j) 
+      yield {
+	("Incorrectly labeled: " + labels(i) + " mistaken as " + labels(j) +  "\n" + sep
+	 + examples(i)(j).mkString("\n\n"))
+      }
+    (sep + "CORRECTLY LABELED EXAMPLES\n" + sep + correct.mkString("\n\n\n")
+     + "\n\n\n" + sep + "INCORRECTLY LABELED EXAMPLES\n" + sep + incorrect.mkString("\n\n\n"))
+  }
+
   // Create a string representation. Be lazy so that we only do it once.
   lazy val stringRep = {
     val lengthOfRow = counts(0).mkString.length + counts(0).length * 7
@@ -86,28 +107,26 @@ class ConfusionMatrix(labels: Seq[String], counts: Seq[Seq[Int]]) {
  */
 object ConfusionMatrix {
 
-  /**
-   * Construct a confusion matrix for comparing gold clusters
-   * to some predicted clusters.
-   *
-   * @param goldClusterIds	a sequence of cluster ids for each data point
-   * @param numPredictedClusters	the number of clusters predicted
-   * @param predictedClusterIndices	sequence of cluster indices (0 to numPredictedClusters-1) for each data point
-   * @return a ConfusionMatrix with the relevant comparisions
-   */
-  def apply(goldLabels: Seq[String], predictedLabels: Seq[String]) = {
+  import scala.collection.mutable.ListBuffer
+
+  def apply(goldLabels: Seq[String], predictedLabels: Seq[String], items: Seq[String]) = {
 
     val labels = (goldLabels.toSet ++ predictedLabels.toSet).toIndexedSeq.sorted
     val labelIndices = labels.zipWithIndex.toMap
     val numLabels = labels.length
     val counts = Array.fill(numLabels, numLabels)(0)
+    val examples = Array.fill(numLabels, numLabels)(new ListBuffer[String])
 
-    goldLabels.zip(predictedLabels).foreach {
-      case (goldLabel, predLabel) =>
+    goldLabels.zip(predictedLabels).zip(items).foreach {
+      case ((goldLabel, predLabel), item) =>
         counts(labelIndices(goldLabel))(labelIndices(predLabel)) += 1
+        examples(labelIndices(goldLabel))(labelIndices(predLabel)) += item
     }
 
-    new ConfusionMatrix(labels, counts.map(_.toIndexedSeq).toIndexedSeq)
+    new ConfusionMatrix(
+      labels, 
+      counts.map(_.toIndexedSeq).toIndexedSeq, 
+      examples.map(_.toIndexedSeq).toIndexedSeq)
 
   }
 
