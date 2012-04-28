@@ -51,7 +51,7 @@ def write_formatted_xml (tweets, file_name):
 def create_dataset_xml (tweets):
     dataset = Element('dataset')
     for (tweetid,userid,username,label,target,content) in tweets:
-        attributes = {"tweetid":tweetid, "userid":userid, "username":username, "label":label, "target":target}
+        attributes = {"tweetid":tweetid, "username":username, "label":label, "target":target}
         itemEl = SubElement(dataset, "item", attributes)
         contentEl = SubElement(itemEl, "content")
         print content
