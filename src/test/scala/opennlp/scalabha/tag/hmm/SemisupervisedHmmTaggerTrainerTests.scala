@@ -37,30 +37,29 @@ class SemisupervisedHmmTaggerTrainerTests {
     	""", results)
   }
 
-  private def runUnsupervisedTrainingTest(tagDict: Map[String, Set[String]], trainLab: Seq[IndexedSeq[(String, String)]]) = {
+  private def runUnsupervisedTrainingTest(tagDict: TagDict[String, String], trainLab: Seq[IndexedSeq[(String, String)]]) = {
     val trainRaw = RawFile("data/postag/english/enraw20k")
     val gold = TaggedFile("data/postag/english/entest")
 
-    LOG.info("tagDictTrain.size = " + tagDict.ungroup.size)
+    LOG.info("tagDictTrain.size = " + tagDict.iterator.ungroup.size)
     LOG.info("labeledTrain.size = " + trainLab.size)
     LOG.info("rawTrain.size     = " + trainRaw.size)
 
     val trainer: SemisupervisedTaggerTrainer[String, String] =
       new SemisupervisedHmmTaggerTrainer(
         initialTransitionCountsTransformer =
-          EisnerSmoothingCondCountsTransformer[String, String](lambda = 1.0, ItemDroppingCountsTransformer("<END>")),
+          new TransitionCountsTransformer(tagDict,
+            EisnerSmoothingCondCountsTransformer(lambda = 1.0)),
         initialEmissionCountsTransformer =
-          StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
-            new EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0),
-              StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>"))),
-        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
-        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
-        "<END>", "<END>",
+          new EmissionCountsTransformer(
+            EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))),
+        estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
+        estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
     val tagger = trainer.trainSemisupervised(tagDict, trainRaw, trainLab)
     val output = tagger.tag(gold.map(_.map(_._1)))
-    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
     results
   }
 

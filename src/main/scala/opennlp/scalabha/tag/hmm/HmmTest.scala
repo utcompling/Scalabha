@@ -4,7 +4,7 @@ import opennlp.scalabha.tag._
 import opennlp.scalabha.tag.support._
 import opennlp.scalabha.tag.hmm.support._
 
-object Test {
+object HmmTest {
 
   def main(args: Array[String]): Unit = {
     val tagDictFile = TaggedFile("data/s00-15.pos").toList
@@ -13,24 +13,23 @@ object Test {
 
     val tagDict = new SimpleTagDictFactory().make(tagDictFile)
 
-    {
-      val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
-        new UnsupervisedHmmTaggerTrainer(
-          initialUnsupervisedEmissionDist =
-            new EstimatedRawCountUnsupervisedEmissionDistFactory(
-              new PassthroughCountsTransformer(),
-              tagDict,
-              unlabTrainFile, "<END>", "<END>").make(),
-          estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
-          estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
-          "<END>", "<END>",
-          maxIterations = 20,
-          minAvgLogProbChangeForEM = 0.00001)
-      val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, unlabTrainFile)
-      val output = unsupervisedTagger.tag(labeledTest.map(_.map(_._1)))
-      val results = new TaggerEvaluator().evaluate(output, labeledTest, tagDict)
-      println(results)
-    }
+//    {
+//      val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
+//        new UnsupervisedHmmTaggerTrainer(
+//          initialUnsupervisedEmissionDist =
+//            new EstimatedRawCountUnsupervisedEmissionDistFactory(
+//              new PassthroughCountsTransformer(),
+//              tagDict,
+//              unlabTrainFile, None, None).make(),
+//          estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
+//          estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
+//          maxIterations = 20,
+//          minAvgLogProbChangeForEM = 0.00001)
+//      val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, unlabTrainFile)
+//      val output = unsupervisedTagger.tag(labeledTest.map(_.map(_._1)))
+//      val results = new TaggerEvaluator().evaluate(output, labeledTest, tagDict)
+//      println(results)
+//    }
   }
 
   case class TaggedFile(filename: String) extends Iterable[IndexedSeq[(String, String)]] {

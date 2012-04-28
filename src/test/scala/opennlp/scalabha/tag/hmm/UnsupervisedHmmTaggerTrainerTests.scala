@@ -32,7 +32,7 @@ class UnsupervisedHmmTaggerTrainerTests {
       "the aardvark walks",
       "the aardvark meanders").map(_.split(" ").toIndexedSeq)
 
-    val tagDict = Map(
+    val tagDict = SimpleTagDict(Map(
       "bird" -> Set("N"),
       "cat" -> Set("N"),
       "dog" -> Set("N"),
@@ -43,7 +43,7 @@ class UnsupervisedHmmTaggerTrainerTests {
       "saw" -> Set("N", "V"),
       "sings" -> Set("V"),
       "the" -> Set("D"),
-      "walks" -> Set("V")).withDefaultValue(Set("N", "V", "R", "D"))
+      "walks" -> Set("V")))
 
     val gold = List(
       Vector(("the", "D"), ("bird", "N"), ("walks", "V")),
@@ -55,20 +55,18 @@ class UnsupervisedHmmTaggerTrainerTests {
       Vector(("the", "D"), ("dog", "N"), ("runs", "V"), ("quickly", "R")),
       Vector(("the", "D"), ("dog", "N"), ("walks", "V"), ("briskly", "R")))
 
-    val tagDictWithEnds = tagDict + ("<END>" -> Set("<END>"))
-
     // Create the initial distributions
-    val allTags = tagDictWithEnds.values.flatten.toSet
+    val allTags = tagDict.allTags.map(Option(_)) + None
     val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.0).toMap).toMap))
     val initialEmissions =
       new EstimatedRawCountUnsupervisedEmissionDistFactory(
         new PassthroughCountsTransformer(),
         tagDict,
-        trainRaw, "<END>", "<END>").make()
-    val unsupervisedTagger = new HmmTagger(initialTransitions, initialEmissions, tagDictWithEnds, "<END>", "<END>")
+        trainRaw).make()
+    val unsupervisedTagger = new HmmTagger(initialTransitions, initialEmissions, OptionalTagDict(tagDict))
 
     val output = unsupervisedTagger.tag(gold.map(_.map(_._1)))
-    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
     assertResultsEqual("""
 		Total:   84.21 (16/19)
 		Known:   100.00 (15/15)
@@ -94,7 +92,7 @@ class UnsupervisedHmmTaggerTrainerTests {
       "the bird sings",
       "the mouse walks").map(_.split(" ").toIndexedSeq)
 
-    val tagDict = Map(
+    val tagDict = SimpleTagDict(Map(
       "bird" -> Set("N"),
       "cat" -> Set("N"),
       "dog" -> Set("N"),
@@ -105,7 +103,7 @@ class UnsupervisedHmmTaggerTrainerTests {
       "saw" -> Set("N", "V"),
       "sings" -> Set("V"),
       "the" -> Set("D"),
-      "walks" -> Set("V")).withDefaultValue(Set("N", "V", "R", "D"))
+      "walks" -> Set("V")))
 
     val gold = List(
       Vector(("a", "D"), ("dog", "N"), ("walks", "V"), ("quickly", "R")),
@@ -122,15 +120,14 @@ class UnsupervisedHmmTaggerTrainerTests {
           new EstimatedRawCountUnsupervisedEmissionDistFactory(
             new PassthroughCountsTransformer(),
             tagDict,
-            trainRaw, "<END>", "<END>").make(),
-        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
-        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
-        "<END>", "<END>",
+            trainRaw).make(),
+        estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
+        estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 1,
         minAvgLogProbChangeForEM = 0.00001)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainRaw)
     val output = unsupervisedTagger.tag(gold.map(_.map(_._1)))
-    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
     assertResultsEqual("""
 		Total:   84.21 (16/19)
 		Known:   100.00 (15/15)
@@ -158,15 +155,14 @@ class UnsupervisedHmmTaggerTrainerTests {
           new EstimatedRawCountUnsupervisedEmissionDistFactory(
             new PassthroughCountsTransformer(),
             tagDict,
-            trainLab.map(_.map(_._1)), "<END>", "<END>").make(),
-        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
-        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
-        "<END>", "<END>",
+            trainLab.map(_.map(_._1))).make(),
+        estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
+        estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._1)))
     val output = unsupervisedTagger.tag(testRaw)
-    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
     assertResultsEqual("""
 		Total:   48.48 (16/33)
 		Known:   48.48 (16/33)
@@ -192,15 +188,14 @@ class UnsupervisedHmmTaggerTrainerTests {
           new EstimatedRawCountUnsupervisedEmissionDistFactory(
             new PassthroughCountsTransformer(),
             tagDict,
-            trainLab.map(_.map(_._1)), "<END>", "<END>").make(),
-        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
-        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
-        "<END>", "<END>",
+            trainLab.map(_.map(_._1))).make(),
+        estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
+        estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._1)))
     val output = unsupervisedTagger.tag(testRaw)
-    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
     assertResultsEqual("""
 		Total:   88.14 (21108/23949)
 		Known:   88.14 (21108/23949)
@@ -272,89 +267,11 @@ class UnsupervisedHmmTaggerTrainerTests {
     	""", results)
   }
 
-  @Test
-  def en_comparisonA_bootstrapedSupervised() {
-    val (tagDictTrain, labeledTrain) = TaggedFile("data/postag/english/entrain").splitAt(3000)
-    val trainRaw = Vector("the", "aardvark", "said", ".") :: RawFile("data/postag/english/enraw20k")
-    val gold = TaggedFile("data/postag/english/entest")
-
-    val tagDict = new SimpleTagDictFactory().make(tagDictTrain)
-    val tagDictWithEnds = tagDict + ("<END>" -> Set("<END>"))
-
-    // Create the initial distributions
-    val allTags = tagDictWithEnds.values.flatten.toSet
-    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.).toMap).toMap))
-    val initialEmissions =
-      new EstimatedRawCountUnsupervisedEmissionDistFactory(
-        new AddLambdaSmoothingCountsTransformer(lambda = 1.,
-          new PassthroughCountsTransformer()),
-        tagDict,
-        trainRaw, "<END>", "<END>").make()
-    val initialUnsupervisedTagger = new HmmTagger(initialTransitions, initialEmissions, tagDictWithEnds, "<END>", "<END>")
-
-    {
-      println("unsupervised intialization")
-      val output = initialUnsupervisedTagger.tag(gold.map(_.map(_._1)))
-      val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
-      println(results)
-    }
-
-    val emUnsupervisedTagger =
-      (new AbstractEmHmmTaggerTrainer[String, String] {
-        override val estimatedTransitionCountsTransformer =
-//          PassthroughCondCountsTransformer[String, String]()
-          AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 0.1)
-        override val estimatedEmissionCountsTransformer =
-//          PassthroughCondCountsTransformer[String, String]()
-          StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
-            new AddLambdaSmoothingCondCountsTransformer[String, String](lambda = 0.1,
-              StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>")))
-        override val startEndSymbol = "<END>"
-        override val startEndTag = "<END>"
-        override val maxIterations: Int = 50
-        override val minAvgLogProbChangeForEM: Double = 0.00001
-
-//        protected override def hmmExaminationHook(hmm: HmmTagger[String, String]) {
-//          val output = hmm.tag(gold.map(_.map(_._1)))
-//          val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
-//          println(results)
-//        }
-
-      }).trainWithEm(trainRaw, initialUnsupervisedTagger)
-
-    {
-      println("unsupervised intialization -> EM training")
-      val output = emUnsupervisedTagger.tag(gold.map(_.map(_._1)))
-      val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
-      println(results)
-    }
-
-    val supervisedTrainer: SupervisedTaggerTrainer[String, String] =
-      new SupervisedHmmTaggerTrainer(
-        transitionCountsTransformer =
-          EisnerSmoothingCondCountsTransformer[String, String](lambda = 1.0, ItemDroppingCountsTransformer("<END>")),
-        emissionCountsTransformer =
-          StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>",
-            new EisnerSmoothingCondCountsTransformer(lambda = 1.0, AddLambdaSmoothingCountsTransformer(lambda = 1.0),
-              StartEndFixingEmissionCountsTransformer[String, String]("<END>", "<END>"))),
-        "<END>", "<END>")
-    val emUnsupervisedOutput = emUnsupervisedTagger.tag(trainRaw)
-    val unsupervisedEmTagger = supervisedTrainer.trainSupervised(emUnsupervisedOutput, new SimpleTagDictFactory().make(emUnsupervisedOutput))
-
-    {
-      println("unsupervised intialization -> EM training -> supervised training")
-      val output = unsupervisedEmTagger.tag(gold.map(_.map(_._1)))
-      val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
-      println(results)
-    }
-
-  }
-
-  private def runUnsupervisedTrainingTest(tagDict: Map[String, Set[String]]) = {
+  private def runUnsupervisedTrainingTest(tagDict: TagDict[String, String]) = {
     val trainRaw = RawFile("data/postag/english/enraw20k")
     val gold = TaggedFile("data/postag/english/entest")
 
-    LOG.debug("tagDictTrain.size = " + tagDict.ungroup.size)
+    LOG.debug("tagDictTrain.size = " + tagDict.iterator.ungroup.size)
     LOG.debug("labeledTrain.size = " + 0)
     LOG.debug("rawTrain.size     = " + trainRaw.size)
 
@@ -364,16 +281,15 @@ class UnsupervisedHmmTaggerTrainerTests {
           new EstimatedRawCountUnsupervisedEmissionDistFactory(
             new PassthroughCountsTransformer(),
             tagDict,
-            trainRaw, "<END>", "<END>").make(),
-        estimatedTransitionCountsTransformer = PassthroughCondCountsTransformer(),
-        estimatedEmissionCountsTransformer = PassthroughCondCountsTransformer(),
-        "<END>", "<END>",
+            trainRaw).make(),
+        estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
+        estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001) {
 
         protected override def hmmExaminationHook(hmm: HmmTagger[String, String]) {
           val output = hmm.tag(gold.map(_.map(_._1)))
-          val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
+          val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
           println(results)
         }
 
@@ -381,7 +297,7 @@ class UnsupervisedHmmTaggerTrainerTests {
 
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainRaw)
     val output = unsupervisedTagger.tag(gold.map(_.map(_._1)))
-    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
     results
   }
 

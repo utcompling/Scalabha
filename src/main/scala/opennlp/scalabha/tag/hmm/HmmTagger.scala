@@ -1,13 +1,13 @@
 package opennlp.scalabha.tag.hmm
 
 import scala.annotation.tailrec
-
 import opennlp.scalabha.tag.Tagger
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.Pattern
 import opennlp.scalabha.util.Pattern.{ -> }
 import opennlp.scalabha.util.LogNum._
 import opennlp.scalabha.util.LogNum
+import opennlp.scalabha.tag.OptionalTagDict
 
 /**
  * Hidden Markov Model for tagging.
@@ -18,17 +18,13 @@ import opennlp.scalabha.util.LogNum
  * @param transitions		function giving the conditional probability of a tag given its previous tag
  * @param emissions			function giving the probability of a symbol given a tag
  * @param tagDict			tag dictionary representing the valid tags for a given symbol
- * @param startEndSymbol	the special start/end symbol used in the transitions and emissions to mark
- * 							the beginning and end of a sentence
- * @param startEndTag		the special start/end tag used in the transitions and emissions to mark
- * 							the beginning and end of a sentence
+ *
+ * NOTE: Start and end symbols and tags are represented by None.
  */
 case class HmmTagger[Sym, Tag](
-  val transitions: Tag => Tag => LogNum,
-  val emissions: Tag => Sym => LogNum,
-  val tagDict: Map[Sym, Set[Tag]],
-  val startEndSymbol: Sym,
-  val startEndTag: Tag)
+  val transitions: Option[Tag] => Option[Tag] => LogNum,
+  val emissions: Option[Tag] => Option[Sym] => LogNum,
+  val tagDict: OptionalTagDict[Sym, Tag])
   extends Tagger[Sym, Tag] {
 
   /**
@@ -41,19 +37,16 @@ case class HmmTagger[Sym, Tag](
     // viterbi(t)(j) = the probability of the most likely subsequence of states 
     // that accounts for the first t observations and ends in state j.
 
-    // Make sure sequence and tag dictionary use startEndSymbol 
-    val tagDictWithEnds = tagDict + (startEndSymbol -> Set(startEndTag))
-
     // Get initial viterbi for start symbol
-    val startViterbi = Map(startEndTag -> LogNum.one)
+    val startViterbi: Map[Option[Tag], LogNum] = Map(None -> LogNum.one)
 
     // Build up backpointers list by calculating viterbi scores for each subsequent observation
     val (lastViterbi, backpointers) =
-      (sequence :+ startEndSymbol).foldLeft((startViterbi, List[Map[Tag, Tag]]())) {
+      (sequence.map(Some(_)) :+ None).foldLeft((startViterbi, List[Map[Option[Tag], Option[Tag]]]())) {
         case ((viterbi, backpointers), tok) =>
           // for each possible tag, get the highest probability previous tag and its score
           val transitionScores =
-            tagDictWithEnds(tok).mapTo(currTag => // each legal tag for the current token
+            tagDict(tok).mapTo(currTag => // each legal tag for the current token
               viterbi.map {
                 case (prevTag, viterbtiScore) =>
                   val v = viterbtiScore // probability of the most likely sequence of states leading to prevTag
@@ -68,19 +61,19 @@ case class HmmTagger[Sym, Tag](
       }
 
     // Get the optimal tag sequence and map the tag indices back to their string values
-    backtrack(backpointers)
+    backtrack(backpointers).flatten
   }
 
   /**
    * Backtrack through the backpointer maps to recover the optimal tag sequence.
    */
-  private def backtrack(backpointers: List[Map[Tag, Tag]]): List[Tag] = {
-    @tailrec def inner(backpointers: List[Map[Tag, Tag]], curTag: Tag, tags: List[Tag]): List[Tag] =
+  private def backtrack(backpointers: List[Map[Option[Tag], Option[Tag]]]): List[Option[Tag]] = {
+    @tailrec def inner(backpointers: List[Map[Option[Tag], Option[Tag]]], curTag: Option[Tag], tags: List[Option[Tag]]): List[Option[Tag]] =
       backpointers match {
-        case Nil => assert(curTag == startEndTag); tags
+        case Nil => assert(curTag == None); tags
         case currPointers :: previousPointers => inner(previousPointers, currPointers(curTag), curTag :: tags)
       }
-    val Pattern.Map(`startEndTag` -> lastTag) :: previousPointers = backpointers
+    val Pattern.Map(None -> lastTag) :: previousPointers = backpointers
     inner(previousPointers, lastTag, Nil)
   }
 }

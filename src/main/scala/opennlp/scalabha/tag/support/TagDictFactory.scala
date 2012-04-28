@@ -1,6 +1,8 @@
 package opennlp.scalabha.tag.support
 
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.tag.TagDict
+import opennlp.scalabha.tag.SimpleTagDict
 
 /**
  * Factory for creating a tag dictionary (mapping from symbols to valid tags)
@@ -17,7 +19,7 @@ import opennlp.scalabha.util.CollectionUtils._
  * @tparam Tag	tags applied to symbols
  */
 trait TagDictFactory[Sym, Tag] {
-  def make(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Map[Sym, Set[Tag]]
+  def make(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): TagDict[Sym, Tag]
 }
 
 /**
@@ -30,9 +32,7 @@ trait TagDictFactory[Sym, Tag] {
  */
 class SimpleTagDictFactory[Sym, Tag]() extends TagDictFactory[Sym, Tag] {
   def make(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
-    val tagDict = taggedTrainSequences.flatten.toSet.groupByKey
-    val allTags = tagDict.flatMap(_._2).toSet
-    tagDict.withDefaultValue(allTags)
+    SimpleTagDict(taggedTrainSequences.flatten.toSet.groupByKey)
   }
 }
 
@@ -51,7 +51,7 @@ class TopSymTagPairTagDictFactory[Sym, Tag](numSymTagPairs: Int) extends TagDict
     val topWordTagPairs = wordTagPairCounts.toList.sortBy(-_._2).map(_._1).take(numSymTagPairs)
     val tagDict = topWordTagPairs.toSet.groupByKey
     val fullTagset = wordTagPairCounts.keySet.map(_._2)
-    tagDict.withDefaultValue(fullTagset)
+    SimpleTagDict(tagDict, fullTagset)
   }
 }
 
@@ -70,7 +70,7 @@ class FullTopSymTagDictFactory[Sym, Tag](numSym: Int, fullTagset: Set[Tag]) exte
     val topWords = wordCounts.toList.sortBy(-_._2).map(_._1).take(numSym)
     val fullTagDict = taggedTrainSequences.flatten.toSet.groupByKey
     val tagDict = topWords.mapTo(fullTagDict).toMap
-    tagDict.withDefaultValue(fullTagset)
+    SimpleTagDict(tagDict, fullTagset)
   }
 }
 
@@ -85,7 +85,7 @@ class FullTopSymTagDictFactory[Sym, Tag](numSym: Int, fullTagset: Set[Tag]) exte
  */
 class DefaultLimitingTagDictFactory[Sym, Tag](maxNumberOfDefaultTags: Int, delegate: TagDictFactory[Sym, Tag]) extends TagDictFactory[Sym, Tag] {
   def make(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
-    val delegateDict = delegate.make(taggedTrainSequences)
+    val delegateDict = delegate.make(taggedTrainSequences).iterator.toMap
     val topNTags =
       delegateDict
         .ungroup
@@ -95,17 +95,17 @@ class DefaultLimitingTagDictFactory[Sym, Tag](maxNumberOfDefaultTags: Int, deleg
         .sortBy(-_._2)
         .take(maxNumberOfDefaultTags)
         .map(_._1).toSet
-    delegateDict.withDefaultValue(topNTags)
+    SimpleTagDict(delegateDict, topNTags)
   }
 }
 
 class ExternalFileTagDictFactory(filename: String, fullTagset: Set[String]) extends TagDictFactory[String, String] {
   override def make(taggedTrainSequences: Iterable[IndexedSeq[(String, String)]]) = {
-    io.Source.fromFile(filename).getLines
+    SimpleTagDict(io.Source.fromFile(filename).getLines
       .map(_.split("\\s+"))
       .flatMap { case Array(word, tags @ _*) => tags.map(word -> _) }
       .groupByKey
-      .mapValuesStrict(_.toSet)
-      .withDefaultValue(fullTagset)
+      .mapValuesStrict(_.toSet),
+      fullTagset)
   }
 }

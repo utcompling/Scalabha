@@ -23,17 +23,13 @@ import scala.annotation.tailrec
  * @param initialUnsupervisedEmissionDist
  * @param estimatedTransitionCountsTransformer		factory for generating builders that count tag occurrences and compute distributions during EM
  * @param estimatedEmissionCountsTransformer		factory for generating builders that count symbol occurrences and compute distributions during EM
- * @param startEndSymbol							a unique start/end symbol used internally to mark the beginning and end of a sentence
- * @param startEndTag								a unique start/end tag used internally to mark the beginning and end of a sentence
  * @param maxIterations								maximum number of iterations to be run during EM
  * @param minAvgLogProbChangeForEM					stop iterating EM if change in average log probability is less than this threshold
  */
 class UnsupervisedHmmTaggerTrainer[Sym, Tag](
-  initialUnsupervisedEmissionDist: Tag => Sym => LogNum,
-  override protected val estimatedTransitionCountsTransformer: CondCountsTransformer[Tag, Tag],
-  override protected val estimatedEmissionCountsTransformer: CondCountsTransformer[Tag, Sym],
-  override protected val startEndSymbol: Sym,
-  override protected val startEndTag: Tag,
+  initialUnsupervisedEmissionDist: Option[Tag] => Option[Sym] => LogNum,
+  override protected val estimatedTransitionCountsTransformer: TransitionCountsTransformer[Tag, Sym],
+  override protected val estimatedEmissionCountsTransformer: EmissionCountsTransformer[Tag, Sym],
   override protected val maxIterations: Int = 50,
   override protected val minAvgLogProbChangeForEM: Double = 0.00001)
   extends AbstractEmHmmTaggerTrainer[Sym, Tag]
@@ -47,18 +43,18 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
    * @param rawTrainSequences		unlabeled sequences to be used as unsupervised training data
    * @return						a trained tagger
    */
-  override def trainUnsupervised(tagDict: Map[Sym, Set[Tag]], rawTrainSequences: Iterable[IndexedSeq[Sym]]): Tagger[Sym, Tag] = {
+  override def trainUnsupervised(tagDict: TagDict[Sym, Tag], rawTrainSequences: Iterable[IndexedSeq[Sym]]): Tagger[Sym, Tag] = {
     LOG.info("Beginning unsupervised training")
-    LOG.info("Tag dict: %d symbols, %.3f avg tags/symbol".format(tagDict.size, tagDict.values.map(_.size).avg))
+    //LOG.info("Tag dict: %d symbols, %.3f avg tags/symbol".format(tagDict.size, tagDict.values.map(_.size).avg))
 
     // Correct tag dictionary for start/final symbols
-    val tagDictWithEnds = tagDict + (startEndSymbol -> Set(startEndTag))
+    val tagDictWithEnds = OptionalTagDict(tagDict)
 
     // Create the initial distributions
-    val allTags = tagDictWithEnds.values.flatten.toSet
-    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.0).toMap).toMap))
+    val allTags = tagDictWithEnds.allTags
+    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapTo(_ => (allTags + None).mapTo(_ => 1.).toMap).toMap + (None -> allTags.mapTo(_ => 1.).toMap)))
     val initialEmissions = initialUnsupervisedEmissionDist
-    val initialHmm = new HmmTagger(initialTransitions, initialEmissions, tagDictWithEnds, startEndSymbol, startEndTag)
+    val initialHmm = new HmmTagger(initialTransitions, initialEmissions, tagDictWithEnds)
 
     hmmExaminationHook(initialHmm)
 
@@ -79,21 +75,17 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
  *
  * @param initialTransitionCountsTransformer	factory for generating builders that count tag occurrences and compute distributions for input to EM
  * @param initialEmissionCountsTransformer		factory for generating builders that count symbol occurrences and compute distributions for input to EM
- * @param startEndSymbol						a unique start/end symbol used internally to mark the beginning and end of a sentence
- * @param startEndTag							a unique start/end tag used internally to mark the beginning and end of a sentence
  * @param maxIterations							maximum number of iterations to be run during EM
  * @param minAvgLogProbChangeForEM				stop iterating EM if change in average log probability is less than this threshold
  */
 class SemisupervisedHmmTaggerTrainer[Sym, Tag](
-  initialTransitionCountsTransformer: CondCountsTransformer[Tag, Tag],
-  initialEmissionCountsTransformer: CondCountsTransformer[Tag, Sym],
-  override protected val estimatedTransitionCountsTransformer: CondCountsTransformer[Tag, Tag],
-  override protected val estimatedEmissionCountsTransformer: CondCountsTransformer[Tag, Sym],
-  override protected val startEndSymbol: Sym,
-  override protected val startEndTag: Tag,
+  initialTransitionCountsTransformer: TransitionCountsTransformer[Tag, Sym],
+  initialEmissionCountsTransformer: EmissionCountsTransformer[Tag, Sym],
+  override protected val estimatedTransitionCountsTransformer: TransitionCountsTransformer[Tag, Sym],
+  override protected val estimatedEmissionCountsTransformer: EmissionCountsTransformer[Tag, Sym],
   override protected val maxIterations: Int = 50,
   override protected val minAvgLogProbChangeForEM: Double = 0.00001)
-  extends SupervisedHmmTaggerTrainer[Sym, Tag](initialTransitionCountsTransformer, initialEmissionCountsTransformer, startEndSymbol, startEndTag)
+  extends SupervisedHmmTaggerTrainer[Sym, Tag](initialTransitionCountsTransformer, initialEmissionCountsTransformer)
   with AbstractEmHmmTaggerTrainer[Sym, Tag]
   with SemisupervisedTaggerTrainer[Sym, Tag] {
 
@@ -108,12 +100,9 @@ class SemisupervisedHmmTaggerTrainer[Sym, Tag](
    * @return						a trained tagger
    */
   override def trainSemisupervised(
-    tagDict: Map[Sym, Set[Tag]],
+    tagDict: TagDict[Sym, Tag],
     rawTrainSequences: Iterable[IndexedSeq[Sym]],
     taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag] = {
-
-    // Correct tag dictionary for start/final symbols
-    val tagDictWithEnds = tagDict + (startEndSymbol -> Set(startEndTag))
 
     // Get initial counts and probability distributions from the labeled data alone
     val (initialTransitionCounts, initialEmissionCounts) = getCountsFromTagged(taggedTrainSequences)
@@ -121,7 +110,7 @@ class SemisupervisedHmmTaggerTrainer[Sym, Tag](
     // Create the initial HMM
     val initialTransitions = CondFreqDist(initialTransitionCountsTransformer(initialTransitionCounts))
     val initialEmissions = CondFreqDist(initialEmissionCountsTransformer(initialEmissionCounts))
-    val initialHmm = new HmmTagger(initialTransitions, initialEmissions, tagDictWithEnds, startEndSymbol, startEndTag)
+    val initialHmm = new HmmTagger(initialTransitions, initialEmissions, OptionalTagDict(tagDict))
 
     hmmExaminationHook(initialHmm)
 
@@ -145,16 +134,19 @@ class SemisupervisedHmmTaggerTrainer[Sym, Tag](
  * @tparam Sym	visible symbols in the sequences
  * @tparam Tag	tags applied to symbols
  *
- * @param maxIterations							maximum number of iterations to be run during EM
- * @param minAvgLogProbChangeForEM				stop iterating EM if change in average log probability is less than this threshold
+ * @param estimatedTransitionCountsTransformer		factory for generating builders that count tag occurrences and compute distributions during EM
+ * @param estimatedEmissionCountsTransformer		factory for generating builders that count symbol occurrences and compute distributions during EM
+ * @param maxIterations								maximum number of iterations to be run during EM
+ * @param minAvgLogProbChangeForEM					stop iterating EM if change in average log probability is less than this threshold
  */
 trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
-  protected val estimatedTransitionCountsTransformer: CondCountsTransformer[Tag, Tag]
-  protected val estimatedEmissionCountsTransformer: CondCountsTransformer[Tag, Sym]
-  protected val startEndSymbol: Sym
-  protected val startEndTag: Tag
+  protected val estimatedTransitionCountsTransformer: TransitionCountsTransformer[Tag, Sym]
+  protected val estimatedEmissionCountsTransformer: EmissionCountsTransformer[Tag, Sym]
   protected val maxIterations: Int = 50
   protected val minAvgLogProbChangeForEM: Double = 0.00001
+
+  type OSym = Option[Sym]
+  type OTag = Option[Tag]
 
   protected val LOG = LogFactory.getLog(classOf[AbstractEmHmmTaggerTrainer[Sym, Tag]])
 
@@ -165,33 +157,22 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     trainWithEm(
       rawTrainSequences,
       initialHmm,
-      CondFreqCounts[Tag, Tag, Double](),
-      CondFreqCounts[Tag, Sym, Double]())
+      CondFreqCounts[OTag, OTag, Double](),
+      CondFreqCounts[OTag, OSym, Double]())
   }
 
   def trainWithEm(
     rawTrainSequences: Iterable[IndexedSeq[Sym]],
     initialHmm: HmmTagger[Sym, Tag],
-    initialTransitionCounts: CondFreqCounts[Tag, Tag, Double],
-    initialEmissionCounts: CondFreqCounts[Tag, Sym, Double]): HmmTagger[Sym, Tag] = {
-
-    if (LOG.isDebugEnabled) {
-      val unknownWord = (rawTrainSequences.flatten.toSet -- initialHmm.tagDict.keySet).headOption
-
-      LOG.debug("    initialEmissions")
-      for (w <- List(unknownWord, Some("company"), Some("the")).flatten.map(_.asInstanceOf[Sym])) {
-        val probs = initialHmm.tagDict.values.flatten.toSet.mapTo(initialHmm.emissions(_)(w).logValue)
-        for ((t, p) <- probs.toList.sortBy(-_._2))
-          LOG.debug("        p(%s|%s) = %.2f".format(if (w == unknownWord) "unk" else w, t, p))
-      }
-    }
+    initialTransitionCounts: CondFreqCounts[OTag, OTag, Double],
+    initialEmissionCounts: CondFreqCounts[OTag, OSym, Double]): HmmTagger[Sym, Tag] = {
 
     reestimateLogNumDistributions(
-      rawTrainSequences: Iterable[IndexedSeq[Sym]],
-      initialHmm: HmmTagger[Sym, Tag],
+      rawTrainSequences,
+      initialHmm,
       1, Double.NegativeInfinity,
-      initialTransitionCounts: CondFreqCounts[Tag, Tag, Double],
-      initialEmissionCounts: CondFreqCounts[Tag, Sym, Double])
+      initialTransitionCounts,
+      initialEmissionCounts)
   }
 
   /**
@@ -206,8 +187,8 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     initialHmm: HmmTagger[Sym, Tag],
     iteration: Int,
     prevAvgLogProb: Double,
-    initialTransitionCounts: CondFreqCounts[Tag, Tag, Double],
-    initialEmissionCounts: CondFreqCounts[Tag, Sym, Double]): HmmTagger[Sym, Tag] = {
+    initialTransitionCounts: CondFreqCounts[OTag, OTag, Double],
+    initialEmissionCounts: CondFreqCounts[OTag, OSym, Double]): HmmTagger[Sym, Tag] = {
 
     // E Step:  Use the forward/backward procedure to determine the 
     //          probability of various possible state sequences for 
@@ -220,8 +201,8 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     //         probability distributions
 
     val transitions = CondFreqDist(estimatedTransitionCountsTransformer(expectedTransitionCounts.toMap))
-    val emissions = CondFreqDist(new StartEndFixingEmissionCountsTransformer(startEndSymbol, startEndTag, estimatedEmissionCountsTransformer)(expectedEmmissionCounts.toMap))
-    val hmm = HmmTagger(transitions, emissions, initialHmm.tagDict, initialHmm.startEndSymbol, initialHmm.startEndTag)
+    val emissions = CondFreqDist(estimatedEmissionCountsTransformer(expectedEmmissionCounts.toMap))
+    val hmm = HmmTagger(transitions, emissions, initialHmm.tagDict)
 
     LOG.info("\t" + iteration + ": " + avgLogProb)
 
@@ -245,11 +226,11 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     else {
       // No ending condition met, re-estimate
       reestimateLogNumDistributions(
-        rawTrainSequences: Iterable[IndexedSeq[Sym]],
-        hmm: HmmTagger[Sym, Tag],
+        rawTrainSequences,
+        hmm,
         iteration + 1, avgLogProb,
-        initialTransitionCounts: CondFreqCounts[Tag, Tag, Double],
-        initialEmissionCounts: CondFreqCounts[Tag, Sym, Double])
+        initialTransitionCounts,
+        initialEmissionCounts)
     }
   }
 
@@ -262,8 +243,8 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
   protected def estimateCounts(
     rawTrainSequences: Iterable[IndexedSeq[Sym]],
     hmm: HmmTagger[Sym, Tag],
-    initialTransitionCounts: CondFreqCounts[Tag, Tag, Double],
-    initialEmissionCounts: CondFreqCounts[Tag, Sym, Double]) = {
+    initialTransitionCounts: CondFreqCounts[OTag, OTag, Double],
+    initialEmissionCounts: CondFreqCounts[OTag, OSym, Double]) = {
 
     val (expectedTransitionCounts, expectedEmissionCounts, totalSeqProb, numSequences) =
       rawTrainSequences.par
@@ -272,9 +253,8 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
             val (estTrCounts, estEmCounts, seqProb) = estimateCountsForSequence(sequence, hmm)
             (estTrCounts, estEmCounts, seqProb.logValue, 1) // number of sentences == 1
         }
-        .fold((CondFreqCounts[Tag, Tag, Double](), CondFreqCounts[Tag, Sym, Double](), 0., 0)) {
-          case ((aTC, aEC, aP, aN), (bTC, bEC, bP, bN)) =>
-            (aTC ++ bTC, aEC ++ bEC, aP + bP, aN + bN) // sum up all the components
+        .fold((CondFreqCounts[OTag, OTag, Double](), CondFreqCounts[OTag, OSym, Double](), 0., 0)) {
+          case ((aTC, aEC, aP, aN), (bTC, bEC, bP, bN)) => (aTC ++ bTC, aEC ++ bEC, aP + bP, aN + bN) // sum up all the components
         }
 
     (expectedTransitionCounts ++ initialTransitionCounts, expectedEmissionCounts ++ initialEmissionCounts, totalSeqProb / numSequences)
@@ -286,12 +266,12 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
    */
   protected def estimateCountsForSequence(
     sequence: IndexedSeq[Sym],
-    hmm: HmmTagger[Sym, Tag]) = {
+    hmm: HmmTagger[Sym, Tag]): (CondFreqCounts[OTag, OTag, Double], CondFreqCounts[OTag, OSym, Double], LogNum) = {
 
     val (forwards, forwardProb) = forwardProbabilities(sequence, hmm)
     val (backwrds, backwrdProb) = backwrdProbabilities(sequence, hmm)
     assert(forwardProb approx backwrdProb, "forward=%s, backward=%s".format(forwardProb.logValue, backwrdProb.logValue))
-    val seqProb = forwardProb // P(sequence | transition,emissions)
+    val seqProb = forwardProb // P(sequence | hmm)
 
     // Get expected transition counts based on forward-backward probabilities
     //        Let expectedTransitionCounts(t)(i)(j) be the probability of being in 
@@ -317,7 +297,7 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
    */
   protected def forwardProbabilities(
     sequence: IndexedSeq[Sym],
-    hmm: HmmTagger[Sym, Tag]): (IndexedSeq[Tag => LogNum], LogNum) = {
+    hmm: HmmTagger[Sym, Tag]): (IndexedSeq[OTag => LogNum], LogNum) = {
 
     // Initialization
     //     forward(1)(j) = a(start)(j) * b(j)(o1)   j in [1,N]
@@ -326,11 +306,10 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     // Termination
     //     P(O | lambda) = forward(final)(sf) = (1 to N).sum(i => forward(T)(i) * aif)
 
-    val startEndTag = hmm.startEndTag
-    val startForward = Map(startEndTag -> LogNum.one)
+    val startForward: Map[OTag, LogNum] = Map(None -> LogNum.one)
 
-    val (lastForward @ Pattern.Map(`startEndTag` -> forwardProb), forwards) =
-      (sequence :+ hmm.startEndSymbol).foldLeft((startForward, List[Map[Tag, LogNum]]())) {
+    val (lastForward @ Pattern.Map(None -> forwardProb), forwards) =
+      (sequence.map(Some(_)) :+ None).foldLeft((startForward, List[Map[OTag, LogNum]]())) {
         case ((prevForward, otherForwards), tok) =>
           val currForward =
             hmm.tagDict(tok).mapTo { currTag => // each legal tag for the current token
@@ -358,7 +337,7 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
    */
   protected def backwrdProbabilities(
     sequence: IndexedSeq[Sym],
-    hmm: HmmTagger[Sym, Tag]): (IndexedSeq[Tag => LogNum], LogNum) = {
+    hmm: HmmTagger[Sym, Tag]): (IndexedSeq[OTag => LogNum], LogNum) = {
 
     // Initialization
     //     backwrd(T)(i) = a(i)(F)   i in [1,N]
@@ -367,11 +346,10 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     // Termination
     //     P(O | lambda) = backwrd(1)(s0) = (1 to N).sum(i => a(0)(j) * b(j)(o1) * backwrd(1)(j))
 
-    val startEndTag = hmm.startEndTag
-    val finalBackwrd = Map(startEndTag -> LogNum.one)
+    val finalBackwrd: Map[OTag, LogNum] = Map(None -> LogNum.one)
 
-    val (firstBackwrd @ Pattern.Map(`startEndTag` -> backwrdProb), backwrds, lastTok) =
-      (hmm.startEndSymbol +: sequence).foldRight((finalBackwrd, List[Map[Tag, LogNum]](), hmm.startEndSymbol)) {
+    val (firstBackwrd @ Pattern.Map(None -> backwrdProb), backwrds, lastTok) =
+      (None +: sequence.map(Some(_))).foldRight((finalBackwrd, List[Map[OTag, LogNum]](), None: OSym)) {
         case (tok, (nextBackwrd, otherBackwrds, nextTok)) =>
           val currBackwrd =
             hmm.tagDict(tok).mapTo { currTag =>
@@ -395,15 +373,17 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
   protected def estimateTransitionCounts(
     sequence: IndexedSeq[Sym],
     hmm: HmmTagger[Sym, Tag],
-    forwards: IndexedSeq[Tag => LogNum],
-    backwrds: IndexedSeq[Tag => LogNum],
+    forwards: IndexedSeq[OTag => LogNum],
+    backwrds: IndexedSeq[OTag => LogNum],
     seqProb: LogNum) = {
 
-    val validTagsByToken = sequence.map(hmm.tagDict)
+    val liftedSeq = sequence.map(Some(_))
+    val validTagsByToken: IndexedSeq[Set[OTag]] = liftedSeq.map(hmm.tagDict)
+    val noneTagset: Set[OTag] = Set(None)
 
-    val nextTokens = sequence :+ hmm.startEndSymbol
-    val currTagSets = Set(hmm.startEndTag) +: validTagsByToken
-    val nextTagSets = validTagsByToken :+ Set(hmm.startEndTag)
+    val nextTokens = liftedSeq :+ None
+    val currTagSets = noneTagset +: validTagsByToken
+    val nextTagSets = validTagsByToken :+ noneTagset
     val currForwards = forwards.dropRight(1)
     val nextBackwrds = backwrds.drop(1)
 
@@ -429,16 +409,14 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
   protected def estimateEmissionCounts(
     sequence: IndexedSeq[Sym],
     hmm: HmmTagger[Sym, Tag],
-    forwards: IndexedSeq[Tag => LogNum],
-    backwrds: IndexedSeq[Tag => LogNum],
-    seqProb: LogNum) = {
+    forwards: IndexedSeq[OTag => LogNum],
+    backwrds: IndexedSeq[OTag => LogNum],
+    seqProb: LogNum): CondFreqCounts[OTag, OSym, Double] = {
 
-    // TODO: Probably not necessary to count start/end states since it's 
-    //       always the case that P(endSym|endTag)=1
-    val fullSeq = hmm.startEndSymbol +: sequence :+ hmm.startEndSymbol
+    val liftedSeq = None +: sequence.map(Some(_)) :+ None
 
     val expectedEmissionCounts =
-      (fullSeq zipEqual forwards zipEqual backwrds).map {
+      (liftedSeq zipEqual forwards zipEqual backwrds).map {
         case ((tok, forward), backwrd) =>
           hmm.tagDict(tok).mapTo(tag =>
             Map(tok -> (forward(tag) * backwrd(tag) / seqProb).toDouble)).toMap
