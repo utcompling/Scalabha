@@ -14,13 +14,13 @@ object FreqDist {
    * Return an "empty" frequency distribution: a function that maps
    * everything to the zero-probability.  P(B) = 0 for all B.
    */
-  val empty = static(LogNum.zero)
+  def empty[B]: MultinomialFreqDist[B] = static(LogNum.zero)
 
   /**
    * Return a "static" frequency distribution: a function that maps
    * everything to the same probability.  P(B) = v for all B.
    */
-  def static(v: LogNum) = (_: Any) => v
+  def static[B](v: LogNum): MultinomialFreqDist[B] = new MultinomialFreqDist[B](Map(), v)
 
   /**
    * Construct a frequency distribution from the counter result.  Calculates
@@ -37,14 +37,15 @@ object FreqDist {
    *
    * @tparam B	the item being counted
    */
-  def apply[B](resultCounts: DefaultedFreqCounts[B, Double]): B => LogNum = {
+  def apply[B](resultCounts: DefaultedFreqCounts[B, Double]): MultinomialFreqDist[B] = {
     val DefaultedFreqCounts(counts, totalAddition, defaultCount) = resultCounts
     val total = counts.toMap.values.sum + totalAddition
     if (total == 0)
-      FreqDist.empty
+      FreqDist.empty[B]
     else
-      counts.toMap.mapValuesStrict(count => (count / total).toLogNum)
-        .withDefaultValue((defaultCount / total).toLogNum)
+      new MultinomialFreqDist(
+        counts.toMap.mapValuesStrict(count => (count / total).toLogNum),
+        (defaultCount / total).toLogNum)
   }
 }
 
@@ -59,13 +60,13 @@ object CondFreqDist {
    * Return an "empty" frequency distribution: a function that maps
    * everything to the zero-probability.  P(B|A) = 0 for all A,B.
    */
-  val empty = static(LogNum.zero)
+  def empty[A,B]: A => MultinomialFreqDist[B] = static(LogNum.zero)
 
   /**
    * Return a "static" frequency distribution: a function that maps
    * everything to the same probability.  P(B|A) = v for all A,B.
    */
-  def static(v: LogNum) = (_: Any) => (_: Any) => v
+  def static[A,B](v: LogNum): A => MultinomialFreqDist[B] = (_: Any) => FreqDist.static(v)
 
   /**
    * Construct a frequency distribution from the counter result. Calculates
@@ -87,7 +88,7 @@ object CondFreqDist {
    * @tparam A	the conditioning item being counted; P(B|A).
    * @tparam B	the conditioned item being counted; P(B|A).
    */
-  def apply[A, B](resultCounts: DefaultedCondFreqCounts[A, B, Double]): A => B => LogNum = {
+  def apply[A, B](resultCounts: DefaultedCondFreqCounts[A, B, Double]): A => MultinomialFreqDist[B] = {
     resultCounts.counts.mapValuesStrict(FreqDist(_)).withDefaultValue(FreqDist.empty)
   }
 }

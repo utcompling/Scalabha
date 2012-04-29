@@ -9,13 +9,13 @@ class FreqDistTests {
 
   @Test
   def test_FreqDist_empty() {
-    val x = FreqDist.empty
+    val x = FreqDist.empty[Symbol]
     assertEqualsProb(LogNum(0), x('z))
   }
 
   @Test
   def test_FreqDist_static() {
-    val x = FreqDist.static(LogNum(0.5))
+    val x = FreqDist.static[Symbol](LogNum(0.5))
     assertEqualsProb(LogNum(0.5), x('z))
   }
 
@@ -37,13 +37,13 @@ class FreqDistTests {
 
   @Test
   def test_CondFreqDist_empty() {
-    val x = CondFreqDist.empty
+    val x = CondFreqDist.empty[Symbol,Symbol]
     assertEqualsProb(LogNum(0), x('y)('z))
   }
 
   @Test
   def test_CondFreqDist_static() {
-    val x = CondFreqDist.static(LogNum(0.5))
+    val x = CondFreqDist.static[Symbol,Symbol](LogNum(0.5))
     assertEqualsProb(LogNum(0.5), x('y)('z))
   }
 
