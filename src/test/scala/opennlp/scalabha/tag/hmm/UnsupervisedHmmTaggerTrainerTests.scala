@@ -66,7 +66,7 @@ class UnsupervisedHmmTaggerTrainerTests {
     val unsupervisedTagger = new HmmTagger(initialTransitions, initialEmissions, OptionalTagDict(tagDict))
 
     val output = unsupervisedTagger.tag(gold.map(_.map(_._1)))
-    val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
     assertResultsEqual("""
 		Total:   84.21 (16/19)
 		Known:   100.00 (15/15)
@@ -127,7 +127,7 @@ class UnsupervisedHmmTaggerTrainerTests {
         minAvgLogProbChangeForEM = 0.00001)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainRaw)
     val output = unsupervisedTagger.tag(gold.map(_.map(_._1)))
-    val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
     assertResultsEqual("""
 		Total:   84.21 (16/19)
 		Known:   100.00 (15/15)
@@ -162,7 +162,7 @@ class UnsupervisedHmmTaggerTrainerTests {
         minAvgLogProbChangeForEM = 0.00001)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._1)))
     val output = unsupervisedTagger.tag(testRaw)
-    val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
     assertResultsEqual("""
 		Total:   48.48 (16/33)
 		Known:   48.48 (16/33)
@@ -195,7 +195,7 @@ class UnsupervisedHmmTaggerTrainerTests {
         minAvgLogProbChangeForEM = 0.00001)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._1)))
     val output = unsupervisedTagger.tag(testRaw)
-    val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
     assertResultsEqual("""
 		Total:   88.14 (21108/23949)
 		Known:   88.14 (21108/23949)
@@ -289,7 +289,7 @@ class UnsupervisedHmmTaggerTrainerTests {
 
         protected override def hmmExaminationHook(hmm: HmmTagger[String, String]) {
           val output = hmm.tag(gold.map(_.map(_._1)))
-          val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
+          val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
           println(results)
         }
 
@@ -297,7 +297,7 @@ class UnsupervisedHmmTaggerTrainerTests {
 
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainRaw)
     val output = unsupervisedTagger.tag(gold.map(_.map(_._1)))
-    val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
     results
   }
 

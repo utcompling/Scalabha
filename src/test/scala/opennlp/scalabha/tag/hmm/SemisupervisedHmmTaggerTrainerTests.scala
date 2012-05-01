@@ -59,7 +59,7 @@ class SemisupervisedHmmTaggerTrainerTests {
         minAvgLogProbChangeForEM = 0.00001)
     val tagger = trainer.trainSemisupervised(tagDict, trainRaw, trainLab)
     val output = tagger.tag(gold.map(_.map(_._1)))
-    val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
     results
   }
 

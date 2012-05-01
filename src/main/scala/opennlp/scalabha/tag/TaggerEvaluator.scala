@@ -5,7 +5,7 @@ import collection.mutable.{ Map => MMap, Set => MSet, Buffer }
 
 class TaggerEvaluator[Sym, Tag] {
 
-  def evaluate(taggerOutput: Iterable[IndexedSeq[(Sym, Tag)]], goldData: Iterable[IndexedSeq[(Sym, Tag)]], tagDict: Map[Sym, Set[Tag]]): ScoreResults[Sym, Tag] = {
+  def evaluate(taggerOutput: Iterable[IndexedSeq[(Sym, Tag)]], goldData: Iterable[IndexedSeq[(Sym, Tag)]], tagDict: TagDict[Sym, Tag]): ScoreResults[Sym, Tag] = {
     var correct = 0
     var total = 0
     var knownCorrect = 0

@@ -74,7 +74,7 @@ class SupervisedHmmTaggerTrainerTests {
     val output = tagger.tag(AsRawFile("data/postag/ic/ictest.txt"))
 
     val gold = TaggedFile("data/postag/ic/ictest.txt")
-    val results = new TaggerEvaluator().evaluate(output, gold, tagger.asInstanceOf[HmmTagger[String, String]].tagDict.iterator.collect { case (Some(k), vs) => (k, vs.flatten) }.toMap)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagger.asInstanceOf[HmmTagger[String, String]].tagDict.unoptioned)
     assertResultsEqual("""
 		Total:   87.88 (29/33)
 		Known:   87.88 (29/33)
@@ -100,7 +100,7 @@ class SupervisedHmmTaggerTrainerTests {
     val output = tagger.tag(AsRawFile("data/postag/english/entest"))
 
     val gold = TaggedFile("data/postag/english/entest")
-    val results = new TaggerEvaluator().evaluate(output, gold, tagger.asInstanceOf[HmmTagger[String, String]].tagDict.iterator.collect { case (Some(k), vs) => (k, vs.flatten) }.toMap)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagger.asInstanceOf[HmmTagger[String, String]].tagDict.unoptioned)
     assertResultsEqual("""
                 Total:   80.91 (19377/23949)
                 Known:   88.72 (19377/21841)
@@ -135,7 +135,7 @@ class SupervisedHmmTaggerTrainerTests {
             EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))))
     val tagger = trainer.trainSupervised(train, tagDict)
     val output = tagger.tag(gold.map(_.map(_._1)))
-    val results = new TaggerEvaluator().evaluate(output, gold, tagDict.iterator.toMap)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
     assertResultsEqual("""
 				Total:   94.15 (22549/23949)
 				Known:   96.86 (21156/21841)

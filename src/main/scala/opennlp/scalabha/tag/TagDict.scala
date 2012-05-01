@@ -28,6 +28,7 @@ object SimpleTagDict {
 class OptionalTagDict[Sym, Tag](tagDict: TagDict[Sym, Tag]) extends TagDict[Option[Sym], Option[Tag]] {
   val optioned: Map[Option[Sym], Set[Option[Tag]]] = tagDict.iterator.map { case (s, ts) => Option(s) -> ts.map(Option(_)) }.toMap
   val default = tagDict.default.map(Option(_))
+  def unoptioned = tagDict
 
   protected def doGet(s: Option[Sym]): Option[Set[Option[Tag]]] = s match {
     case None => Some(Set(None))
