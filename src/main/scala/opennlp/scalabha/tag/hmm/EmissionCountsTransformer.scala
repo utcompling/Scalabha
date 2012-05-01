@@ -17,7 +17,7 @@ class EmissionCountsTransformer[Tag, Sym](delegate: CondCountsTransformer[Option
         case (tag, DefaultedFreqCounts(c, t, d)) =>
           //val results =
           tag -> (tag match {
-            case None => DefaultedFreqCounts(c.filterKeys(Set(None)), 0., 0.)
+            case None => DefaultedFreqCounts(Map((None: Option[Sym]) -> 1.), 0., 0.)
             case _ => DefaultedFreqCounts(c + (None -> 0.), t, d)
           })
         //println(results)
