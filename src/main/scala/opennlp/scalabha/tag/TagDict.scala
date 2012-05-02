@@ -5,10 +5,21 @@ trait TagDict[Sym, Tag] extends (Sym => Set[Tag]) { //}extends Map[Sym, Set[Tag]
 
   final def apply(s: Sym) = get(s).get
   final def get(s: Sym): Option[Set[Tag]] = Some(doGet(s).getOrElse(default))
+
+  /**
+   * Return the tagset for the symbol, or None if it does not exist.  Do not
+   * return the default.
+   */
   protected def doGet(s: Sym): Option[Set[Tag]]
+
+  /**
+   * Does the symbol exist as an entry in the tag dict (excluding defaults)?
+   */
+  final def contains(s: Sym) = doGet(s).isDefined
+
   def iterator: Iterator[(Sym, Set[Tag])]
-  def symbols = iterator.map(_._1).toSet
-  def allTags = iterator.flatMap(_._2).toSet ++ default
+  final def symbols = iterator.map(_._1).toSet
+  final def allTags = iterator.flatMap(_._2).toSet ++ default
   //  final def +[B1 >: Set[Tag]](kv: (Sym, B1)) = sys.error("not implemented")
   //  final def -(key: Sym): TagDict[Sym, Tag] = sys.error("not implemented")
   //  def empty: TagDict[Sym, Tag]

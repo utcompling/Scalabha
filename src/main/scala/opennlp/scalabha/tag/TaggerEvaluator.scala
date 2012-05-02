@@ -26,7 +26,7 @@ class TaggerEvaluator[Sym, Tag] {
           mistakes ::= ((goldTag, rsltTag))
         total += 1
 
-        if (tagDict.get(goldSym).isDefined /*.map(_(goldTag)).getOrElse(false)*/ ) {
+        if (tagDict.contains(goldSym) /*&& tagDict(goldSym).contains(goldTag)*/ ) {
           if (rsltTag == goldTag)
             knownCorrect += 1
           knownTotal += 1

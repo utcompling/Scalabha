@@ -248,8 +248,7 @@ class UnsupervisedHmmTaggerTrainerTests {
     	""", results)
   }
 
-  @Test
-  def en_comparisonA() {
+  def en_smallTagDict() {
     val (tagDictTrain, labeledTrain) = TaggedFile("data/postag/english/entrain").splitAt(3000)
     val tagDict = new SimpleTagDictFactory().make(tagDictTrain)
     val results = runUnsupervisedTrainingTest(tagDict)
@@ -334,7 +333,7 @@ class UnsupervisedHmmTaggerTrainerTests {
 object UnsupervisedHmmTaggerTrainerTests {
 
   @BeforeClass def turnOffLogging() {
-    Logger.getRootLogger.setLevel(Level.DEBUG)
+    Logger.getRootLogger.setLevel(Level.OFF)
   }
 
 }
