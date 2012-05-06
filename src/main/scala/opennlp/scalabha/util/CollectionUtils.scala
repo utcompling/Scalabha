@@ -520,6 +520,78 @@ object CollectionUtils {
   implicit def enriched_groupByKey_Iterator[A](self: Iterator[A]) = new Enriched_groupByKey_Iterator(self)
 
   //////////////////////////////////////////////////////
+  // +++(other: TraversableOnce[(T,Traversable[S])]): Repr[(T,Traversable[S])]
+  //   - Given two collections of pairs (T,Traversable[S]), combine into
+  //     a single collection such that all values associated with the same
+  //     key are concatenated.
+  //   - Functionally equivalent to:
+  //         (this.iterator ++ other).groupBy(_._1).mapValues(_.map(_._2).reduce(_ ++ _))
+  //////////////////////////////////////////////////////
+
+  class Enriched_$plus$plus$plus_TraversableLike_Traversable[T, S, Repr2 <: Traversable[S], Repr1 <: Traversable[(T, TraversableLike[S, Repr2])]](self: TraversableLike[(T, TraversableLike[S, Repr2]), Repr1]) {
+    /**
+     * Given two collections of pairs (T,Traversable[S]), combine into
+     * a single collection such that all values associated with the same
+     * key are concatenated.
+     *
+     * @param other 	another collection to add to
+     * @return a collection of pairs
+     */
+    def +++[That1 <: Traversable[(T, TraversableLike[S, Repr2])], That2](other: TraversableOnce[(T, TraversableLike[S, Repr2])])(implicit bf2: CanBuildFrom[Repr2, S, That2], bf1: CanBuildFrom[Repr1, (T, That2), That1]) = {
+      val grouped = (self ++ other).groupByKey
+      val b = bf1(grouped.asInstanceOf[Repr1])
+      b.sizeHint(grouped.size)
+      for ((k, vs) <- grouped) {
+        val b2 = bf2(vs.asInstanceOf[Repr2])
+        for (v <- vs) b2 ++= v
+        b += k -> b2.result
+      }
+      b.result
+    }
+  }
+  implicit def enriched_$plus$plus$plus_TraversableLike_Traversable[T, S, Repr2 <: Traversable[S], Repr1 <: Traversable[(T, TraversableLike[S, Repr2])]](self: TraversableLike[(T, TraversableLike[S, Repr2]), Repr1]) = new Enriched_$plus$plus$plus_TraversableLike_Traversable(self)
+
+  //////////////////////////////////////////////////////
+  // +++[U:Numeric](other: Traversable[(T,U)]): Repr[(T,U)]
+  //   - Given two collections of pairs (T,U:Numeric), combine into
+  //     a single collection such that all values associated with the same
+  //     key are summed.
+  //   - Functionally equivalent to:
+  //         (this.iterator ++ other).groupBy(_._1).mapValues(_.map(_._2).sum)
+  //////////////////////////////////////////////////////
+
+  class Enriched_$plus$plus$plus_TraversableLike_Numeric[T, U: Numeric, Repr <: Traversable[(T, U)]](self: TraversableLike[(T, U), Repr]) {
+    /**
+     * Given two collections of pairs (T,Traversable[S]), combine into
+     * a single collection such that all values associated with the same
+     * key are summed.
+     *
+     * @param other 	another collection to add to
+     * @return a collection of pairs
+     */
+    def +++[That <: Traversable[(T, U)]](other: TraversableOnce[(T, U)])(implicit bf: CanBuildFrom[Repr, (T, U), That]) = {
+      val grouped = (self ++ other).groupByKey
+      val b = bf(grouped.asInstanceOf[Repr])
+      b.sizeHint(grouped.size)
+      for ((k, vs) <- grouped) b += k -> vs.sum
+      b.result
+    }
+  }
+  implicit def enriched_$plus$plus$plus_TraversableLike_Numeric[T, U: Numeric, Repr <: Traversable[(T, U)]](self: TraversableLike[(T, U), Repr]) = new Enriched_$plus$plus$plus_TraversableLike_Numeric(self)
+
+  //  class Enriched_$plus$plus$plus_Iterator[T, U](self: Iterator[(T, U)]) {
+  //    /**
+  //     * In a collection of pairs, map a function over the second item of each
+  //     * pair.
+  //     *
+  //     * @param f	function to map over the second item of each pair
+  //     * @return a collection of pairs
+  //     */
+  //    def +++[R] = self.mapValues(f)
+  //  }
+  //  implicit def enrich_$plus$plus$plus_Iterator[T, U](self: Iterator[(T, U)]) = new Enriched_$plus$plus$plus_Iterator(self)
+
+  //////////////////////////////////////////////////////
   // zip(that: TraversableOnce[B]): Iterator[(A, B)]
   //   - Extend zip functionality to Iterator
   //////////////////////////////////////////////////////
