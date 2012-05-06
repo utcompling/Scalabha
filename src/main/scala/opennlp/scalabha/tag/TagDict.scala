@@ -7,8 +7,7 @@ import opennlp.scalabha.util.CollectionUtils._
 // TagDict interface
 ////////////////////////////////
 
-trait TagDict[Sym, Tag] {
-  val defaultSet: Set[Tag]
+abstract class TagDict[Sym, Tag](val defaultSet: Set[Tag]) {
   final def set(s: Sym): Set[Tag] = getSet(s).get
   final def getSet(s: Sym): Option[Set[Tag]] = Some(doGetSet(s).getOrElse(defaultSet))
 
@@ -32,9 +31,7 @@ trait TagDict[Sym, Tag] {
 // Unweighted TagDict
 ////////////////////////////////
 
-trait UnweightedTagDict[Sym, Tag] extends TagDict[Sym, Tag] {
-  val default: Set[Tag]
-  final override val defaultSet = default
+abstract class UnweightedTagDict[Sym, Tag](val default: Set[Tag]) extends TagDict[Sym, Tag](default) {
   def iterator: Iterator[(Sym, Set[Tag])]
   final override def setIterator = iterator
 }
@@ -42,7 +39,7 @@ trait UnweightedTagDict[Sym, Tag] extends TagDict[Sym, Tag] {
 ///////////////////////
 // Simple Unweighted TagDict
 
-class SimpleTagDict[Sym, Tag](d: Map[Sym, Set[Tag]], override val default: Set[Tag]) extends UnweightedTagDict[Sym, Tag] {
+class SimpleTagDict[Sym, Tag](d: Map[Sym, Set[Tag]], override val default: Set[Tag]) extends UnweightedTagDict[Sym, Tag](default) {
   protected override def doGetSet(s: Sym) = d.get(s)
   override def iterator = d.iterator
 }
@@ -55,11 +52,13 @@ object SimpleTagDict {
 ///////////////////////
 // Optional Unweighted TagDict
 
-class OptionalTagDict[Sym, Tag](tagDict: TagDict[Sym, Tag]) extends UnweightedTagDict[Option[Sym], Option[Tag]] {
+class OptionalTagDict[Sym, Tag](tagDict: TagDict[Sym, Tag]) extends UnweightedTagDict[Option[Sym], Option[Tag]](tagDict.defaultSet.map(Option(_))) {
   val optioned: Map[Option[Sym], Set[Option[Tag]]] = tagDict.setIterator.map { case (s, ts) => Option(s) -> ts.map(Option(_)) }.toMap
-  override val default = tagDict.defaultSet.map(Option(_))
-  def unoptioned = tagDict
-  protected override def doGetSet(s: Option[Sym]): Option[Set[Option[Tag]]] = Option(optioned.get(s).getOrElse(Set(None)))
+  val unoptioned = tagDict
+  protected override def doGetSet(s: Option[Sym]): Option[Set[Option[Tag]]] = s match {
+    case None => Some(Set(None))
+    case _ => optioned.get(s)
+  }
   override def iterator = optioned.iterator
 }
 
@@ -71,9 +70,7 @@ object OptionalTagDict {
 // Weighted TagDict
 ////////////////////////////////
 
-trait WeightedTagDict[Sym, Tag] extends TagDict[Sym, Tag] {
-  val default: Map[Tag, LogNum]
-  final override val defaultSet = default.keySet
+abstract class WeightedTagDict[Sym, Tag](val default: Map[Tag, LogNum]) extends TagDict[Sym, Tag](default.keySet) {
   def iterator: Iterator[(Sym, Map[Tag, LogNum])]
   final override def setIterator = iterator.mapValuesStrict(_.keySet)
   protected def doGetMap(s: Sym): Option[Map[Tag, LogNum]]
@@ -83,7 +80,7 @@ trait WeightedTagDict[Sym, Tag] extends TagDict[Sym, Tag] {
 ///////////////////////
 // Simple Weighted TagDict
 
-class SimpleWeightedTagDict[Sym, Tag](d: Map[Sym, Map[Tag, LogNum]], override val default: Map[Tag, LogNum]) extends WeightedTagDict[Sym, Tag] {
+class SimpleWeightedTagDict[Sym, Tag](d: Map[Sym, Map[Tag, LogNum]], override val default: Map[Tag, LogNum]) extends WeightedTagDict[Sym, Tag](default) {
   protected override def doGetMap(s: Sym) = d.get(s)
   override def iterator = d.iterator
 }
@@ -96,10 +93,9 @@ object SimpleWeightedTagDict {
 ///////////////////////
 // Optional Weighted TagDict
 
-class OptionalWeightedTagDict[Sym, Tag](tagDict: WeightedTagDict[Sym, Tag]) extends WeightedTagDict[Option[Sym], Option[Tag]] {
+class OptionalWeightedTagDict[Sym, Tag](tagDict: WeightedTagDict[Sym, Tag]) extends WeightedTagDict[Option[Sym], Option[Tag]](tagDict.default.mapKeys(Option(_))) {
   val optioned: Map[Option[Sym], Map[Option[Tag], LogNum]] = tagDict.iterator.map { case (s, ts) => Option(s) -> ts.mapKeys(Option(_)) }.toMap
-  override val default = tagDict.default.mapKeys(Option(_))
-  def unoptioned = tagDict
+  val unoptioned = tagDict
 
   protected override def doGetMap(s: Option[Sym]): Option[Map[Option[Tag], LogNum]] = s match {
     case None => Some(Map(None -> LogNum.one))
