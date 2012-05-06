@@ -137,16 +137,16 @@ class SupervisedHmmTaggerTrainerTests {
     val output = tagger.tag(gold.map(_.map(_._1)))
     val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
     assertResultsEqual("""
-				Total:   94.15 (22549/23949)
-				Known:   96.86 (21156/21841)
-				Unknown: 66.08 (1393/2108)
+				Total:   91.54 (21924/23949)
+				Known:   96.33 (21039/21841)
+				Unknown: 41.98 (885/2108)
 				Common Mistakes:
 				#Err     Gold      Model
-				243      N        J
-				232      V        N
-				179      J        N
-				139      N        V       
-				91       V        J       
+				152      V        N
+				150      N        J
+				142      N        D
+				141      N        V
+				121      J        N
 				""", results)
   }
 
