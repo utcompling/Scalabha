@@ -307,7 +307,7 @@ class UnsupervisedHmmTaggerTrainerTests {
     val trainRaw = RawFile("data/postag/english/enraw20k")
     val gold = TaggedFile("data/postag/english/entest")
 
-    LOG.debug("tagDictTrain.size = " + tagDict.iterator.ungroup.size)
+    LOG.debug("tagDictTrain.size = " + tagDict.setIterator.ungroup.size)
     LOG.debug("labeledTrain.size = " + 0)
     LOG.debug("rawTrain.size     = " + trainRaw.size)
 

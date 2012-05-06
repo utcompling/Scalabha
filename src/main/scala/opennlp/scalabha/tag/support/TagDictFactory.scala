@@ -85,7 +85,7 @@ class FullTopSymTagDictFactory[Sym, Tag](numSym: Int, fullTagset: Set[Tag]) exte
  */
 class DefaultLimitingTagDictFactory[Sym, Tag](maxNumberOfDefaultTags: Int, delegate: TagDictFactory[Sym, Tag]) extends TagDictFactory[Sym, Tag] {
   def make(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
-    val delegateDict = delegate.make(taggedTrainSequences).iterator.toMap
+    val delegateDict = delegate.make(taggedTrainSequences).setIterator.toMap
     val topNTags =
       delegateDict
         .ungroup

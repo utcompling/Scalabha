@@ -41,7 +41,7 @@ class SemisupervisedHmmTaggerTrainerTests {
     val trainRaw = RawFile("data/postag/english/enraw20k")
     val gold = TaggedFile("data/postag/english/entest")
 
-    LOG.info("tagDictTrain.size = " + tagDict.iterator.ungroup.size)
+    LOG.info("tagDictTrain.size = " + tagDict.setIterator.ungroup.size)
     LOG.info("labeledTrain.size = " + trainLab.size)
     LOG.info("rawTrain.size     = " + trainRaw.size)
 

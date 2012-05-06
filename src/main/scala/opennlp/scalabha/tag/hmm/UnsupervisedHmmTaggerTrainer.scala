@@ -312,7 +312,7 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
       (sequence.map(Some(_)) :+ None).foldLeft((startForward, List[Map[OTag, LogNum]]())) {
         case ((prevForward, otherForwards), tok) =>
           val currForward =
-            hmm.tagDict(tok).mapTo { currTag => // each legal tag for the current token
+            hmm.tagDict.set(tok).mapTo { currTag => // each legal tag for the current token
               val tProb =
                 prevForward.sumBy {
                   case (prevTag, prevFwdScore) => prevFwdScore * hmm.transitions(prevTag)(currTag)
@@ -352,7 +352,7 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
       (None +: sequence.map(Some(_))).foldRight((finalBackwrd, List[Map[OTag, LogNum]](), None: OSym)) {
         case (tok, (nextBackwrd, otherBackwrds, nextTok)) =>
           val currBackwrd =
-            hmm.tagDict(tok).mapTo { currTag =>
+            hmm.tagDict.set(tok).mapTo { currTag =>
               nextBackwrd.sumBy {
                 case (nextTag, nextBkwdScore) =>
                   hmm.transitions(currTag)(nextTag) * hmm.emissions(nextTag)(nextTok) * nextBkwdScore
@@ -378,7 +378,7 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     seqProb: LogNum) = {
 
     val liftedSeq = sequence.map(Some(_))
-    val validTagsByToken: IndexedSeq[Set[OTag]] = liftedSeq.map(hmm.tagDict)
+    val validTagsByToken: IndexedSeq[Set[OTag]] = liftedSeq.map(hmm.tagDict.set)
     val noneTagset: Set[OTag] = Set(None)
 
     val nextTokens = liftedSeq :+ None
@@ -418,7 +418,7 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     val expectedEmissionCounts =
       (liftedSeq zipEqual forwards zipEqual backwrds).map {
         case ((tok, forward), backwrd) =>
-          hmm.tagDict(tok).mapTo(tag =>
+          hmm.tagDict.set(tok).mapTo(tag =>
             Map(tok -> (forward(tag) * backwrd(tag) / seqProb).toDouble)).toMap
       }
 

@@ -42,7 +42,7 @@ class TagDictConstrainedEmissionCountsTransformer[Tag, Sym](tagDict: TagDict[Sym
     new DefaultedCondFreqCounts(
       delegate(counts).counts.map {
         case (tag, DefaultedFreqCounts(c, t, d)) =>
-          val filtered = c.filterKeys(sym => optionalTagDict(sym)(tag))
+          val filtered = c.filterKeys(sym => optionalTagDict.set(sym)(tag))
           tag -> (tag match {
             case None => DefaultedFreqCounts(filtered, 0., 0.)
             case _ => DefaultedFreqCounts(filtered, t, d)

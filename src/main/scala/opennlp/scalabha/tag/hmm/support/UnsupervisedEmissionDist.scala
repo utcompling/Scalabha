@@ -41,7 +41,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
     val DefaultedFreqCounts(rawCounts, totalAddition, defaultCount) = countsTransformer(rawData.flatten.counts)
 
     val rawSymbolCounts = rawCounts.withDefaultValue(defaultCount) // number of times each symbol appears in the raw data
-    val tagToSymbolDict = tagDict.iterator.ungroup.map(_.swap).toSet.groupByKey // a reversed tag dict; Tag -> Set[Symbol]
+    val tagToSymbolDict = tagDict.setIterator.ungroup.map(_.swap).toSet.groupByKey // a reversed tag dict; Tag -> Set[Symbol]
 
     val vocabRaw = rawSymbolCounts.keySet // set of all symbols in raw data
     val vocabKnown = tagDict.symbols // set of all symbols in tag dict (known symbols)
@@ -56,7 +56,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
 
     val knownCounts =
       tagToSymbolDict.mapValuesStrict {
-        _.mapTo(s => (rawSymbolCounts(s)) / tagDict(s).size.toDouble).toMap // estimated C(w,t) for known symbols
+        _.mapTo(s => (rawSymbolCounts(s)) / tagDict.set(s).size.toDouble).toMap // estimated C(w,t) for known symbols
       }
 
     val estimatedUnknownProportions = {

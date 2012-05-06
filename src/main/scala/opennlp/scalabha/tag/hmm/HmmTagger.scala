@@ -46,7 +46,7 @@ case class HmmTagger[Sym, Tag](
         case ((viterbi, backpointers), tok) =>
           // for each possible tag, get the highest probability previous tag and its score
           val transitionScores =
-            tagDict(tok).mapTo(currTag => // each legal tag for the current token
+            tagDict.set(tok).mapTo(currTag => // each legal tag for the current token
               viterbi.map {
                 case (prevTag, viterbtiScore) =>
                   val v = viterbtiScore // probability of the most likely sequence of states leading to prevTag
