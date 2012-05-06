@@ -145,7 +145,7 @@ object CollectionUtils {
   implicit def enriched_sumBy_GenTraversableOnce[A](self: GenTraversableOnce[A]) = new Enriched_sumBy_GenTraversableOnce(self)
 
   //////////////////////////////////////////////////////
-  // mapTo[B](f: A => B): Repr[B]
+  // mapTo[B](f: A => B): Repr[(A,B)]
   //   - Map a function over the collection, returning a set of pairs consisting 
   //     of the original item and the result of the function application
   //   - Functionally equivalent to:
@@ -190,6 +190,50 @@ object CollectionUtils {
     }
   }
   implicit def enriched_mapTo_Iterator[A](self: Iterator[A]) = new Enriched_mapTo_Iterator(self)
+
+  //////////////////////////////////////////////////////
+  // mapToVal[B](v: B): Repr[(A,B)]
+  //   - Map each item in the collection to a particular value
+  //   - Functionally equivalent to:
+  //         map(x => x -> v)
+  //////////////////////////////////////////////////////
+
+  class Enriched_mapToVal_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
+    /**
+     * Map each item in the collection to a particular value
+     *
+     * Functionally equivalent to: map(x => x -> v)
+     *
+     * @param v	the value to map to
+     * @return the new collection
+     */
+    def mapToVal[B, That](v: => B)(implicit bf: CanBuildFrom[Repr, (A, B), That]): That = {
+      val b = bf(self.asInstanceOf[Repr])
+      b.sizeHint(self.size)
+      for (x <- self) b += x -> v
+      b.result
+    }
+  }
+  implicit def enriched_mapToVal_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) = new Enriched_mapToVal_GenTraversableLike(self)
+
+  class Enriched_mapToVal_Iterator[A](self: Iterator[A]) {
+    /**
+     * Map each item in the collection to a particular value
+     *
+     * Functionally equivalent to: map(x => x -> v)
+     *
+     * @param v	the value to map to
+     * @return a new iterator
+     */
+    def mapToVal[B](v: => B): Iterator[(A, B)] = new Iterator[(A, B)] {
+      def hasNext = self.hasNext
+      def next() = {
+        val x = self.next
+        x -> v
+      }
+    }
+  }
+  implicit def enriched_mapToVal_Iterator[A](self: Iterator[A]) = new Enriched_mapToVal_Iterator(self)
 
   //////////////////////////////////////////////////////
   // zipEqual(that: GenTraversable[B]): Repr[(A,B)]

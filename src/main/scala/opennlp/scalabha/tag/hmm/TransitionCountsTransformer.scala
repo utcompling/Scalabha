@@ -10,7 +10,7 @@ class TransitionCountsTransformer[Tag, Sym](tagDict: TagDict[Sym, Tag], delegate
 
   val constraints = {
     val allTags = OptionalTagDict(tagDict).allTags
-    allTags.mapTo(_ => (allTags + None)).toMap + (None -> allTags)
+    allTags.mapToVal(allTags + None).toMap + (None -> allTags)
   }
 
   override def apply(counts: DefaultedCondFreqCounts[Option[Tag], Option[Tag], Double]) = {

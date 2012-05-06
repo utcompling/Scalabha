@@ -57,7 +57,7 @@ class UnsupervisedHmmTaggerTrainerTests {
 
     // Create the initial distributions
     val allTags = tagDict.allTags.map(Option(_)) + None
-    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapTo(_ => allTags.mapTo(_ => 1.0).toMap).toMap))
+    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapToVal(allTags.mapToVal(1.).toMap).toMap))
     val initialEmissions =
       new EstimatedRawCountUnsupervisedEmissionDistFactory(
         new PassthroughCountsTransformer(),

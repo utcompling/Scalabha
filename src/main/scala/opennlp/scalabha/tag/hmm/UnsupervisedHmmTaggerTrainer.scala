@@ -52,7 +52,7 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
 
     // Create the initial distributions
     val allTags = tagDictWithEnds.allTags
-    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapTo(_ => (allTags + None).mapTo(_ => 1.).toMap).toMap + (None -> allTags.mapTo(_ => 1.).toMap)))
+    val initialTransitions = CondFreqDist(DefaultedCondFreqCounts(allTags.mapToVal((allTags + None).mapToVal(1.).toMap).toMap + (None -> allTags.mapToVal(1.).toMap)))
     val initialEmissions = initialUnsupervisedEmissionDist
     val initialHmm = new HmmTagger(initialTransitions, initialEmissions, tagDictWithEnds)
 

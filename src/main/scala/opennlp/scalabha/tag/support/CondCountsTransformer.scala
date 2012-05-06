@@ -80,14 +80,14 @@ case class ConstrainingCondCountsTransformer[A, B](validEntries: Map[A, Set[B]],
     val resultCounts = delegate(counts)
     val zeroCountAs = DefaultedCondFreqCounts(validEntries.mapValuesStrict(_ => Map[B, Double]())) // a count for every A in validEntries
     val allBs = (validEntries.values.flatten ++ resultCounts.counts.values.flatMap(_.counts.keySet)).toSet
-    val zeroCountBs = FreqCounts(allBs.map(_ -> 0.).toMap)
+    val zeroCountBs = FreqCounts(allBs.mapToVal(0.).toMap)
     DefaultedCondFreqCounts(
       delegate(counts).counts.map {
         case (a, DefaultedFreqCounts(aCounts, aTotalAddition, aDefaultCount)) =>
           validEntries.get(a) match {
             case Some(validBs) =>
               val filtered = FreqCounts(aCounts.filterKeys(validBs)) ++ zeroCountBs
-              val defaults = FreqCounts((validBs -- aCounts.keySet).mapTo(b => aDefaultCount).toMap)
+              val defaults = FreqCounts((validBs -- aCounts.keySet).mapToVal(aDefaultCount).toMap)
               a -> (filtered ++ defaults ++ zeroCountBs).toMap
             case None =>
               a -> Map[B, Double]()
@@ -130,7 +130,7 @@ case class AddLambdaSmoothingCondCountsTransformer[A, B](lambda: Double, delegat
     new DefaultedCondFreqCounts(
       resultCounts.mapValuesStrict {
         case DefaultedFreqCounts(c, t, d) =>
-          val defaultCounts = FreqCounts((allBs -- c.keySet).mapTo(_ => d).toMap)
+          val defaultCounts = FreqCounts((allBs -- c.keySet).mapToVal(d).toMap)
           DefaultedFreqCounts((FreqCounts(c) ++ defaultCounts).toMap.mapValuesStrict(_ + lambda), t + lambda, d + lambda)
       })
   }
@@ -176,7 +176,7 @@ class EisnerSmoothingCondCountsTransformer[A, B](lambda: Double, backoffCountsTr
       resultCounts.map {
         case (a, DefaultedFreqCounts(aCounts, aTotalAdd, aDefault)) =>
           // Replace any missing counts with the default
-          val defaultCounts = FreqCounts((allBs -- aCounts.keySet).mapTo(_ => aDefault).toMap)
+          val defaultCounts = FreqCounts((allBs -- aCounts.keySet).mapToVal(aDefault).toMap)
           val countsWithDefaults = (FreqCounts(aCounts) ++ defaultCounts).toMap
 
           val numSingleCountItems = countsWithDefaults.count(_._2 < 2.0)
@@ -220,7 +220,7 @@ case class RandomCondCountsTransformer[A, B](maxCount: Int, delegate: CondCounts
     new DefaultedCondFreqCounts(
       resultCounts.mapValuesStrict {
         case DefaultedFreqCounts(c, t, d) =>
-          val defaultCounts = FreqCounts((allBs -- c.keySet).mapTo(_ => d).toMap)
+          val defaultCounts = FreqCounts((allBs -- c.keySet).mapToVal(d).toMap)
           val scaled = (FreqCounts(c) ++ defaultCounts).toMap.mapValuesStrict(_ + rand.nextInt(maxCount + 1))
           DefaultedFreqCounts(scaled, t, d)
       })
