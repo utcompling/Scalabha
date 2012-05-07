@@ -562,7 +562,7 @@ object CollectionUtils {
 
   class Enriched_$plus$plus$plus_TraversableLike_Numeric[T, U: Numeric, Repr <: Traversable[(T, U)]](self: TraversableLike[(T, U), Repr]) {
     /**
-     * Given two collections of pairs (T,Traversable[S]), combine into
+     * Given two collections of pairs (T,U:Numeric), combine into
      * a single collection such that all values associated with the same
      * key are summed.
      *
@@ -590,6 +590,68 @@ object CollectionUtils {
   //    def +++[R] = self.mapValues(f)
   //  }
   //  implicit def enrich_$plus$plus$plus_Iterator[T, U](self: Iterator[(T, U)]) = new Enriched_$plus$plus$plus_Iterator(self)
+
+  //////////////////////////////////////////////////////
+  // flattenByKey: Repr[(T,Traversable[S])]
+  //   - Reduce a collection of collections of pairs (T,Traversable[S]), into
+  //     a single collection such that all values associated with the same
+  //     key are concatenated.
+  //   - Functionally equivalent to:
+  //         this.flatten.groupBy(_._1).mapValues(_.map(_._2).reduce(_ ++ _))
+  //       or
+  //         this.reduce(_ +++ _)
+  //////////////////////////////////////////////////////
+
+  class Enriched_flattenByKey_TraversableOnce_Traversable[T, S, Repr2 <: Traversable[S], Repr1 <: Traversable[(T, TraversableLike[S, Repr2])]](self: TraversableOnce[TraversableLike[(T, TraversableLike[S, Repr2]), Repr1]]) {
+    /**
+     * Reduce a collection of collections of pairs (T,Traversable[S]), into
+     * a single collection such that all values associated with the same
+     * key are concatenated.
+     *
+     * @return a collection of pairs
+     */
+    def flattenByKey[That1 <: Traversable[(T, TraversableLike[S, Repr2])], That2](implicit bf2: CanBuildFrom[Repr2, S, That2], bf1: CanBuildFrom[Repr1, (T, That2), That1]) = {
+      val grouped = self.toIterator.flatten.groupByKey
+      val b = bf1(grouped.asInstanceOf[Repr1])
+      for ((k, vs) <- grouped) {
+        val b2 = bf2()
+        for (v <- vs) b2 ++= v
+        b += k -> b2.result
+      }
+      b.result
+    }
+  }
+  implicit def enriched_flattenByKey_TraversableOnce_Traversable[T, S, Repr2 <: Traversable[S], Repr1 <: Traversable[(T, TraversableLike[S, Repr2])]](self: TraversableOnce[TraversableLike[(T, TraversableLike[S, Repr2]), Repr1]]) = new Enriched_flattenByKey_TraversableOnce_Traversable(self)
+
+  //////////////////////////////////////////////////////
+  // sumByKey[U:Numeric](other: Traversable[(T,U)]): Repr[(T,U)]
+  //   - Given a collection of collections of pairs (T,U:Numeric), combine into
+  //     a single collection such that all values associated with the same
+  //     key are summed.
+  //   - Functionally equivalent to:
+  //         (this.iterator ++ other).groupBy(_._1).mapValues(_.map(_._2).sum)
+  //       or
+  //         this.reduce(_ +++ _)
+  //////////////////////////////////////////////////////
+
+  class Enriched_sumByKey_GenTraversableOnce_Numeric[T, U: Numeric, Repr <: Traversable[(T, U)]](self: GenTraversableOnce[TraversableLike[(T, U), Repr]]) {
+    /**
+     * Given a collection of collections of pairs (T,U:Numeric), combine into
+     * a single collection such that all values associated with the same
+     * key are summed.
+     *
+     * @param other 	another collection to add to
+     * @return a collection of pairs
+     */
+    def sumByKey[That <: Traversable[(T, U)]](implicit bf: CanBuildFrom[Repr, (T, U), That]) = {
+      val grouped = self.toIterator.flatten.groupByKey
+      val b = bf(grouped.asInstanceOf[Repr])
+      b.sizeHint(grouped.size)
+      for ((k, vs) <- grouped) b += k -> vs.sum
+      b.result
+    }
+  }
+  implicit def enriched_sumByKey_GenTraversableOnce_Numeric[T, U: Numeric, Repr <: Traversable[(T, U)]](self: GenTraversableOnce[TraversableLike[(T, U), Repr]]) = new Enriched_sumByKey_GenTraversableOnce_Numeric(self)
 
   //////////////////////////////////////////////////////
   // zip(that: TraversableOnce[B]): Iterator[(A, B)]
