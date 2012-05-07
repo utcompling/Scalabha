@@ -2,23 +2,24 @@ package opennlp.scalabha.tag.support
 
 import org.junit.Assert._
 import org.junit._
+import opennlp.scalabha.util.CollectionUtils._
 
 class FreqCountsTests {
 
   @Test
   def test_FreqCounts() {
-    val f = FreqCounts(Map('A' -> 2))
-    val g = FreqCounts(Map('B' -> 4))
-    val h = FreqCounts(Map('A' -> 3))
+    val f = Map('A' -> 2)
+    val g = Map('B' -> 4)
+    val h = Map('A' -> 3)
     val i = f +++ g +++ h
     assertEquals(Map('B' -> 4, 'A' -> 5), i.toMap)
   }
 
   @Test
   def test_FreqCounts_double() {
-    val f = FreqCounts(Map('A' -> 2.2))
-    val g = FreqCounts(Map('B' -> 4.4))
-    val h = FreqCounts(Map('A' -> 3.0))
+    val f = Map('A' -> 2.2)
+    val g = Map('B' -> 4.4)
+    val h = Map('A' -> 3.0)
     val i = f +++ g +++ h
     assertEquals(Map('B' -> 4.4, 'A' -> 5.2), i.toMap)
   }

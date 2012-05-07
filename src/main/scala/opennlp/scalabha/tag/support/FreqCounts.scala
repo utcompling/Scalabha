@@ -10,28 +10,6 @@ import scala.collection.immutable.SetProxy
 import scala.collection.GenTraversable
 
 /**
- * Convenience wrapper of a map from items to their counts.  Its primary
- * function is to make adding counts easier.  The "++" operator adds the
- * counts for each respective entry (unlike Map's standard behavior).
- *
- * @tparam B	the item being counted
- * @tparam N	the Numeric type of the count
- */
-class FreqCounts[B, N: Numeric](private val self: Map[B, N]) {
-  def +++(that: FreqCounts[B, N]) = new FreqCounts((self.iterator ++ that.iterator).groupByKey.mapValuesStrict(_.sum))
-  def ---(bs: TraversableOnce[B]) = new FreqCounts(self -- bs)
-  def -(b: B) = new FreqCounts(self - b)
-  def iterator = self.iterator
-  def toMap = self
-  override def toString = "FreqCounts(%s)".format(self)
-}
-
-object FreqCounts {
-  def apply[B, N: Numeric]() = new FreqCounts[B, N](Map())
-  def apply[B, N: Numeric](self: Map[B, N]) = new FreqCounts(self)
-}
-
-/**
  * Convenience wrapper of a map from item pairs to their counts.  Its primary
  * function is to make adding counts easier.  The "++" operator adds the
  * counts for each respective entry (unlike Map's standard behavior).
@@ -40,18 +18,18 @@ object FreqCounts {
  * @tparam B	the conditioned item being counted; P(B|A).
  * @tparam N	the Numeric type of the count
  */
-class CondFreqCounts[A, B, N: Numeric](private val self: Map[A, FreqCounts[B, N]]) {
+class CondFreqCounts[A, B, N: Numeric](private val self: Map[A, Map[B, N]]) {
   def ++(that: CondFreqCounts[A, B, N]) =
     new CondFreqCounts((self.iterator ++ that.iterator).groupByKey.mapValuesStrict(_.reduce(_ +++ _)))
   def iterator = self.iterator
-  def map[C](f: ((A, FreqCounts[B, N])) => C) = iterator.map(f)
+  def map[C](f: ((A, Map[B, N])) => C) = iterator.map(f)
   def values = iterator.map(_._2)
-  def toMap = self.mapValuesStrict(_.toMap)
-  def toDouble = CondFreqCounts(self.mapValuesStrict(_.toMap.mapValuesStrict(implicitly[Numeric[N]].toDouble(_))))
-  override def toString = "CondFreqCounts(%s)".format(self.mapValues(_.toMap))
+  def toMap = self
+  def toDouble = CondFreqCounts(self.mapValuesStrict(_.mapValuesStrict(implicitly[Numeric[N]].toDouble)))
+  override def toString = "CondFreqCounts(%s)".format(self)
 }
 
 object CondFreqCounts {
   def apply[A, B, N: Numeric]() = new CondFreqCounts[A, B, N](Map())
-  def apply[A, B, N: Numeric](self: Map[A, Map[B, N]]) = new CondFreqCounts(self.mapValuesStrict(FreqCounts(_)))
+  def apply[A, B, N: Numeric](self: Map[A, Map[B, N]]) = new CondFreqCounts(self)
 }

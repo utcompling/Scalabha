@@ -130,8 +130,8 @@ case class AddLambdaSmoothingCondCountsTransformer[A, B](lambda: Double, delegat
     new DefaultedCondFreqCounts(
       resultCounts.mapValuesStrict {
         case DefaultedFreqCounts(c, t, d) =>
-          val defaultCounts = FreqCounts((allBs -- c.keySet).mapToVal(d).toMap)
-          DefaultedFreqCounts((FreqCounts(c) +++ defaultCounts).toMap.mapValuesStrict(_ + lambda), t + lambda, d + lambda)
+          val defaultCounts = (allBs -- c.keySet).mapToVal(d)
+          DefaultedFreqCounts((c +++ defaultCounts).mapValuesStrict(_ + lambda), t + lambda, d + lambda)
       })
   }
 }
@@ -220,8 +220,8 @@ case class RandomCondCountsTransformer[A, B](maxCount: Int, delegate: CondCounts
     new DefaultedCondFreqCounts(
       resultCounts.mapValuesStrict {
         case DefaultedFreqCounts(c, t, d) =>
-          val defaultCounts = FreqCounts((allBs -- c.keySet).mapToVal(d).toMap)
-          val scaled = (FreqCounts(c) +++ defaultCounts).toMap.mapValuesStrict(_ + rand.nextInt(maxCount + 1))
+          val defaultCounts = (allBs -- c.keySet).mapToVal(d)
+          val scaled = (c +++ defaultCounts).mapValuesStrict(_ + rand.nextInt(maxCount + 1))
           DefaultedFreqCounts(scaled, t, d)
       })
   }
