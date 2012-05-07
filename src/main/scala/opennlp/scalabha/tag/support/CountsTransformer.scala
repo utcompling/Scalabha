@@ -79,7 +79,7 @@ case class ConstrainingCountsTransformer[B](validEntries: Set[B], delegate: Coun
   override def apply(counts: DefaultedFreqCounts[B, Double]) = {
     val DefaultedFreqCounts(resultCounts, totalAddition, defaultCount) = delegate(counts)
     val zeroCounts = DefaultedFreqCounts(resultCounts.mapValuesStrict(_ => 0.)) // a count for every B in validEntries
-    DefaultedFreqCounts(validEntries.mapTo(b => resultCounts.getOrElse(b, defaultCount)).toMap) ++ zeroCounts
+    DefaultedFreqCounts(validEntries.mapTo(b => resultCounts.getOrElse(b, defaultCount)).toMap) +++ zeroCounts
   }
 }
 

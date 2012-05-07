@@ -18,8 +18,8 @@ import scala.collection.GenTraversable
  * @tparam N	the Numeric type of the count
  */
 case class DefaultedFreqCounts[B, N: Numeric](val counts: Map[B, N], val totalAddition: N, val defaultCount: N) {
-  def ++(that: DefaultedFreqCounts[B, N]) = {
-    val countSum = (counts.iterator ++ that.counts).groupByKey.mapValuesStrict(_.sum)
+  def +++(that: DefaultedFreqCounts[B, N]) = {
+    val countSum = counts +++ that.counts
 
     if (totalAddition == implicitly[Numeric[N]].zero && defaultCount == implicitly[Numeric[N]].zero)
       new DefaultedFreqCounts(countSum, that.totalAddition, that.defaultCount)
@@ -52,8 +52,8 @@ object DefaultedFreqCounts {
  * @tparam N	the Numeric type of the count
  */
 class DefaultedCondFreqCounts[A, B, N: Numeric](val counts: Map[A, DefaultedFreqCounts[B, N]]) {
-  def ++(that: DefaultedCondFreqCounts[A, B, N]): DefaultedCondFreqCounts[A, B, N] = {
-    new DefaultedCondFreqCounts((counts.iterator ++ that.counts).groupByKey.mapValuesStrict(_.reduce(_ ++ _)))
+  def +++(that: DefaultedCondFreqCounts[A, B, N]): DefaultedCondFreqCounts[A, B, N] = {
+    new DefaultedCondFreqCounts((counts.iterator ++ that.counts).groupByKey.mapValuesStrict(_.reduce(_ +++ _)))
   }
 
   def simpleCounts = counts.mapValuesStrict(_.simpleCounts)

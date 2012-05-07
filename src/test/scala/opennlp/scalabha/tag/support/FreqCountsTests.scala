@@ -10,7 +10,7 @@ class FreqCountsTests {
     val f = FreqCounts(Map('A' -> 2))
     val g = FreqCounts(Map('B' -> 4))
     val h = FreqCounts(Map('A' -> 3))
-    val i = f ++ g ++ h
+    val i = f +++ g +++ h
     assertEquals(Map('B' -> 4, 'A' -> 5), i.toMap)
   }
 
@@ -19,7 +19,7 @@ class FreqCountsTests {
     val f = FreqCounts(Map('A' -> 2.2))
     val g = FreqCounts(Map('B' -> 4.4))
     val h = FreqCounts(Map('A' -> 3.0))
-    val i = f ++ g ++ h
+    val i = f +++ g +++ h
     assertEquals(Map('B' -> 4.4, 'A' -> 5.2), i.toMap)
   }
 

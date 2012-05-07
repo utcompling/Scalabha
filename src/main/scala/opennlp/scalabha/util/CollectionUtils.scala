@@ -538,7 +538,7 @@ object CollectionUtils {
      * @return a collection of pairs
      */
     def +++[That1 <: Traversable[(T, TraversableLike[S, Repr2])], That2](other: TraversableOnce[(T, TraversableLike[S, Repr2])])(implicit bf2: CanBuildFrom[Repr2, S, That2], bf1: CanBuildFrom[Repr1, (T, That2), That1]) = {
-      val grouped = (self ++ other).groupByKey
+      val grouped = (self.toIterator ++ other).groupByKey
       val b = bf1(grouped.asInstanceOf[Repr1])
       b.sizeHint(grouped.size)
       for ((k, vs) <- grouped) {
@@ -570,7 +570,7 @@ object CollectionUtils {
      * @return a collection of pairs
      */
     def +++[That <: Traversable[(T, U)]](other: TraversableOnce[(T, U)])(implicit bf: CanBuildFrom[Repr, (T, U), That]) = {
-      val grouped = (self ++ other).groupByKey
+      val grouped = (self.toIterator ++ other).groupByKey
       val b = bf(grouped.asInstanceOf[Repr])
       b.sizeHint(grouped.size)
       for ((k, vs) <- grouped) b += k -> vs.sum
