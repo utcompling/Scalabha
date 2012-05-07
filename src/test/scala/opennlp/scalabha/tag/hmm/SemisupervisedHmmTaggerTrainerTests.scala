@@ -19,22 +19,34 @@ class SemisupervisedHmmTaggerTrainerTests {
   val LOG = LogFactory.getLog(classOf[SemisupervisedHmmTaggerTrainerTests])
 
   @Test
-  def en_comparisonA() {
+  def en_smallTagDict() {
     val (tagDictTrain, labeledTrain) = TaggedFile("data/postag/english/entrain").splitAt(3000)
     val tagDict = new SimpleTagDictFactory().make(tagDictTrain)
-    val results = runUnsupervisedTrainingTest(tagDict, tagDictTrain)
+    val (semisupervisedResults, autosupervisedResults) = runUnsupervisedTrainingTest(tagDict, tagDictTrain)
     assertResultsEqual("""
-		Total:   91.15 (21829/23949)
-		Known:   96.63 (20745/21469)
-		Unknown: 43.71 (1084/2480)
+		Total:   83.81 (20071/23949)
+		Known:   93.34 (20040/21469)
+		Unknown: 1.25 (31/2480)
 		Common Mistakes:
 		#Err     Gold      Model
-		195      N        J
-		167      V        N
-		159      N        V
-		136      N        D
-		107      J        N
-    	""", results)
+		1359     N        .
+		393      V        .
+		341      J        .
+		246      V        N
+    	229      C        .
+    	""", semisupervisedResults)
+    assertResultsEqual("""
+		Total:   90.42 (21655/23949)
+		Known:   96.01 (20613/21469)
+		Unknown: 42.02 (1042/2480)
+		Common Mistakes:
+		#Err     Gold      Model
+		185      V        N
+		180      N        J
+		168      N        D
+		156      N        V
+		115      J        N
+    	""", autosupervisedResults)
   }
 
   private def runUnsupervisedTrainingTest(tagDict: TagDict[String, String], trainLab: Seq[IndexedSeq[(String, String)]]) = {
@@ -57,10 +69,24 @@ class SemisupervisedHmmTaggerTrainerTests {
         estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
-    val tagger = trainer.trainSemisupervised(tagDict, trainRaw, trainLab)
-    val output = tagger.tag(gold.map(_.map(_._1)))
-    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
-    results
+    val semisupervisedTagger = trainer.trainSemisupervised(tagDict, trainRaw, trainLab)
+    val output = semisupervisedTagger.tag(gold.map(_.map(_._1)))
+    val semisupervisedResults = new TaggerEvaluator().evaluate(output, gold, tagDict)
+
+    val supervisedTrainer: SupervisedTaggerTrainer[String, String] =
+      new SupervisedHmmTaggerTrainer(
+        transitionCountsTransformer =
+          new TransitionCountsTransformer(tagDict,
+            EisnerSmoothingCondCountsTransformer(1.)),
+        emissionCountsTransformer =
+          new EmissionCountsTransformer(
+            EisnerSmoothingCondCountsTransformer(1., AddLambdaSmoothingCountsTransformer(1.))))
+    val semisupervisedAutotagged = semisupervisedTagger.tag(trainRaw)
+    val autosupervisedTagger = supervisedTrainer.trainSupervised(semisupervisedAutotagged, tagDict)
+    val autosupervisedOutput = autosupervisedTagger.tag(gold.map(_.map(_._1)))
+    val autosupervisedResults = new TaggerEvaluator().evaluate(autosupervisedOutput, gold, tagDict)
+
+    (semisupervisedResults, autosupervisedResults)
   }
 
   object TaggedFile {
