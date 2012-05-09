@@ -32,13 +32,16 @@ case class HmmTagger[Sym, Tag](
    */
   override def tagSequence(sequence: IndexedSeq[Sym]): List[Tag] = {
     val viterbi = new Viterbi(new TagEdgeScorer[Sym, Tag] {
-      def apply(prevSym: Option[Sym], prevTag: Option[Tag], currSym: Option[Sym], currTag: Option[Tag]): LogNum = {
+      override def apply(prevSym: Option[Sym], prevTag: Option[Tag], currSym: Option[Sym], currTag: Option[Tag]): LogNum = {
         val t = transitions(prevTag)(currTag) // probability of transition to current
         val e = emissions(currTag)(currSym) // probability of observing current symbol
         t * e
       }
     })
-    viterbi.tagSequence(sequence, tagDict)
+    viterbi.tagSequence(sequence, tagDict) match {
+      case Some(tagging) => tagging
+      case None => throw new RuntimeException("No tagging found for '%s'".format(sequence.mkString(" ")))
+    }
   }
 
 }
