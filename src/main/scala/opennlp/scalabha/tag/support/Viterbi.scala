@@ -21,7 +21,7 @@ class Viterbi[Sym, Tag](edgeScorer: TagEdgeScorer[Sym, Tag]) {
    * @param sequence		sequence to be tagged
    * @param tagSet			set of all tags
    */
-  def tagSequence(sequence: IndexedSeq[Sym], tagSet: Set[Tag]): Option[List[Tag]] = {
+  def tagSequence(sequence: Seq[Sym], tagSet: Set[Tag]): Option[List[Tag]] = {
     val allTags = tagSet.map(Option(_)) + None
     tagSequence(sequence, tagSet, allTags.mapToVal(allTags).toMap)
   }
@@ -34,7 +34,7 @@ class Viterbi[Sym, Tag](edgeScorer: TagEdgeScorer[Sym, Tag]) {
    * @param tagSet			set of all tags
    * @param tagTransitions	valid tag-tag transitions
    */
-  def tagSequence(sequence: IndexedSeq[Sym], tagSet: Set[Tag], tagTransitions: Map[Option[Tag], Set[Option[Tag]]]): Option[List[Tag]] = {
+  def tagSequence(sequence: Seq[Sym], tagSet: Set[Tag], tagTransitions: Map[Option[Tag], Set[Option[Tag]]]): Option[List[Tag]] = {
     tagSequence(sequence, OptionalTagDict(SimpleTagDict(Map[Sym, Set[Tag]](), tagSet)), tagTransitions)
   }
 
@@ -46,7 +46,7 @@ class Viterbi[Sym, Tag](edgeScorer: TagEdgeScorer[Sym, Tag]) {
    * @param tagDict			tag dictionary indicating which words can be used with which tags
    * @param tagTransitions	valid tag-tag transitions
    */
-  def tagSequence(sequence: IndexedSeq[Sym], tagDict: OptionalTagDict[Sym, Tag]): Option[List[Tag]] = {
+  def tagSequence(sequence: Seq[Sym], tagDict: OptionalTagDict[Sym, Tag]): Option[List[Tag]] = {
     val allTags = tagDict.allTags + None
     tagSequence(sequence, tagDict, allTags.mapToVal(allTags).toMap)
   }
@@ -58,7 +58,7 @@ class Viterbi[Sym, Tag](edgeScorer: TagEdgeScorer[Sym, Tag]) {
    * @param tagDict			tag dictionary indicating which words can be used with which tags
    * @param tagTransitions	valid tag-tag transitions
    */
-  def tagSequence(sequence: IndexedSeq[Sym], tagDict: OptionalTagDict[Sym, Tag], tagTransitions: Map[Option[Tag], Set[Option[Tag]]]): Option[List[Tag]] = {
+  def tagSequence(sequence: Seq[Sym], tagDict: OptionalTagDict[Sym, Tag], tagTransitions: Map[Option[Tag], Set[Option[Tag]]]): Option[List[Tag]] = {
     // viterbi(t)(j) = the probability of the most likely subsequence of states 
     // that accounts for the first t observations and ends in state j.
 
