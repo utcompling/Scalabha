@@ -1,7 +1,6 @@
 package opennlp.scalabha.tag.support
 
 import opennlp.scalabha.util.CollectionUtils._
-import opennlp.scalabha.util.Pattern._
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
 import collection.{ Map => CMap }

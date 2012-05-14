@@ -30,6 +30,10 @@ object Pattern {
     def unapplySeq[A, B](m: Map[A, B]): Option[Seq[(A, B)]] = Some(m.toList)
   }
 
+  object Set {
+    def unapplySeq[A](s: Set[A]): Option[Seq[A]] = Some(s.toList)
+  }
+
   object -> {
     def unapply[A, B](pair: (A, B)): Option[(A, B)] = {
       Some(pair)
