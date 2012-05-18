@@ -1,6 +1,7 @@
 package opennlp.scalabha.tag.support
 
 import opennlp.scalabha.util.LogNum
+import opennlp.scalabha.util.LogNum._
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.Pattern.{ +:, :+ }
 import scala.annotation.tailrec
@@ -97,7 +98,7 @@ object MultinomialFreqDist {
   }
 
   def main(args: Array[String]) {
-    val probs = Map('N -> .4, 'V -> .3, 'D -> .2).mapValuesStrict(LogNum.apply)
+    val probs = Map('N -> .4, 'V -> .3, 'D -> .2).mapValuesStrict(_.toLogNum)
     val dist = new MultinomialFreqDist(probs)
     println(dist.sample)
     println((1 to 100000).map(_ => dist.sample).counts.normalizeValues)

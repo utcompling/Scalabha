@@ -53,7 +53,7 @@ final class LogNum(val logValue: Double) extends Ordered[LogNum] {
 
 object LogNum {
 
-  def apply(d: Double) = new LogNum(math.log(d))
+  def apply[N: Numeric](n: N) = new LogNum(math.log(implicitly[Numeric[N]].toDouble(n)))
 
   val zero = new LogNum(Double.NegativeInfinity)
   val one = new LogNum(0.0)
@@ -62,8 +62,8 @@ object LogNum {
     override def compare(a: LogNum, b: LogNum) = a compare b
   }
 
-  class EnrichedNumeric[N](self: N)(implicit num: Numeric[N]) {
-    def toLogNum = LogNum(num.toDouble(self))
+  class EnrichedNumeric[N: Numeric](self: N) {
+    def toLogNum = LogNum(self)
   }
   implicit def enrichNumeric[N: Numeric](self: N) = new EnrichedNumeric(self)
 
