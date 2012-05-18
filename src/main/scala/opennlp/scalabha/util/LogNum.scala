@@ -65,7 +65,7 @@ object LogNum {
   class EnrichedNumeric[N](self: N)(implicit num: Numeric[N]) {
     def toLogNum = LogNum(num.toDouble(self))
   }
-  implicit def enrichNumeric(self: Double) = new EnrichedNumeric(self)
+  implicit def enrichNumeric[N: Numeric](self: N) = new EnrichedNumeric(self)
 
   trait LogNumIsFractional extends Fractional[LogNum] {
     def plus(x: LogNum, y: LogNum): LogNum = x + y

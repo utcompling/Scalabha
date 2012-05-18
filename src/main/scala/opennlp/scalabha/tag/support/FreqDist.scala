@@ -23,6 +23,20 @@ object FreqDist {
   def static[B](v: LogNum): MultinomialFreqDist[B] = new MultinomialFreqDist[B](Map(), v)
 
   /**
+   * Construct a frequency distribution from the counts.  Calculates
+   * the distribution by dividing each count by the total count.
+   * P(B) = C(B) / Sum[C(x) for all x].
+   *
+   * Note that if the total count is zero, the distribution
+   * returned is simply the empty distribution.
+   *
+   * @tparam B	the item being counted
+   */
+  def apply[B, N: Numeric](counts: Map[B, N]): MultinomialFreqDist[B] = {
+    apply(DefaultedFreqCounts(counts))
+  }
+
+  /**
    * Construct a frequency distribution from the counter result.  Calculates
    * the distribution by dividing each count by the total count.
    * P(B) = C(B) / Sum[C(x) for all x].
@@ -37,15 +51,15 @@ object FreqDist {
    *
    * @tparam B	the item being counted
    */
-  def apply[B](resultCounts: DefaultedFreqCounts[B, Double]): MultinomialFreqDist[B] = {
+  def apply[B, N](resultCounts: DefaultedFreqCounts[B, N])(implicit num: Numeric[N]): MultinomialFreqDist[B] = {
     val DefaultedFreqCounts(counts, totalAddition, defaultCount) = resultCounts
-    val total = counts.toMap.values.sum + totalAddition
-    if (total == 0)
+    val total = num.plus(counts.values.sum, totalAddition)
+    if (total == num.zero)
       FreqDist.empty[B]
     else
       new MultinomialFreqDist(
-        counts.toMap.mapValuesStrict(count => (count / total).toLogNum),
-        (defaultCount / total).toLogNum)
+        counts.mapValuesStrict(_.toLogNum).normalizeValues,
+        defaultCount.toLogNum / total.toLogNum)
   }
 }
 
@@ -60,13 +74,13 @@ object CondFreqDist {
    * Return an "empty" frequency distribution: a function that maps
    * everything to the zero-probability.  P(B|A) = 0 for all A,B.
    */
-  def empty[A,B]: A => MultinomialFreqDist[B] = static(LogNum.zero)
+  def empty[A, B]: A => MultinomialFreqDist[B] = static(LogNum.zero)
 
   /**
    * Return a "static" frequency distribution: a function that maps
    * everything to the same probability.  P(B|A) = v for all A,B.
    */
-  def static[A,B](v: LogNum): A => MultinomialFreqDist[B] = (_: Any) => FreqDist.static(v)
+  def static[A, B](v: LogNum): A => MultinomialFreqDist[B] = (_: Any) => FreqDist.static(v)
 
   /**
    * Construct a frequency distribution from the counter result. Calculates
@@ -88,7 +102,7 @@ object CondFreqDist {
    * @tparam A	the conditioning item being counted; P(B|A).
    * @tparam B	the conditioned item being counted; P(B|A).
    */
-  def apply[A, B](resultCounts: DefaultedCondFreqCounts[A, B, Double]): A => MultinomialFreqDist[B] = {
+  def apply[A, B, N: Numeric](resultCounts: DefaultedCondFreqCounts[A, B, N]): A => MultinomialFreqDist[B] = {
     resultCounts.counts.mapValuesStrict(FreqDist(_)).withDefaultValue(FreqDist.empty)
   }
 }
