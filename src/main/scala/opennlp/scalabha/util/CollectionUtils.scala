@@ -884,7 +884,7 @@ object CollectionUtils {
     def normalizeValues[That](implicit num: Fractional[U], bf: CanBuildFrom[Repr, (T, U), That]) = {
       val b = bf(self.asInstanceOf[Repr])
       b.sizeHint(self.size)
-      val total = self.map(_._2).sum
+      val total = self.toIterator.map(_._2).sum
       for ((k, v) <- self) b += k -> num.div(v, total)
       b.result
     }
@@ -900,7 +900,7 @@ object CollectionUtils {
     def normalizeValues[That](implicit bf: CanBuildFrom[Repr, (T, Double), That]) = {
       val b = bf(self.asInstanceOf[Repr])
       b.sizeHint(self.size)
-      val total = self.map(_._2).sum.toDouble
+      val total = self.toIterator.map(_._2).sum.toDouble
       for ((k, v) <- self) b += k -> (v / total)
       b.result
     }
