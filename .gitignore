@@ -1,3 +1,7 @@
 lib_managed/
 project/
 target/
+.project
+.classpath
+.cache
+
