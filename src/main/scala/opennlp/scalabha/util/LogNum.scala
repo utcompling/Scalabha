@@ -1,14 +1,14 @@
 package opennlp.scalabha.util
 
 /**
- * This Numeric class represents values using logarithms.  The underlying 
+ * This Numeric class represents values using logarithms.  The underlying
  * logarithmic representation is completely hidden from the calling code.
  *
  * This class exists to allow for the use of obvious operators (* for
  * multiplication instead of + on logarithms) and to prevent coding mistakes
  * resulting from the inadvertent mixing of logarithmic and non-logarithmic
- * Double representations of probabilities.  Additionally, it is possible to 
- * use the `sum` and `product` collection methods on collections of 
+ * Double representations of probabilities.  Additionally, it is possible to
+ * use the `sum` and `product` collection methods on collections of
  * Probabilities, and get the expected results.
  *
  * All to* methods return the (non-logarithmic) value stored.  The only
@@ -33,10 +33,10 @@ final class LogNum(val logValue: Double) extends Ordered[LogNum] {
     case _ => false
   }
   override def hashCode(): Int = toDouble ##
-  
+
   override def compare(that: LogNum) = logValue.compare(that.logValue)
   def approx(o: LogNum, tolerance: Double): Boolean = {
-    if(this == LogNum.zero && o == LogNum.zero)
+    if (this == LogNum.zero && o == LogNum.zero)
       true
     else
       (logValue - o.logValue).abs < tolerance
@@ -47,7 +47,7 @@ final class LogNum(val logValue: Double) extends Ordered[LogNum] {
   def toLong = toDouble.toLong
   def toFloat = toDouble.toFloat
   def toDouble = math.exp(logValue)
-  
+
   override def toString = "LogNum(%s)".format(toDouble)
 }
 
@@ -78,6 +78,8 @@ object LogNum {
     def toLong(x: LogNum): Long = x.toLong
     def toFloat(x: LogNum): Float = x.toFloat
     def toDouble(x: LogNum): Double = x.toDouble
+    override def zero = LogNum.zero
+    override def one = LogNum.one
   }
 
   implicit object LogNumIsFractional extends LogNumIsFractional with LogNumOrdering
