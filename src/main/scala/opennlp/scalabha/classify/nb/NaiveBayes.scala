@@ -21,21 +21,20 @@ case class NaiveBayesClassifier[L, T](
   val featureProb: L => T => LogNum,
   val labels: Set[L]) extends Classifier[L, T] {
 
-  val uniformProbs = List.fill(labels.size)(LogNum.one / LogNum(labels.size))
+  val uniformProbs = labels.mapToVal(LogNum.one).normalizeValues
 
   override def classify(document: Instance[T]): Iterable[(L, LogNum)] = {
-    val unnormalizedScores = labels.toList.map { label =>
+    val unnormalizedScores = labels.mapTo { label =>
       val prior = priorProb(label)
       val features = document.allFeatures
       val featuresProb = features.map(featureProb(label)(_)).product
       prior * featuresProb
     }
-    val logprobOfDoc = unnormalizedScores.reduce(_ + _)
-    val logprobs =
-      if (logprobOfDoc == LogNum.zero) uniformProbs
-      else unnormalizedScores.map(_ / logprobOfDoc)
+    
+    val probOfDoc = unnormalizedScores.sumBy(_._2)
 
-    labels.zip(logprobs)
+    if (probOfDoc == LogNum.zero) uniformProbs
+    else unnormalizedScores.normalizeValues
   }
 }
 
