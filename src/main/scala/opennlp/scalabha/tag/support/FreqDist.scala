@@ -56,10 +56,12 @@ object FreqDist {
     val total = num.plus(counts.values.sum, totalAddition)
     if (total == num.zero)
       FreqDist.empty[B]
-    else
+    else {
+      val logTotal = total.toLogNum
       new MultinomialFreqDist(
-        counts.mapValuesStrict(_.toLogNum).normalizeValues,
-        defaultCount.toLogNum / total.toLogNum)
+        counts.mapValuesStrict(_.toLogNum / logTotal),
+        defaultCount.toLogNum / logTotal)
+    }
   }
 }
 

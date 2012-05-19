@@ -82,7 +82,7 @@ case class ConstrainingCondCountsTransformer[A, B](validEntries: Map[A, Set[B]],
     val allBs = (validEntries.values.flatten ++ resultCounts.counts.values.flatMap(_.counts.keySet)).toSet
     val zeroCountBs = allBs.mapToVal(0.)
     DefaultedCondFreqCounts(
-      delegate(counts).counts.map {
+      resultCounts.counts.map {
         case (a, DefaultedFreqCounts(aCounts, aTotalAddition, aDefaultCount)) =>
           validEntries.get(a) match {
             case Some(validBs) =>
