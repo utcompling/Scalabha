@@ -31,8 +31,8 @@ class MultinomialFreqDist[T](dist: Map[T, LogNum], default: LogNum = LogNum.zero
   def iterator = dist.iterator
 
   override def sample(): T = {
-    sampler.find(LogNum(random.nextDouble) * lastSampleKey).get
-    //Stream.continually(sampler.find(LogNum(random.nextDouble) * lastSampleKey)).find(_.isDefined).get.get
+    sampler.find(random.nextDouble * lastSampleKey).get
+    //Stream.continually(sampler.find(random.nextDouble * lastSampleKey)).find(_.isDefined).get.get
   }
 
 }

@@ -59,8 +59,8 @@ object FreqDist {
     else {
       val logTotal = total.toLogNum
       new MultinomialFreqDist(
-        counts.mapValuesStrict(_.toLogNum / logTotal),
-        defaultCount.toLogNum / logTotal)
+        counts.mapValuesStrict(_ / logTotal),
+        defaultCount / logTotal)
     }
   }
 }
