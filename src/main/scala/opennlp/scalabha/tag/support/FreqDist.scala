@@ -85,6 +85,22 @@ object CondFreqDist {
   def static[A, B](v: LogNum): A => MultinomialFreqDist[B] = (_: Any) => FreqDist.static(v)
 
   /**
+   * Construct a frequency distribution from the counts. Calculates
+   * the distribution for each entry by dividing each count by the total
+   * count for that entry.
+   * P(B|A) = For each A: C(B|A) / Sum[C(x|A) for all x].
+   *
+   * Note that if the total for a given 'A' is zero, then
+   * that 'A' will map to the empty distribution.
+   *
+   * @tparam A	the conditioning item being counted; P(B|A).
+   * @tparam B	the conditioned item being counted; P(B|A).
+   */
+  def apply[A, B, N: Numeric](counts: Map[A, Map[B, N]]): A => MultinomialFreqDist[B] = {
+    apply(DefaultedCondFreqCounts(counts))
+  }
+
+  /**
    * Construct a frequency distribution from the counter result. Calculates
    * the distribution for each entry by dividing each count by the total
    * count for that entry.
@@ -97,9 +113,7 @@ object CondFreqDist {
    * the count for "unseen" items, those items not included in the counts.
    *
    * Note that if the total for a given 'A' (after additions) is zero, then
-   * that 'A' will map to the empty distribution.  If the grand total
-   * (including additions from the top level and all 'A' entries) is zero,
-   * then the empty conditional distribution is returned.
+   * that 'A' will map to the empty distribution.
    *
    * @tparam A	the conditioning item being counted; P(B|A).
    * @tparam B	the conditioned item being counted; P(B|A).
