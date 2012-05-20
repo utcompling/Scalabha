@@ -461,27 +461,16 @@ object CollectionUtils {
   //   - Map each distinct item in the collection to the number of times it appears.
   //////////////////////////////////////////////////////
 
-  class Enriched_counts_TraversableLike[A, Repr <: Traversable[A]](self: TraversableLike[A, Repr]) {
+  class Enriched_counts_GenTraversableOnce[A](self: GenTraversableOnce[A]) {
     /**
      * Map each distinct item in the collection to the number of times it appears.
      *
      * @return Map from items to their counts
      */
     def counts(): Map[A, Int] =
-      self.groupBy(identity).mapValuesStrict(_.size)
+      self.toIterator.groupBy(identity).mapValuesStrict(_.size)
   }
-  implicit def enrich_counts_TraversableLike[A, Repr <: Traversable[A]](self: TraversableLike[A, Repr]) = new Enriched_counts_TraversableLike[A, Repr](self)
-
-  class Enriched_counts_Iterator[A](self: Iterator[A]) {
-    /**
-     * Map each distinct item in the collection to the number of times it appears.
-     *
-     * @return Map from items to their counts
-     */
-    def counts(): Map[A, Int] =
-      self.groupBy(identity).mapValuesStrict(_.size)
-  }
-  implicit def enrich_counts_Iterator[A](self: Iterator[A]) = new Enriched_counts_Iterator(self)
+  implicit def enrich_counts_GenTraversableOnce[A](self: GenTraversableOnce[A]) = new Enriched_counts_GenTraversableOnce[A](self)
 
   //////////////////////////////////////////////////////
   // groupByKey(): Map[T,Repr[U]]
