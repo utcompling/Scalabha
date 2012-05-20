@@ -15,6 +15,7 @@ class LogNumTests {
     val d = 2.toLogNum
 
     assertEqualsLog(b, d + a)
+    assertEqualsLog(d, b - a)
     assertEqualsLog(c, d * a)
     assertEqualsLog(d, c / a)
 
@@ -22,6 +23,10 @@ class LogNumTests {
     assertEqualsLog(b, 2L + a)
     assertEqualsLog(b, 2f + a)
     assertEqualsLog(b, 2.0 + a)
+    assertEqualsLog(d, 5 - a)
+    assertEqualsLog(d, 5L - a)
+    assertEqualsLog(d, 5f - a)
+    assertEqualsLog(d, 5.0 - a)
     assertEqualsLog(c, 2 * a)
     assertEqualsLog(c, 2L * a)
     assertEqualsLog(c, 2f * a)
@@ -35,6 +40,10 @@ class LogNumTests {
     assertEqualsLog(b, a + 2L)
     assertEqualsLog(b, a + 2f)
     assertEqualsLog(b, a + 2.0)
+    assertEqualsLog(a, b - 2)
+    assertEqualsLog(a, b - 2L)
+    assertEqualsLog(a, b - 2f)
+    assertEqualsLog(a, b - 2.0)
     assertEqualsLog(c, a * 2)
     assertEqualsLog(c, a * 2L)
     assertEqualsLog(c, a * 2f)

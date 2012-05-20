@@ -1,5 +1,7 @@
 package opennlp.scalabha.util
 
+import math._
+
 /**
  * This Numeric class represents values using logarithms.  The underlying
  * logarithmic representation is completely hidden from the calling code.
@@ -22,9 +24,18 @@ final class LogNum(val logValue: Double) extends Ordered[LogNum] {
     else if (o.logValue == Double.NegativeInfinity)
       this
     else if (logValue > o.logValue)
-      new LogNum(logValue + math.log(1 + math.exp(o.logValue - logValue)))
+      new LogNum(logValue + log1p(exp(o.logValue - logValue)))
     else
-      new LogNum(o.logValue + math.log(1 + math.exp(logValue - o.logValue)))
+      new LogNum(o.logValue + log1p(exp(logValue - o.logValue)))
+  }
+  def -[N: Numeric](other: N): LogNum = {
+    val o = LogNum(other)
+    if (this < o)
+      sys.error("subtraction results in a negative LogNum")
+    else if (o == LogNum.zero)
+      this
+    else
+      new LogNum(logValue + log1p(-exp(o.logValue - logValue)))
   }
   def *[N: Numeric](o: N): LogNum = new LogNum(logValue + LogNum(o).logValue)
   def /[N: Numeric](o: N): LogNum = new LogNum(logValue - LogNum(o).logValue)
@@ -47,7 +58,7 @@ final class LogNum(val logValue: Double) extends Ordered[LogNum] {
   def toInt = toDouble.toInt
   def toLong = toDouble.toLong
   def toFloat = toDouble.toFloat
-  def toDouble = math.exp(logValue)
+  def toDouble = exp(logValue)
 
   override def toString = "LogNum(%s)".format(toDouble)
 }
@@ -57,7 +68,7 @@ object LogNum {
   def apply[N: Numeric](n: N) = {
     n match {
       case logNum: LogNum => logNum
-      case _ => new LogNum(math.log(implicitly[Numeric[N]].toDouble(n)))
+      case _ => new LogNum(log(implicitly[Numeric[N]].toDouble(n)))
     }
   }
 
@@ -72,7 +83,7 @@ object LogNum {
 
   trait LogNumIsFractional extends Fractional[LogNum] {
     def plus(x: LogNum, y: LogNum): LogNum = x + y
-    def minus(x: LogNum, y: LogNum): LogNum = sys.error("not implemented")
+    def minus(x: LogNum, y: LogNum): LogNum = x - y
     def times(x: LogNum, y: LogNum): LogNum = x * y
     def div(x: LogNum, y: LogNum): LogNum = x / y
     def negate(x: LogNum): LogNum = sys.error("LogNum values cannot be negated")
@@ -88,6 +99,7 @@ object LogNum {
   class EnrichedNumeric[N: Numeric](self: N) {
     def toLogNum = LogNum(self)
     def +(n: LogNum) = toLogNum + n
+    def -(n: LogNum) = toLogNum - n
     def *(n: LogNum) = toLogNum * n
     def /(n: LogNum) = toLogNum / n
   }
