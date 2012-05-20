@@ -17,27 +17,30 @@ import org.apache.commons.logging.LogFactory
 class MultinomialFreqDist[T](dist: Map[T, LogNum], default: LogNum = LogNum.zero) extends Distribution[T] {
   private val LOG = LogFactory.getLog(MultinomialFreqDist.getClass)
 
-  lazy val sampler =
+  protected lazy val sampler =
     RedBlackTree(
       dist.toList
         .scanLeft((None: Option[T], LogNum.zero)) { case ((ta, tb), (xa, xb)) => (Some(xa), tb + xb) }
         .collect { case (Some(x), p) => (x, p) }
         .map(_.swap): _*)
-  lazy val lastSampleKey = sampler.tree.last
+  protected lazy val lastSampleKey = sampler.tree.last
 
-  lazy val random = new Random
+  protected lazy val random = new Random
 
   override def apply(key: T) = dist.getOrElse(key, default)
   def iterator = dist.iterator
 
   override def sample(): T = {
     sampler.find(random.nextDouble * lastSampleKey).get
-    //Stream.continually(sampler.find(random.nextDouble * lastSampleKey)).find(_.isDefined).get.get
   }
 
 }
 
 object MultinomialFreqDist {
+  def apply[T](dist: Map[T, LogNum], default: LogNum = LogNum.zero) = {
+    new MultinomialFreqDist[T](dist, default)
+  }
+
   object RedBlackTree {
     def apply[A, B](items: (A, B)*)(implicit ord: Ordering[A]) = {
       val redBlack = new TreeMap[A, B] ++ items
