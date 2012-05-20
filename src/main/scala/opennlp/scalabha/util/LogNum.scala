@@ -15,7 +15,8 @@ package opennlp.scalabha.util
  * way to access the actual logarithmic value is by the 'logValue' field.
  */
 final class LogNum(val logValue: Double) extends Ordered[LogNum] {
-  def +(o: LogNum): LogNum = {
+  def +[N: Numeric](other: N): LogNum = {
+    val o = LogNum(other)
     if (logValue == Double.NegativeInfinity)
       o
     else if (o.logValue == Double.NegativeInfinity)
@@ -25,8 +26,8 @@ final class LogNum(val logValue: Double) extends Ordered[LogNum] {
     else
       new LogNum(o.logValue + math.log(1 + math.exp(logValue - o.logValue)))
   }
-  def *(o: LogNum): LogNum = new LogNum(logValue + o.logValue)
-  def /(o: LogNum): LogNum = new LogNum(logValue - o.logValue)
+  def *[N: Numeric](o: N): LogNum = new LogNum(logValue + LogNum(o).logValue)
+  def /[N: Numeric](o: N): LogNum = new LogNum(logValue - LogNum(o).logValue)
 
   override def equals(o: Any): Boolean = o match {
     case o: LogNum => logValue == o.logValue
@@ -53,7 +54,12 @@ final class LogNum(val logValue: Double) extends Ordered[LogNum] {
 
 object LogNum {
 
-  def apply[N: Numeric](n: N) = new LogNum(math.log(implicitly[Numeric[N]].toDouble(n)))
+  def apply[N: Numeric](n: N) = {
+    n match {
+      case logNum: LogNum => logNum
+      case _ => new LogNum(math.log(implicitly[Numeric[N]].toDouble(n)))
+    }
+  }
 
   val zero = new LogNum(Double.NegativeInfinity)
   val one = new LogNum(0.0)
@@ -62,10 +68,7 @@ object LogNum {
     override def compare(a: LogNum, b: LogNum) = a compare b
   }
 
-  class EnrichedNumeric[N: Numeric](self: N) {
-    def toLogNum = LogNum(self)
-  }
-  implicit def enrichNumeric[N: Numeric](self: N) = new EnrichedNumeric(self)
+  implicit object LogNumIsFractional extends LogNumIsFractional with LogNumOrdering
 
   trait LogNumIsFractional extends Fractional[LogNum] {
     def plus(x: LogNum, y: LogNum): LogNum = x + y
@@ -73,7 +76,7 @@ object LogNum {
     def times(x: LogNum, y: LogNum): LogNum = x * y
     def div(x: LogNum, y: LogNum): LogNum = x / y
     def negate(x: LogNum): LogNum = sys.error("LogNum values cannot be negated")
-    def fromInt(x: Int): LogNum = x.toDouble.toLogNum
+    def fromInt(x: Int): LogNum = LogNum(x)
     def toInt(x: LogNum): Int = x.toInt
     def toLong(x: LogNum): Long = x.toLong
     def toFloat(x: LogNum): Float = x.toFloat
@@ -82,6 +85,12 @@ object LogNum {
     override def one = LogNum.one
   }
 
-  implicit object LogNumIsFractional extends LogNumIsFractional with LogNumOrdering
+  class EnrichedNumeric[N: Numeric](self: N) {
+    def toLogNum = LogNum(self)
+    def +(n: LogNum) = toLogNum + n
+    def *(n: LogNum) = toLogNum * n
+    def /(n: LogNum) = toLogNum / n
+  }
+  implicit def enrichNumeric[N: Numeric](self: N) = new EnrichedNumeric(self)
 
 }
