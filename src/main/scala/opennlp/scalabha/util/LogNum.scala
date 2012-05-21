@@ -39,6 +39,7 @@ final class LogNum(val logValue: Double) extends Ordered[LogNum] {
   }
   def *[N: Numeric](o: N): LogNum = new LogNum(logValue + LogNum(o).logValue)
   def /[N: Numeric](o: N): LogNum = new LogNum(logValue - LogNum(o).logValue)
+  def **[N: Numeric](pow: N): LogNum = new LogNum(implicitly[Numeric[N]].toDouble(pow) * logValue)
 
   override def equals(o: Any): Boolean = o match {
     case o: LogNum => logValue == o.logValue
@@ -102,7 +103,11 @@ object LogNum {
     def -(n: LogNum) = toLogNum - n
     def *(n: LogNum) = toLogNum * n
     def /(n: LogNum) = toLogNum / n
+    def **(n: LogNum) = toLogNum ** n
   }
   implicit def enrichNumeric[N: Numeric](self: N) = new EnrichedNumeric(self)
+
+  def pow[N: Numeric](n: LogNum, pow: N): LogNum = n ** pow
+  def pow[N: Numeric](n: N, pow: LogNum): LogNum = n ** pow
 
 }
