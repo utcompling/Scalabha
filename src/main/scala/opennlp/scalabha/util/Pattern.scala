@@ -60,16 +60,26 @@ object Pattern {
 
   object +: {
     def unapply[T](s: Iterable[T]): Option[(T, Iterable[T])] =
-      if (s.size >= 1) {
-        val itr = s.iterator
-        Some(itr.next, new Iterable[T] { def iterator = itr })
-      }
+      if (s.size >= 1) 
+        Some(s.head, s.tail)
+      else
+        None
+
+    def unapply[T](s: Array[T]): Option[(T, Array[T])] =
+      if (s.size >= 1)
+        Some(s.head, s.tail)
       else
         None
   }
 
   object :+ {
     def unapply[T](s: Iterable[T]): Option[(Iterable[T], T)] =
+      if (s.size >= 1)
+        Some(s.dropRight(1), s.last)
+      else
+        None
+
+    def unapply[T](s: Array[T]): Option[(Array[T], T)] =
       if (s.size >= 1)
         Some(s.dropRight(1), s.last)
       else

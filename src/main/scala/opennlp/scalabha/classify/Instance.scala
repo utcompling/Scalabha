@@ -1,6 +1,7 @@
 package opennlp.scalabha.classify
 
 import scala.io.Source
+import opennlp.scalabha.util.Pattern.{ :+ }
 
 /**
  * Trait for instances with attributes and feature values
@@ -41,8 +42,7 @@ class CsvLabeledInstanceSource(inputSource: Source)
   def getLabeledInstances = {
     inputSource.getLines.map { line =>
       val atts = line.split(",")
-      val label = atts.last
-      val features = atts.dropRight(1)
+      val features :+ label = atts
       (label, new DefaultInstance(features))
     }
   }

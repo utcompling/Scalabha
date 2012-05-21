@@ -24,17 +24,19 @@ case class NaiveBayesClassifier[L, T](
   val uniformProbs = labels.mapToVal(LogNum.one).normalizeValues
 
   override def classify(document: Instance[T]): Iterable[(L, LogNum)] = {
+    val features = document.allFeatures
     val unnormalizedScores = labels.mapTo { label =>
       val prior = priorProb(label)
-      val features = document.allFeatures
-      val featuresProb = features.map(featureProb(label)(_)).product
+      val featuresProb = features.map(featureProb(label)).product
       prior * featuresProb
     }
-    
+
     val probOfDoc = unnormalizedScores.sumBy(_._2)
 
-    if (probOfDoc == LogNum.zero) uniformProbs
-    else unnormalizedScores.normalizeValues
+    if (probOfDoc == LogNum.zero)
+      uniformProbs
+    else
+      unnormalizedScores.normalizeValues
   }
 }
 
@@ -54,12 +56,10 @@ case class OnlineNaiveBayesClassifierTrainer[L, T](val lambda: Double)
     else
       AddLambdaSmoothingCondCountsTransformer[L, T](lambda)
 
-  val labels = mutable.Set.empty[L]
   val labelDocCounter = mutable.Map[L, Int]().withDefaultValue(0)
   val labelFeatureCounter = mutable.Map[L, mutable.Map[T, Int]]()
 
   def reset {
-    labels.clear
     labelDocCounter.clear
     labelFeatureCounter.clear
   }
@@ -75,13 +75,15 @@ case class OnlineNaiveBayesClassifierTrainer[L, T](val lambda: Double)
               label,
               mutable.Map[T, Int]().withDefaultValue(0))(feature) += count
         }
-        labels += label
       }
     }
 
     val labelDocDist = FreqDist(labelDocCountsTransformer(labelDocCounter))
     val labelFeatDist =
       CondFreqDist(labelFeatureCountsTransformer(labelFeatureCounter))
-    NaiveBayesClassifier[L, T](labelDocDist, labelFeatDist, labels.toSet)
+    NaiveBayesClassifier[L, T](
+        labelDocDist, 
+        labelFeatDist, 
+        labelDocCounter.keys.toSet)
   }
 }
