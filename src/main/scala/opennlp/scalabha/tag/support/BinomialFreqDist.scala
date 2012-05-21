@@ -15,6 +15,7 @@ class BinomialFreqDist[T](label0: T, label1: T, firstProb: LogNum)
       label1
   }
 
+  override def toString = "BinomialFreqDist(%s, %s, %s)".format(label0, label1, firstProb.toDouble)
 }
 
 object BinomialFreqDist {

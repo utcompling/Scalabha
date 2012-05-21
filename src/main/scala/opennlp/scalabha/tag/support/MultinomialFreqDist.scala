@@ -34,6 +34,7 @@ class MultinomialFreqDist[T](dist: Map[T, LogNum], default: LogNum = LogNum.zero
     sampler.find(random.nextDouble * lastSampleKey).get
   }
 
+  override def toString = "MultinomialFreqDist(%s)".format(dist)
 }
 
 object MultinomialFreqDist {
