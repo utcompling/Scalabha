@@ -38,7 +38,7 @@ class Ngram[T](cfd: Seq[Option[T]] => MultinomialFreqDist[Option[T]], n: Int) {
 
 class NgramTrainer[T](
   n: Int,
-  countsTransformer: CondCountsTransformer[Iterable[Option[T]], Option[T]]) {
+  countsTransformer: CondCountsTransformer[Seq[Option[T]], Option[T]]) {
 
   def train(sentences: TraversableOnce[Seq[T]]) = {
     new Ngram(CondFreqDist(
@@ -60,8 +60,8 @@ object Ngram {
   def main(args: Array[String]) {
 
     val N = 2
-    val countsTransformer = PassthroughCondCountsTransformer[Iterable[Option[String]], Option[String]]()
-    //val countsTransformer = AddLambdaSmoothingCondCountsTransformer[Iterable[Option[String]], Option[String]](0.01)
+    val countsTransformer = PassthroughCondCountsTransformer[Seq[Option[String]], Option[String]]()
+    //val countsTransformer = AddLambdaSmoothingCondCountsTransformer[Seq[Option[String]], Option[String]](0.01)
     val trainer = new NgramTrainer(N, countsTransformer)
 
     val filename = "data/postag/english/enraw20k"

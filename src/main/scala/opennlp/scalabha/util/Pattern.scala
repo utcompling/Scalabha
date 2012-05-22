@@ -1,30 +1,26 @@
 package opennlp.scalabha.util
+import scala.collection.generic.CanBuildFrom
 
 object Pattern {
 
   object UnapplyInt {
     def x = 1
     val IntRE = """^(\d+)$""".r
-    def unapply(v: Any): Option[Int] = v match {
-      case i: Int => Some(i)
+    def unapply(v: String): Option[Int] = v match {
       case IntRE(s) => Some(s.toInt)
       case _ => None
     }
   }
-//  implicit def int2unapplyInt(objA: Int.type) = UnapplyInt
+  //  implicit def int2unapplyInt(objA: Int.type) = UnapplyInt
 
   object UnapplyDouble {
     val DoubleRE = """^(\d+\.?\d*|\d*\.?\d+)$""".r
-    def unapply(v: Any): Option[Double] = v match {
-      case i: Int => Some(i)
-      case l: Long => Some(l)
-      case f: Float => Some(f)
-      case d: Double => Some(d)
+    def unapply(v: String): Option[Double] = v match {
       case DoubleRE(s) => Some(s.toDouble)
       case _ => None
     }
   }
-//  implicit def double2unapplyDouble(objA: Double.type) = UnapplyDouble
+  //  implicit def double2unapplyDouble(objA: Double.type) = UnapplyDouble
 
   object Map {
     def unapplySeq[A, B](m: Map[A, B]): Option[Seq[(A, B)]] = Some(m.toList)
@@ -59,31 +55,27 @@ object Pattern {
   }
 
   object +: {
-    def unapply[T](s: Iterable[T]): Option[(T, Iterable[T])] =
-      if (s.size >= 1) 
-        Some(s.head, s.tail)
+    def unapply[CC, A, That](seq: CC)(implicit asSeq: CC => Seq[A], cbf: CanBuildFrom[CC, A, That]): Option[(A, That)] = {
+      if (seq.size >= 1) {
+        val b = cbf(seq)
+        b ++= seq.tail
+        Some(seq.head, b.result)
+      }
       else
         None
-
-    def unapply[T](s: Array[T]): Option[(T, Array[T])] =
-      if (s.size >= 1)
-        Some(s.head, s.tail)
-      else
-        None
+    }
   }
 
   object :+ {
-    def unapply[T](s: Iterable[T]): Option[(Iterable[T], T)] =
-      if (s.size >= 1)
-        Some(s.dropRight(1), s.last)
+    def unapply[CC, A, That](seq: CC)(implicit asSeq: CC => Seq[A], cbf: CanBuildFrom[CC, A, That]): Option[(That, A)] = {
+      if (seq.size >= 1) {
+        val b = cbf(seq)
+        b ++= seq.dropRight(1)
+        Some(b.result, seq.last)
+      }
       else
         None
-
-    def unapply[T](s: Array[T]): Option[(Array[T], T)] =
-      if (s.size >= 1)
-        Some(s.dropRight(1), s.last)
-      else
-        None
+    }
   }
 
   object Iterable {
