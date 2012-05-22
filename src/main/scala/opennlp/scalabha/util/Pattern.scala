@@ -56,11 +56,8 @@ object Pattern {
 
   object +: {
     def unapply[CC, A, That](seq: CC)(implicit asSeq: CC => Seq[A], cbf: CanBuildFrom[CC, A, That]): Option[(A, That)] = {
-      if (seq.size >= 1) {
-        val b = cbf(seq)
-        b ++= seq.tail
-        Some(seq.head, b.result)
-      }
+      if (seq.size >= 1)
+        Some(seq.head, (cbf(seq) ++= seq.tail).result)
       else
         None
     }
@@ -68,11 +65,8 @@ object Pattern {
 
   object :+ {
     def unapply[CC, A, That](seq: CC)(implicit asSeq: CC => Seq[A], cbf: CanBuildFrom[CC, A, That]): Option[(That, A)] = {
-      if (seq.size >= 1) {
-        val b = cbf(seq)
-        b ++= seq.dropRight(1)
-        Some(b.result, seq.last)
-      }
+      if (seq.size >= 1)
+        Some((cbf(seq) ++= seq.dropRight(1)).result, seq.last)
       else
         None
     }
