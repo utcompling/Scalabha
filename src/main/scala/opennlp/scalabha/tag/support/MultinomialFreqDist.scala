@@ -86,9 +86,15 @@ object MultinomialFreqDist {
           else
             inner(searchKey, right)
         case Tree(key, value, left @ Tree(lkey, lvalue, lleft, lright), _) =>
-          inner(searchKey, left)
+          if (ord.lteq(searchKey, lkey))
+            inner(searchKey, left)
+          else
+            Some(tree)
         case Tree(key, value, _, right @ Tree(rkey, rvalue, rleft, rright)) =>
-          inner(searchKey, right)
+          if (ord.lt(searchKey, key))
+            Some(tree)
+          else
+            inner(searchKey, right)
         case Tree(key, value, _, _) => // Terminal node
           if (ord.lt(searchKey, key))
             Some(tree)
