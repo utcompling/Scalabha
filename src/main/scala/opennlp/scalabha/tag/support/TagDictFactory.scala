@@ -1,8 +1,11 @@
 package opennlp.scalabha.tag.support
 
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.LogNum
+import opennlp.scalabha.util.LogNum._
 import opennlp.scalabha.tag.TagDict
 import opennlp.scalabha.tag.SimpleTagDict
+import opennlp.scalabha.tag.SimpleWeightedTagDict
 
 /**
  * Factory for creating a tag dictionary (mapping from symbols to valid tags)
@@ -33,6 +36,22 @@ trait TagDictFactory[Sym, Tag] {
 class SimpleTagDictFactory[Sym, Tag]() extends TagDictFactory[Sym, Tag] {
   def make(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
     SimpleTagDict(taggedTrainSequences.flatten.toSet.groupByKey)
+  }
+}
+
+/**
+ * Basic TagDictFactory that maps each symbol of the labeled data to
+ * the set of all tags with which it is seen in association.
+ * Default for unknown symbols is the set of all seen tags.
+ *
+ * @tparam Sym	visible symbols in the sequences
+ * @tparam Tag	tags applied to symbols
+ */
+class SimpleWeightedTagDictFactory[Sym, Tag]() extends TagDictFactory[Sym, Tag] {
+  def make(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
+    val counts = taggedTrainSequences.flatten.groupByKey.mapValuesStrict(_.counts.mapValuesStrict(_.toLogNum))
+    val defaultCounts = counts.iterator.map(_._2).sumByKey
+    SimpleWeightedTagDict(counts.mapValuesStrict(_.normalizeValues), defaultCounts.normalizeValues)
   }
 }
 

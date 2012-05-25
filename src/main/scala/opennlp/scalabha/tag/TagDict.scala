@@ -110,7 +110,6 @@ class SimpleWeightedTagDict[Sym, Tag](d: Map[Sym, Map[Tag, LogNum]], override va
 }
 
 object SimpleWeightedTagDict {
-  def apply[Sym, Tag](d: Map[Sym, Map[Tag, LogNum]]) = new SimpleWeightedTagDict(d, d.values.reduce(_ +++ _).normalizeValues)
   def apply[Sym, Tag](d: Map[Sym, Map[Tag, LogNum]], default: Map[Tag, LogNum]) = new SimpleWeightedTagDict(d, default)
 }
 
