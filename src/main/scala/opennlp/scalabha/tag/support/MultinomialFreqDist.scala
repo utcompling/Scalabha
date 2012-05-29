@@ -14,7 +14,7 @@ import scala.collection.immutable.RedBlack
 import opennlp.scalabha.tag.support.MultinomialFreqDist._
 import org.apache.commons.logging.LogFactory
 
-class MultinomialFreqDist[T](dist: Map[T, LogNum], default: LogNum = LogNum.zero) extends Distribution[T] {
+class MultinomialFreqDist[T](dist: Map[T, LogNum], default: LogNum = LogNum.zero) extends DiscreteDistribution[T] {
   private val LOG = LogFactory.getLog(MultinomialFreqDist.getClass)
 
   protected lazy val sampler =
