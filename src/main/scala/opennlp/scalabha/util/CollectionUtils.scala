@@ -671,6 +671,19 @@ object CollectionUtils {
   }
   implicit def enriched_sumByKey_GenTraversableOnce_Numeric[T, U: Numeric, Repr <: Traversable[(T, U)]](self: GenTraversableOnce[TraversableLike[(T, U), Repr]]) = new Enriched_sumByKey_GenTraversableOnce_Numeric(self)
 
+  class Enriched_sumByKey_GenTraversableOnce_Iterator[T, U: Numeric](self: GenTraversableOnce[Iterator[(T, U)]]) {
+    /**
+     * Given a collection of collections of pairs (T,U:Numeric), combine into
+     * a single collection such that all values associated with the same
+     * key are summed.
+     *
+     * @param other 	another collection to add to
+     * @return a collection of pairs
+     */
+    def sumByKey = self.toIterator.flatten.groupByKey.mapValuesStrict(_.sum)
+  }
+  implicit def enriched_sumByKey_GenTraversableOnce_Iterator[T, U: Numeric](self: GenTraversableOnce[Iterator[(T, U)]]) = new Enriched_sumByKey_GenTraversableOnce_Iterator(self)
+
   //////////////////////////////////////////////////////
   // zip(that: TraversableOnce[B]): Iterator[(A, B)]
   //   - Extend zip functionality to Iterator
