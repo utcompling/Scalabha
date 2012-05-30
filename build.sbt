@@ -27,6 +27,10 @@ libraryDependencies ++= Seq(
   "net.sf.opencsv" % "opencsv" % "2.1",
   "com.codecommit" %% "anti-xml" % "0.3",
   "com.codahale" % "jerkson_2.9.1" % "0.5.0",
+  "org.scalanlp" % "scalanlp-learn_2.9.1" % "0.4.RC1" excludeAll(
+    ExclusionRule(organization = "org.scalala")
+  ),
+  "org.scalala" % "scalala_2.9.1" % "1.0.0.RC2",
   "org.apache.commons" % "commons-lang3" % "3.0.1",
   "commons-logging" % "commons-logging" % "1.1.1",
   "log4j" % "log4j" % "1.2.16",
