@@ -1,23 +1,20 @@
 package opennlp.scalabha.classify.nb
 
 import scala.annotation.tailrec
-import scala.collection.mutable.{ Buffer => MSeq }
-import scala.collection.mutable.{ Map => MMap }
-import scala.collection.{ Map => CMap }
+import scala.collection.mutable.{Buffer => MSeq}
+import scala.collection.mutable.{Map => MMap}
+
 import org.apache.commons.logging.LogFactory
-import org.apache.log4j.Level
-import org.apache.log4j.Logger
+
 import opennlp.scalabha.classify.ClassifierEvaluator
-import opennlp.scalabha.classify.DefaultInstance
-import opennlp.scalabha.tag.support.BinomialFreqDist
 import opennlp.scalabha.tag.support.CondFreqDist
 import opennlp.scalabha.tag.support.FreqDist
 import opennlp.scalabha.tag.support.MultinomialFreqDist
-import opennlp.scalabha.util.Collections.History
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.Collections.History
 import opennlp.scalabha.util.LogNum._
-import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.Stats.DirichletSampler
+import opennlp.scalabha.util.LogNum
 
 /**
  * Gibbs Sampler for Naive Bayes.
