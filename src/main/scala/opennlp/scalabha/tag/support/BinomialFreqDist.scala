@@ -36,3 +36,8 @@ object BinomialFreqDist {
   }
 
 }
+
+object BooleanFreqDist {
+  def apply(propTrue: LogNum): BinomialFreqDist[Boolean] = BinomialFreqDist(true, false, propTrue)
+  def apply(propTrue: Double): BinomialFreqDist[Boolean] = apply(propTrue.toLogNum)
+}
