@@ -19,7 +19,7 @@ class MultinomialFreqDist[T](dist: Map[T, LogNum], default: LogNum = LogNum.zero
 
   protected lazy val sampler =
     RedBlackTree(
-      dist.toList
+      dist.toList.filter(_._2 > LogNum.zero)
         .scanLeft((None: Option[T], LogNum.zero)) { case ((ta, tb), (xa, xb)) => (Some(xa), tb + xb) }
         .collect { case (Some(x), p) => (x, p) }
         .map(_.swap): _*)
