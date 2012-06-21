@@ -143,7 +143,7 @@ class NaiveBayesGibbsSampler[L, T](
             val c = doc.map { case (word, count) => wordDist(word) ** count }.product // probability this document has the potential label
             (a / b) * c
           }.seq
-          val newLabelDist = MultinomialFreqDist(estimates.normalizeValues.toMap)
+          val newLabelDist = FreqDist(estimates.toMap)
           val newLabel = newLabelDist.sample //  sample a new label for this document based on the likelihood of each potential
           labels.head(docId) = newLabel
 
@@ -180,10 +180,8 @@ class NaiveBayesGibbsSampler[L, T](
 
   private def makeClassifier(labDocs: Map[L, List[Map[T, Int]]], labels: History[MSeq[L]], wordDists: History[Map[L, Map[T, LogNum]]]) = {
     val labeledLabelCounts = labDocs.mapValuesStrict(_.size)
-    val avgLabelCounts = labeledLabelCounts +++ labels.iterator.toList.transpose.map(_.counts.maxBy(_._2)._1).counts
-    val labelDocDist = FreqDist(avgLabelCounts)
-    val avgWordDistributions = wordDists.iterator.flatten.groupByKey.mapValuesStrict(_.sumByKey)
-    val labelFeatDist = CondFreqDist(avgWordDistributions)
+    val labelDocDist = FreqDist(labeledLabelCounts +++ labels.iterator.toList.transpose.map(_.counts.maxBy(_._2)._1).counts)
+    val labelFeatDist = CondFreqDist(wordDists.iterator.flatten.groupByKey.mapValuesStrict(_.sumByKey))
     NaiveBayesClassifier(labelDocDist, labelFeatDist, labelList.toSet)
   }
 
