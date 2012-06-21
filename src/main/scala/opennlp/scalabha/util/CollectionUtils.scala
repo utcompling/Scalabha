@@ -390,6 +390,7 @@ object CollectionUtils {
       for ((k, v) <- self) b += k -> f(v)
       b.result
     }
+    def mapVals[R, That](f: U => R)(implicit bf: CanBuildFrom[Repr, (T, R), That]) = mapValuesStrict(f)(bf)
   }
   implicit def enriched_mapValuesStrict_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) = new Enriched_mapValuesStrict_GenTraversableLike(self)
 
@@ -402,6 +403,7 @@ object CollectionUtils {
      * @return a collection of pairs
      */
     def mapValuesStrict[R](f: U => R) = self.mapValues(f)
+    def mapVals[R](f: U => R) = mapValuesStrict(f)
   }
   implicit def enrich_mapValuesStrict_Iterator[T, U](self: Iterator[(T, U)]) = new Enriched_mapValuesStrict_Iterator(self)
 
@@ -683,6 +685,34 @@ object CollectionUtils {
     def sumByKey = self.toIterator.flatten.groupByKey.mapValuesStrict(_.sum)
   }
   implicit def enriched_sumByKey_GenTraversableOnce_Iterator[T, U: Numeric](self: GenTraversableOnce[Iterator[(T, U)]]) = new Enriched_sumByKey_GenTraversableOnce_Iterator(self)
+
+  //////////////////////////////////////////////////////
+  // mapt[A,B,R](f: (A,B) => R): Repr[R]
+  //   - map over a Tuple2
+  //   - same as `xs.map { case (x,y) => f(x,y) } `
+  //////////////////////////////////////////////////////
+
+  class Enriched_mapt_2_GenTraversableLike[A, B, Repr <: GenTraversable[(A, B)]](self: GenTraversableLike[(A, B), Repr]) {
+    def mapt[R, That](f: (A, B) => R)(implicit bf: CanBuildFrom[Repr, R, That]) = {
+      val fTupled = f.tupled
+      val b = bf(self.asInstanceOf[Repr])
+      b.sizeHint(self.size)
+      for (t <- self) b += fTupled(t)
+      b.result
+    }
+  }
+  implicit def enrich_mapt_2_GenTraversableLike[A, B, Repr <: GenTraversable[(A, B)]](self: GenTraversableLike[(A, B), Repr]) = new Enriched_mapt_2_GenTraversableLike(self)
+  
+  class Enriched_mapt_3_GenTraversableLike[A, B, C, Repr <: GenTraversable[(A, B, C)]](self: GenTraversableLike[(A, B, C), Repr]) {
+    def mapt[R, That](f: (A, B, C) => R)(implicit bf: CanBuildFrom[Repr, R, That]) = {
+      val fTupled = f.tupled
+      val b = bf(self.asInstanceOf[Repr])
+      b.sizeHint(self.size)
+      for (t <- self) b += fTupled(t)
+      b.result
+    }
+  }
+  implicit def enrich_mapt_3_GenTraversableLike[A, B, C, Repr <: GenTraversable[(A, B, C)]](self: GenTraversableLike[(A, B, C), Repr]) = new Enriched_mapt_3_GenTraversableLike(self)
 
   //////////////////////////////////////////////////////
   // zip(that: TraversableOnce[B]): Iterator[(A, B)]
