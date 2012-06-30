@@ -20,12 +20,12 @@ import scala.collection.GenTraversable
  */
 class CondFreqCounts[A, B, N: Numeric](private val self: Map[A, Map[B, N]]) {
   def ++(that: CondFreqCounts[A, B, N]) =
-    new CondFreqCounts((self.iterator ++ that.iterator).groupByKey.mapValuesStrict(_.reduce(_ +++ _)))
+    new CondFreqCounts((self.iterator ++ that.iterator).groupByKey.mapVals(_.reduce(_ +++ _)))
   def iterator = self.iterator
   def map[C](f: ((A, Map[B, N])) => C) = iterator.map(f)
   def values = iterator.map(_._2)
   def toMap = self
-  def toDouble = CondFreqCounts(self.mapValuesStrict(_.mapValuesStrict(implicitly[Numeric[N]].toDouble)))
+  def toDouble = CondFreqCounts(self.mapVals(_.mapVals(implicitly[Numeric[N]].toDouble)))
   override def toString = "CondFreqCounts(%s)".format(self)
 }
 

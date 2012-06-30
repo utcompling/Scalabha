@@ -96,7 +96,7 @@ abstract class WeightedTagDict[Sym, Tag](val default: Map[Tag, LogNum]) extends 
   final override def defaultSet = default.keySet
   final def weights(s: Sym): Map[Tag, LogNum] = doGetMap(s).getOrElse(default)
   def iterator: Iterator[(Sym, Map[Tag, LogNum])]
-  final override def setIterator = iterator.mapValuesStrict(_.keySet)
+  final override def setIterator = iterator.mapVals(_.keySet)
   def doGetMap(s: Sym): Option[Map[Tag, LogNum]]
   final override def doGetSet(s: Sym) = doGetMap(s).map(_.keySet)
 }

@@ -48,7 +48,7 @@ import collection.{ Map => CMap }
  */
 trait CondCountsTransformer[A, B] {
   final def apply[N: Numeric](counts: CMap[A, CMap[B, N]]): DefaultedCondFreqCounts[A, B, Double] =
-    this(DefaultedCondFreqCounts(counts.mapValuesStrict(_.mapValuesStrict(implicitly[Numeric[N]].toDouble).toMap).toMap))
+    this(DefaultedCondFreqCounts(counts.mapVals(_.mapVals(implicitly[Numeric[N]].toDouble).toMap).toMap))
 
   def apply(counts: DefaultedCondFreqCounts[A, B, Double]): DefaultedCondFreqCounts[A, B, Double]
 }
@@ -78,7 +78,7 @@ case class PassthroughCondCountsTransformer[A, B]() extends CondCountsTransforme
 case class ConstrainingCondCountsTransformer[A, B](validEntries: Map[A, Set[B]], delegate: CondCountsTransformer[A, B]) extends CondCountsTransformer[A, B] {
   override def apply(counts: DefaultedCondFreqCounts[A, B, Double]) = {
     val resultCounts = delegate(counts)
-    val zeroCountAs = DefaultedCondFreqCounts(validEntries.mapValuesStrict(_ => Map[B, Double]())) // a count for every A in validEntries
+    val zeroCountAs = DefaultedCondFreqCounts(validEntries.mapVals(_ => Map[B, Double]())) // a count for every A in validEntries
     val allBs = (validEntries.values.flatten ++ resultCounts.counts.values.flatMap(_.counts.keySet)).toSet
     val zeroCountBs = allBs.mapToVal(0.)
     DefaultedCondFreqCounts(
@@ -128,10 +128,10 @@ case class AddLambdaSmoothingCondCountsTransformer[A, B](lambda: Double, delegat
     val allBs = resultCounts.flatMap(_._2.counts.keySet).toSet // collect all Bs across all As
 
     new DefaultedCondFreqCounts(
-      resultCounts.mapValuesStrict {
+      resultCounts.mapVals {
         case DefaultedFreqCounts(c, t, d) =>
           val defaultCounts = (allBs -- c.keySet).mapToVal(d)
-          DefaultedFreqCounts((c +++ defaultCounts).mapValuesStrict(_ + lambda), t + lambda, d + lambda)
+          DefaultedFreqCounts((c +++ defaultCounts).mapVals(_ + lambda), t + lambda, d + lambda)
       })
   }
 }
@@ -167,7 +167,7 @@ class EisnerSmoothingCondCountsTransformer[A, B](lambda: Double, backoffCountsTr
     val transformedBackoffCounts = backoffCountsTransformer(totalBackoffCounts)
     val DefaultedFreqCounts(backoffCounts, backoffTotalAddition, backoffDefaultCount) = transformedBackoffCounts
     val backoffTotal = backoffCounts.values.sum + backoffTotalAddition
-    val backoffDist = backoffCounts.mapValuesStrict(_ / backoffTotal)
+    val backoffDist = backoffCounts.mapVals(_ / backoffTotal)
     val backoffDefault = backoffDefaultCount / backoffTotal
 
     val allBs = resultCounts.flatMap(_._2.counts.keySet).toSet // collect all Bs across all As
@@ -181,7 +181,7 @@ class EisnerSmoothingCondCountsTransformer[A, B](lambda: Double, backoffCountsTr
 
           val numSingleCountItems = countsWithDefaults.count(_._2 < 2.0)
           val smoothedLambda = lambda * (1e-100 + numSingleCountItems)
-          val smoothedBackoff = backoffDist.mapValuesStrict(_ * smoothedLambda)
+          val smoothedBackoff = backoffDist.mapVals(_ * smoothedLambda)
           val smoothedBackoffDefault = backoffDefault * smoothedLambda
           val smoothedCounts = countsWithDefaults +++ smoothedBackoff
           val smoothedDefaultCount = aDefault + smoothedBackoffDefault
@@ -218,10 +218,10 @@ case class RandomCondCountsTransformer[A, B](maxCount: Int, delegate: CondCounts
     val allBs = resultCounts.flatMap(_._2.counts.keySet).toSet // collect all Bs across all As
 
     new DefaultedCondFreqCounts(
-      resultCounts.mapValuesStrict {
+      resultCounts.mapVals {
         case DefaultedFreqCounts(c, t, d) =>
           val defaultCounts = (allBs -- c.keySet).mapToVal(d)
-          val scaled = (c +++ defaultCounts).mapValuesStrict(_ + rand.nextInt(maxCount + 1))
+          val scaled = (c +++ defaultCounts).mapVals(_ + rand.nextInt(maxCount + 1))
           DefaultedFreqCounts(scaled, t, d)
       })
   }

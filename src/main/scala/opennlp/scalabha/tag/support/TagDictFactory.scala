@@ -49,9 +49,9 @@ class SimpleTagDictFactory[Sym, Tag]() extends TagDictFactory[Sym, Tag] {
  */
 class SimpleWeightedTagDictFactory[Sym, Tag]() extends TagDictFactory[Sym, Tag] {
   def make(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
-    val counts = taggedTrainSequences.flatten.groupByKey.mapValuesStrict(_.counts.mapValuesStrict(_.toLogNum))
+    val counts = taggedTrainSequences.flatten.groupByKey.mapVals(_.counts.mapVals(_.toLogNum))
     val defaultCounts = counts.iterator.map(_._2).sumByKey
-    SimpleWeightedTagDict(counts.mapValuesStrict(_.normalizeValues), defaultCounts.normalizeValues)
+    SimpleWeightedTagDict(counts.mapVals(_.normalizeValues), defaultCounts.normalizeValues)
   }
 }
 
@@ -110,7 +110,7 @@ class DefaultLimitingTagDictFactory[Sym, Tag](maxNumberOfDefaultTags: Int, deleg
         .ungroup
         .map(_.swap).toSet
         .groupByKey
-        .mapValuesStrict(_.size).toList
+        .mapVals(_.size).toList
         .sortBy(-_._2)
         .take(maxNumberOfDefaultTags)
         .map(_._1).toSet
@@ -124,7 +124,7 @@ class ExternalFileTagDictFactory(filename: String, fullTagset: Set[String]) exte
       .map(_.split("\\s+"))
       .flatMap { case Array(word, tags @ _*) => tags.map(word -> _) }
       .groupByKey
-      .mapValuesStrict(_.toSet),
+      .mapVals(_.toSet),
       fullTagset)
   }
 }

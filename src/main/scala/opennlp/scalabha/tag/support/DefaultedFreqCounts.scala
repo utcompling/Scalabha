@@ -53,13 +53,13 @@ object DefaultedFreqCounts {
  */
 class DefaultedCondFreqCounts[A, B, N: Numeric](val counts: Map[A, DefaultedFreqCounts[B, N]]) {
   def +++(that: DefaultedCondFreqCounts[A, B, N]): DefaultedCondFreqCounts[A, B, N] = {
-    new DefaultedCondFreqCounts((counts.iterator ++ that.counts).groupByKey.mapValuesStrict(_.reduce(_ +++ _)))
+    new DefaultedCondFreqCounts((counts.iterator ++ that.counts).groupByKey.mapVals(_.reduce(_ +++ _)))
   }
 
-  def simpleCounts = counts.mapValuesStrict(_.simpleCounts)
+  def simpleCounts = counts.mapVals(_.simpleCounts)
 }
 
 object DefaultedCondFreqCounts {
   def apply[A, B, N: Numeric](counts: Map[A, Map[B, N]]) =
-    new DefaultedCondFreqCounts(counts.mapValuesStrict(c => DefaultedFreqCounts(c)))
+    new DefaultedCondFreqCounts(counts.mapVals(c => DefaultedFreqCounts(c)))
 }

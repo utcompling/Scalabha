@@ -51,7 +51,7 @@ class NgramTrainer[T](
           }
           .toIterator
           .groupByKey
-          .mapValuesStrict(_.counts))), n)
+          .mapVals(_.counts))), n)
   }
 }
 

@@ -165,7 +165,7 @@ object BowGenerate {
           val wordCount = LogNum(featureCounts(WordCountFeature))
           featureCounts
             .filterKeys(_ != WordCountFeature) // remove dummy feature
-            .mapValuesStrict(c => (LogNum(c) / wordCount).logValue)
+            .mapVals(c => (LogNum(c) / wordCount).logValue)
         }
 
     if (LOG.isDebugEnabled) {
@@ -203,7 +203,7 @@ object BowGenerate {
     val featureWordProbByWord =
       featureCountsByWord
         .mapValues(_
-          .mapValuesStrict(c => (LogNum(c) / LogNum(numWords)).logValue))
+          .mapVals(c => (LogNum(c) / LogNum(numWords)).logValue))
 
     if (LOG.isDebugEnabled) {
       LOG.debug("featureWordProbByWord")

@@ -47,7 +47,7 @@ class NaiveBayesGibbsSampler[L, T](
     // 
 
     // Labeled document word counts. Organized by label.
-    val labDocs = labeledData.toIterator.groupByKey.mapValuesStrict(_.map(_.counts)) +++ labelList.mapToVal(List()).toMap
+    val labDocs = labeledData.toIterator.groupByKey.mapVals(_.map(_.counts)) +++ labelList.mapToVal(List()).toMap
 
     //
     // Stable
@@ -93,7 +93,7 @@ class NaiveBayesGibbsSampler[L, T](
     // including labeled, (noisily-labeled) unlabeled data, and pseudocounts
     val labelCounts = {
       val unlCounts = initialLabels.counts
-      val labCounts = labDocs.mapValuesStrict(_.size)
+      val labCounts = labDocs.mapVals(_.size)
       labelList.mapTo { l =>
         val labCount = labCounts.getOrElse(l, 0)
         val unlCount = unlCounts.getOrElse(l, 0)
@@ -106,7 +106,7 @@ class NaiveBayesGibbsSampler[L, T](
     // including labeled and (noisily-labeled) unlabeled data BUT NOT 
     // pseudocounts.  We leave pseudocounts out to keep the vectors sparse.
     val wordCounts = {
-      val unlCountsByLabel = (initialLabels zipEqual docs).groupByKey.mapValuesStrict(_.sumByKey)
+      val unlCountsByLabel = (initialLabels zipEqual docs).groupByKey.mapVals(_.sumByKey)
       labelList.mapTo { l =>
         val labCounts = labDocs(l).sumByKey
         val unlCounts = unlCountsByLabel.getOrElse(l, Map())
@@ -179,9 +179,9 @@ class NaiveBayesGibbsSampler[L, T](
   }
 
   private def makeClassifier(labDocs: Map[L, List[Map[T, Int]]], labels: History[MSeq[L]], wordDists: History[Map[L, Map[T, LogNum]]]) = {
-    val labeledLabelCounts = labDocs.mapValuesStrict(_.size)
+    val labeledLabelCounts = labDocs.mapVals(_.size)
     val labelDocDist = FreqDist(labeledLabelCounts +++ labels.iterator.toList.transpose.map(_.counts.maxBy(_._2)._1).counts)
-    val labelFeatDist = CondFreqDist(wordDists.iterator.flatten.groupByKey.mapValuesStrict(_.sumByKey))
+    val labelFeatDist = CondFreqDist(wordDists.iterator.flatten.groupByKey.mapVals(_.sumByKey))
     NaiveBayesClassifier(labelDocDist, labelFeatDist, labelList.toSet)
   }
 

@@ -118,7 +118,7 @@ class NaiveBayesGibbsSamplerTests {
     val eval = CompositeClassifierEvaluator(labeled, unlabeled, test)
 
     // Supervised
-    val sc = OnlineNaiveBayesClassifierTrainer[String, String](0.)(labeled.mapValuesStrict(new DefaultInstance(_)))
+    val sc = OnlineNaiveBayesClassifierTrainer[String, String](0.)(labeled.mapVals(new DefaultInstance(_)))
     LOG.debug(sc.priorProb)
     LOG.debug(sc.featureProb)
     eval(sc).map(_.accuracyStr) foreach println
@@ -144,7 +144,7 @@ class NaiveBayesGibbsSamplerTests {
     val trainer = OnlineNaiveBayesClassifierTrainer[String, String](0)
     val train = new CsvLabeledInstanceSource(Source.fromFile("data/classify/tennis/train"))
     val test = new CsvLabeledInstanceSource(Source.fromFile("data/classify/tennis/test"))
-    val eval = new SimpleClassifierEvaluator(test.getLabeledInstances.mapValuesStrict(_.allFeatures.toSeq).toList)
+    val eval = new SimpleClassifierEvaluator(test.getLabeledInstances.mapVals(_.allFeatures.toSeq).toList)
 
     // Supervised
     val sc = trainer(train.getLabeledInstances)

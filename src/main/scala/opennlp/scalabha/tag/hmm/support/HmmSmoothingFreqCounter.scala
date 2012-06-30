@@ -12,7 +12,7 @@ import opennlp.scalabha.tag.support._
 //
 //  override def apply(counts: DefaultedCondFreqCounts[Option[Tag], Option[Sym], Double]) = {
 //    val corrected =
-//      delegate(counts).counts.mapValuesStrict {
+//      delegate(counts).counts.mapVals {
 //        case DefaultedFreqCounts(aCounts, aTotalAdd, aDefault) =>
 //          // Remove startEndTag from association with any symbol
 //          DefaultedFreqCounts(aCounts - None, aTotalAdd, aDefault)

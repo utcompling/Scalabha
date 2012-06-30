@@ -80,11 +80,11 @@ class Viterbi[Sym, Tag](edgeScorer: TagEdgeScorer[Sym, Tag]) {
               })
               .toMap
               .filter(_._2.nonEmpty) // remove tags that don't transition anywhere
-          val bestTransitions = transitionScores.mapValuesStrict(_.maxBy(_._2)) // get the previous tag with the highest probability (and its score)
+          val bestTransitions = transitionScores.mapVals(_.maxBy(_._2)) // get the previous tag with the highest probability (and its score)
           if (bestTransitions.nonEmpty) {
             Some(
-              bestTransitions.mapValuesStrict(_._2), // update viterbi for the next row
-              bestTransitions.mapValuesStrict(_._1) :: backpointers, // append new backpointers
+              bestTransitions.mapVals(_._2), // update viterbi for the next row
+              bestTransitions.mapVals(_._1) :: backpointers, // append new backpointers
               currSym)
           }
           else

@@ -30,7 +30,7 @@ class SimpleClassifierEvaluator[L, T](gold: Seq[(L, Seq[T])]) extends Classifier
       total += 1
     }
 
-    Seq(ClassifierEvaluatorResult(correct, total, mistakes.mapValuesStrict(_.toMap).toMap, results))
+    Seq(ClassifierEvaluatorResult(correct, total, mistakes.mapVals(_.toMap).toMap, results))
   }
 }
 

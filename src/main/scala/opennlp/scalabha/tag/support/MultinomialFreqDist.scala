@@ -108,7 +108,7 @@ object MultinomialFreqDist {
   }
 
   def main(args: Array[String]) {
-    val probs = Map('N -> .4, 'V -> .3, 'D -> .2).mapValuesStrict(_.toLogNum)
+    val probs = Map('N -> .4, 'V -> .3, 'D -> .2).mapVals(_.toLogNum)
     val dist = new MultinomialFreqDist(probs)
     println(dist.sample)
     println((1 to 100000).map(_ => dist.sample).counts.normalizeValues)

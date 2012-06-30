@@ -47,7 +47,7 @@ import collection.{ Map => CMap }
  */
 trait CountsTransformer[B] {
   final def apply[N: Numeric](counts: CMap[B, N]): DefaultedFreqCounts[B, Double] =
-    this(DefaultedFreqCounts(counts.mapValuesStrict(implicitly[Numeric[N]].toDouble).toMap))
+    this(DefaultedFreqCounts(counts.mapVals(implicitly[Numeric[N]].toDouble).toMap))
 
   def apply(counts: DefaultedFreqCounts[B, Double]): DefaultedFreqCounts[B, Double]
 }
@@ -77,7 +77,7 @@ case class PassthroughCountsTransformer[B]() extends CountsTransformer[B] {
 case class ConstrainingCountsTransformer[B](validEntries: Set[B], delegate: CountsTransformer[B]) extends CountsTransformer[B] {
   override def apply(counts: DefaultedFreqCounts[B, Double]) = {
     val DefaultedFreqCounts(resultCounts, totalAddition, defaultCount) = delegate(counts)
-    val zeroCounts = DefaultedFreqCounts(resultCounts.mapValuesStrict(_ => 0.)) // a count for every B in validEntries
+    val zeroCounts = DefaultedFreqCounts(resultCounts.mapVals(_ => 0.)) // a count for every B in validEntries
     DefaultedFreqCounts(validEntries.mapTo(b => resultCounts.getOrElse(b, defaultCount)).toMap) +++ zeroCounts
   }
 }
@@ -149,7 +149,7 @@ object ItemDroppingCountsTransformer {
 case class AddLambdaSmoothingCountsTransformer[B](lambda: Double, delegate: CountsTransformer[B]) extends CountsTransformer[B] {
   override def apply(counts: DefaultedFreqCounts[B, Double]) = {
     val DefaultedFreqCounts(resultCounts, totalAddition, defaultCount) = delegate(counts)
-    DefaultedFreqCounts(resultCounts.mapValuesStrict(_ + lambda), totalAddition + lambda, defaultCount + lambda)
+    DefaultedFreqCounts(resultCounts.mapVals(_ + lambda), totalAddition + lambda, defaultCount + lambda)
   }
 }
 

@@ -55,7 +55,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
     LOG.debug("totalRawWordCount (unknown) = " + rawUnkwnCountByWord.values.sum)
 
     val knownCounts =
-      tagToSymbolDict.mapValuesStrict {
+      tagToSymbolDict.mapVals {
         _.mapTo(s => (rawSymbolCounts(s)) / tagDict.set(s).size.toDouble).toMap // estimated C(w,t) for known symbols
       }
 
@@ -64,7 +64,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
         LOG.debug("raw proportions =              " + knownCounts.mapValues(_.values.sum).normalizeValues.mapValues("%.3f".format(_)))
 
         knownCounts
-          .mapValuesStrict(_.values.sum) // estimated number of unknown tokens for each tag 
+          .mapVals(_.values.sum) // estimated number of unknown tokens for each tag 
           .normalizeValues // estimated count mass for unknowns spread across all unknown tokens
       }
 
@@ -73,8 +73,8 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
 
         val x =
           tagToSymbolDict
-            .mapValuesStrict(_.size) // number of symbols associated with each tag
-            .mapValuesStrict(math.pow(_, 2)) // exaggerate the differences
+            .mapVals(_.size) // number of symbols associated with each tag
+            .mapVals(math.pow(_, 2)) // exaggerate the differences
             .normalizeValues
 
         LOG.debug("tagDict (skewed) proportions = " + x.normalizeValues.mapValues("%.3f".format(_)))
@@ -93,7 +93,7 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
       knownCounts.map {
         case (tag, estimatedKnownCounts) =>
           val estimatedUnknownProportion = estimatedUnknownProportions(tag)
-          val unknownCounts = rawUnkwnCountByWord.mapValuesStrict(_ * estimatedUnknownProportion)
+          val unknownCounts = rawUnkwnCountByWord.mapVals(_ * estimatedUnknownProportion)
           val totalCounts = estimatedKnownCounts ++ unknownCounts // combine known and unknown estimates
           (tag, DefaultedFreqCounts(totalCounts, (totalAddition + defaultCount) * estimatedUnknownProportion, defaultCount * estimatedUnknownProportion)) // default for unseen words in test is one count 
       }

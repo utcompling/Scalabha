@@ -57,11 +57,11 @@ class SupervisedHmmTaggerTrainer[Sym, Tag](
 
     // Get the tag transitions, including start/final tags
     val tagPairs = endedSequences.map(_.map(_._2).sliding2).flatten
-    val transitionCounts = tagPairs.groupByKey.mapValuesStrict(_.counts)
+    val transitionCounts = tagPairs.groupByKey.mapVals(_.counts)
 
     // Get the word/tag pairs (emissions)
     val tagSymbolPairs = endedSequences.flatMap(_.map(_.swap))
-    val emissionCounts = tagSymbolPairs.groupByKey.mapValuesStrict(_.counts)
+    val emissionCounts = tagSymbolPairs.groupByKey.mapVals(_.counts)
 
     (transitionCounts, emissionCounts)
   }

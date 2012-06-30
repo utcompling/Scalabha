@@ -58,7 +58,7 @@ object FreqDist {
       FreqDist.empty[B]
     else {
       val logTotal = total.toLogNum
-      new MultinomialFreqDist(counts.mapValuesStrict(_ / logTotal), defaultCount / logTotal)
+      new MultinomialFreqDist(counts.mapVals(_ / logTotal), defaultCount / logTotal)
     }
   }
 }
@@ -117,6 +117,6 @@ object CondFreqDist {
    * @tparam B	the conditioned item being counted; P(B|A).
    */
   def apply[A, B, N: Numeric](resultCounts: DefaultedCondFreqCounts[A, B, N]): A => MultinomialFreqDist[B] = {
-    resultCounts.counts.mapValuesStrict(FreqDist(_)).withDefaultValue(FreqDist.empty)
+    resultCounts.counts.mapVals(FreqDist(_)).withDefaultValue(FreqDist.empty)
   }
 }
