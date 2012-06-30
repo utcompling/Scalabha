@@ -451,13 +451,13 @@ object CollectionUtils {
   implicit def enrich_mapValues_Iterator[T, U](self: Iterator[(T, U)]) = new Enriched_mapValues_Iterator(self)
 
   //////////////////////////////////////////////////////
-  // mapValuesStrict(f: U => R): Repr[(T,R)]
+  // mapVals(f: U => R): Repr[(T,R)]
   //   - In a collection of pairs, map a function over the second item of each pair.
   //   - Functionally equivalent to:
   //         this.map { case (k,v) => k -> f(v) }
   //////////////////////////////////////////////////////
 
-  class Enriched_mapValuesStrict_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) {
+  class Enriched_mapVals_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) {
     /**
      * In a collection of pairs, map a function over the second item of each
      * pair.  Ensures that the map is computed at call-time, and not returned
@@ -466,17 +466,19 @@ object CollectionUtils {
      * @param f	function to map over the second item of each pair
      * @return a collection of pairs
      */
-    def mapValuesStrict[R, That](f: U => R)(implicit bf: CanBuildFrom[Repr, (T, R), That]) = {
+    def mapVals[R, That](f: U => R)(implicit bf: CanBuildFrom[Repr, (T, R), That]) = {
       val b = bf(self.asInstanceOf[Repr])
       b.sizeHint(self.size)
       for ((k, v) <- self) b += k -> f(v)
       b.result
     }
-    def mapVals[R, That](f: U => R)(implicit bf: CanBuildFrom[Repr, (T, R), That]) = mapValuesStrict(f)(bf)
-  }
-  implicit def enriched_mapValuesStrict_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) = new Enriched_mapValuesStrict_GenTraversableLike(self)
 
-  class Enriched_mapValuesStrict_Iterator[T, U](self: Iterator[(T, U)]) {
+    @deprecated("use mapVals")
+    def mapValuesStrict[R, That](f: U => R)(implicit bf: CanBuildFrom[Repr, (T, R), That]) = mapVals(f)(bf)
+  }
+  implicit def enriched_mapVals_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) = new Enriched_mapVals_GenTraversableLike(self)
+
+  class Enriched_mapVals_Iterator[T, U](self: Iterator[(T, U)]) {
     /**
      * In a collection of pairs, map a function over the second item of each
      * pair.
@@ -484,10 +486,12 @@ object CollectionUtils {
      * @param f	function to map over the second item of each pair
      * @return a collection of pairs
      */
-    def mapValuesStrict[R](f: U => R) = self.mapValues(f)
-    def mapVals[R](f: U => R) = mapValuesStrict(f)
+    def mapVals[R](f: U => R) = self.mapValues(f)
+
+    @deprecated("use mapVals")
+    def mapValuesStrict[R](f: U => R) = mapVals(f)
   }
-  implicit def enrich_mapValuesStrict_Iterator[T, U](self: Iterator[(T, U)]) = new Enriched_mapValuesStrict_Iterator(self)
+  implicit def enrich_mapVals_Iterator[T, U](self: Iterator[(T, U)]) = new Enriched_mapVals_Iterator(self)
 
   //////////////////////////////////////////////////////
   // mapKeys(f: T => R): Repr[(R,U)]
@@ -581,7 +585,7 @@ object CollectionUtils {
      * @return Map from items to their counts
      */
     def counts(): Map[A, Int] =
-      self.toIterator.groupBy(identity).mapValuesStrict(_.size)
+      self.toIterator.groupBy(identity).mapVals(_.size)
   }
   implicit def enrich_counts_GenTraversableOnce[A](self: GenTraversableOnce[A]) = new Enriched_counts_GenTraversableOnce[A](self)
 
@@ -597,7 +601,7 @@ object CollectionUtils {
      * @return Map from first items of the pairs to collections of items that have been grouped
      */
     def groupByKey[T, U, That](implicit ev: A <:< (T, U), bf: CanBuildFrom[Repr, U, That]): Map[T, That] =
-      self.groupBy(_._1).mapValuesStrict(_.map(_._2).asInstanceOf[That])
+      self.groupBy(_._1).mapVals(_.map(_._2).asInstanceOf[That])
   }
   implicit def enriched_groupByKey_TraversableLike[A, Repr <: Traversable[A]](self: TraversableLike[A, Repr]) = new Enriched_groupByKey_TraversableLike[A, Repr](self)
 
@@ -617,7 +621,7 @@ object CollectionUtils {
      * @return Map from first items of the pairs to collections of items that have been grouped
      */
     def groupByKey[T, U, That <: Iterable[U]](builder: => Builder[U, That])(implicit ev: A <:< (T, U)): Map[T, That] =
-      self.groupBy(_._1).mapValuesStrict(v => (builder ++= v.map(_._2)).result)
+      self.groupBy(_._1).mapVals(v => (builder ++= v.map(_._2)).result)
   }
   implicit def enriched_groupByKey_Iterator[A](self: Iterator[A]) = new Enriched_groupByKey_Iterator(self)
 
@@ -764,7 +768,7 @@ object CollectionUtils {
      * @param other 	another collection to add to
      * @return a collection of pairs
      */
-    def sumByKey = self.toIterator.flatten.groupByKey.mapValuesStrict(_.sum)
+    def sumByKey = self.toIterator.flatten.groupByKey.mapVals(_.sum)
   }
   implicit def enriched_sumByKey_GenTraversableOnce_Iterator[T, U: Numeric](self: GenTraversableOnce[Iterator[(T, U)]]) = new Enriched_sumByKey_GenTraversableOnce_Iterator(self)
 
