@@ -130,7 +130,7 @@ object CollectionUtils {
           if (hasNext) { i += 1; itr.next }
           else throw new RuntimeException("first has already been read completely")
 
-        def hasNext() = i < splitAt
+        def hasNext() = i < splitAt && itr.hasNext
       }
 
     val second: Iterator[T] =
@@ -140,9 +140,7 @@ object CollectionUtils {
           else if (hasNext) { i += 1; itr.next }
           else throw new RuntimeException("first has already been read completely")
 
-        def hasNext() = {
-          itr.hasNext
-        }
+        def hasNext() = itr.hasNext
       }
   }
 
