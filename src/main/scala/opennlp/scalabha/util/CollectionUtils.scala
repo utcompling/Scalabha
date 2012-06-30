@@ -759,8 +759,8 @@ object CollectionUtils {
   implicit def enriched_zip_Iterator[A](self: Iterator[A]) = new Enriched_zip_Iterator(self)
 
   //////////////////////////////////////////////////////
-  // zip(that: TraversableOnce[B]): Iterator[(A, B)]
-  //   - Extend zip functionality to Iterator
+  // unzip(): (Iterator[A], Iterator[B])
+  //   - Extend unzip functionality to Iterator
   //////////////////////////////////////////////////////
 
   class Enriched_unzip_Iterator[T, U](self: Iterator[(T, U)]) {
@@ -768,11 +768,13 @@ object CollectionUtils {
       this.unzip(ListBuffer[T](), ListBuffer[U]())
 
     def unzip[ThatT <: Iterable[T], ThatU <: Iterable[U]](tBuilder: => Builder[T, ThatT], uBuilder: => Builder[U, ThatU]): (ThatT, ThatU) = {
+      val tBldr = tBuilder
+      val uBldr = uBuilder
       for ((t, u) <- self) {
-        tBuilder += t
-        uBuilder += u
+        tBldr += t
+        uBldr += u
       }
-      (tBuilder.result, uBuilder.result)
+      (tBldr.result, uBldr.result)
     }
   }
   implicit def enrich_unzip_Iterator[T, U](self: Iterator[(T, U)]) = new Enriched_unzip_Iterator(self)
