@@ -70,7 +70,7 @@ object CollectionUtils {
   //   - Inspired by String.split
   //////////////////////////////////////////////////////
 
-  class Enriched_split_GenTraversableOnce[A](self: GenTraversableOnce[A]) {
+  class Enriched_split_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
     /**
      * Split this collection on each occurrence of the delimiter.  Delimiters
      * do not appear in the output.
@@ -79,16 +79,73 @@ object CollectionUtils {
      *
      * @param delim	The delimiter upon which to split.
      */
-    def split(delim: A) = {
-      (self.foldLeft(List[List[A]]()) {
-        case (Nil, `delim`) => Nil
-        case (Nil, item) => (item :: Nil) :: Nil
-        case (cur :: accum, `delim`) => List[A]() :: cur :: accum
-        case (cur :: accum, item) => (item :: cur) :: accum
-      }).reverse.map(_.reverse)
+    def split[That](delim: A)(implicit bf: CanBuildFrom[Repr, A, That]): Iterator[That] = {
+      val itr = self.toIterator
+
+      new Iterator[That] {
+        def next(): That = {
+          if (!itr.hasNext) throw new RuntimeException("next on empty iterator")
+
+          val b = bf(self.asInstanceOf[Repr])
+          while (itr.hasNext) {
+            val x = itr.next
+            if (x == delim)
+              return b.result
+            else
+              b += x
+          }
+          return b.result
+        }
+
+        def hasNext() = itr.hasNext
+      }
     }
   }
-  implicit def enriched_split_GenTraversableOnce[A](self: GenTraversableOnce[A]) = new Enriched_split_GenTraversableOnce(self)
+  implicit def enriched_split_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) = new Enriched_split_GenTraversableLike(self)
+
+  class Enriched_split_Iterator[A](self: Iterator[A]) {
+    /**
+     * Split this collection on each occurrence of the delimiter.  Delimiters
+     * do not appear in the output.
+     *
+     * Inspired by String.split
+     *
+     * @param delim	The delimiter upon which to split.
+     */
+    def split(delim: A): Iterator[List[A]] =
+      split(delim, ListBuffer[A]())
+
+    /**
+     * Split this collection on each occurrence of the delimiter.  Delimiters
+     * do not appear in the output.
+     *
+     * Inspired by String.split
+     *
+     * @param delim	The delimiter upon which to split.
+     */
+    def split[That](delim: A, builder: => Builder[A, That])(): Iterator[That] = {
+      val itr = self.toIterator
+
+      new Iterator[That] {
+        def next(): That = {
+          if (!itr.hasNext) throw new RuntimeException("next on empty iterator")
+
+          val b = builder
+          while (itr.hasNext) {
+            val x = itr.next
+            if (x == delim)
+              return b.result
+            else
+              b += x
+          }
+          return b.result
+        }
+
+        def hasNext() = itr.hasNext
+      }
+    }
+  }
+  implicit def enriched_split_Iterator[A](self: Iterator[A]) = new Enriched_split_Iterator(self)
 
   //////////////////////////////////////////////////////
   // splitAt(n: Int) 
@@ -98,8 +155,8 @@ object CollectionUtils {
 
   class Enriched_splitAt_Iterator[A](self: Iterator[A]) {
     /**
-     * Safely split this iterator at the specified index.  The 'first' 
-     * iterator must be exhausted completely before the items in the 'second' 
+     * Safely split this iterator at the specified index.  The 'first'
+     * iterator must be exhausted completely before the items in the 'second'
      * iterator can be accessed.
      *
      * Inspired by String.splitAt

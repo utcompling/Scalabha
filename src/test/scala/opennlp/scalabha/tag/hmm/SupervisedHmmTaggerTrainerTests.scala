@@ -157,6 +157,7 @@ class SupervisedHmmTaggerTrainerTests {
         .split("###/###")
         .filter(_.nonEmpty)
         .map(_.map(_.split("/").toSeq match { case Seq(w, t) => (w, t) }).toIndexedSeq)
+        .toList
   }
 
   object AsRawFile {

@@ -96,6 +96,7 @@ class SemisupervisedHmmTaggerTrainerTests {
         .split("###/###")
         .filter(_.nonEmpty)
         .map(_.map(_.split("/").toSeq.toTuple2).toIndexedSeq)
+        .toList
   }
 
   object AsRawFile {
@@ -110,6 +111,7 @@ class SemisupervisedHmmTaggerTrainerTests {
         .split("###")
         .filter(_.nonEmpty)
         .map(_.toIndexedSeq)
+        .toList
   }
 
   def assertResultsEqual(expectedString: String, results: ScoreResults[String, String]) {
