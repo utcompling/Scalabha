@@ -98,7 +98,9 @@ object CollectionUtils {
 
   class Enriched_splitAt_Iterator[A](self: Iterator[A]) {
     /**
-     * Split this collection at the specified index.
+     * Safely split this iterator at the specified index.  The 'first' 
+     * iterator must be exhausted completely before the items in the 'second' 
+     * iterator can be accessed.
      *
      * Inspired by String.splitAt
      *
@@ -107,16 +109,42 @@ object CollectionUtils {
      *          starting with the split point
      */
     def splitAt(n: Int): (Iterator[A], Iterator[A]) = {
-      var accum: List[A] = Nil
-      var i = 0
-      while (i < n && self.hasNext) {
-        accum ::= self.next
-        i += 1
-      }
-      (accum.reverse.iterator, self)
+      val splitter = new LazyIteratorSplitter(self, n)
+      (splitter.first, splitter.second)
     }
   }
   implicit def enriched_splitAt_Iterator[A](self: Iterator[A]) = new Enriched_splitAt_Iterator(self)
+
+  /**
+   * Safely split an Iterator.  Has two fields 'first' and 'second', for the
+   * portions before and after the split.  The 'first' iterator must be
+   * exhausted completely before the items in the 'second' iterator can be
+   * accessed.
+   */
+  class LazyIteratorSplitter[T](itr: Iterator[T], splitAt: Int) {
+    var i = 0
+
+    val first: Iterator[T] =
+      new Iterator[T] {
+        def next(): T =
+          if (hasNext) { i += 1; itr.next }
+          else throw new RuntimeException("first has already been read completely")
+
+        def hasNext() = i < splitAt
+      }
+
+    val second: Iterator[T] =
+      new Iterator[T] {
+        def next(): T =
+          if (i < splitAt) throw new RuntimeException("first has NOT YET been read completely")
+          else if (hasNext) { i += 1; itr.next }
+          else throw new RuntimeException("first has already been read completely")
+
+        def hasNext() = {
+          itr.hasNext
+        }
+      }
+  }
 
   //////////////////////////////////////////////////////
   // sumBy[B: Numeric](f: A => B): B
@@ -257,8 +285,7 @@ object CollectionUtils {
           if (self.hasNext) {
             if (thatItr.hasNext) true
             else throw new RuntimeException("Attempting to zipEqual collections of different lengths.")
-          }
-          else {
+          } else {
             if (thatItr.hasNext) throw new RuntimeException("Attempting to zipEqual collections of different lengths.")
             else false
           }
@@ -358,7 +385,7 @@ object CollectionUtils {
      * @param f	function to map over the second item of each pair
      * @return a collection of pairs
      */
-    def mapValues[R](f: U => R) = new Iterator[(T, R)] {
+    def mapValues[R](f: U => R): Iterator[(T, R)] = new Iterator[(T, R)] {
       def hasNext = self.hasNext
       def next() = {
         val (k, v) = self.next()
@@ -702,7 +729,7 @@ object CollectionUtils {
     }
   }
   implicit def enrich_mapt_2_GenTraversableLike[A, B, Repr <: GenTraversable[(A, B)]](self: GenTraversableLike[(A, B), Repr]) = new Enriched_mapt_2_GenTraversableLike(self)
-  
+
   class Enriched_mapt_3_GenTraversableLike[A, B, C, Repr <: GenTraversable[(A, B, C)]](self: GenTraversableLike[(A, B, C), Repr]) {
     def mapt[R, That](f: (A, B, C) => R)(implicit bf: CanBuildFrom[Repr, R, That]) = {
       val fTupled = f.tupled
@@ -803,8 +830,7 @@ object CollectionUtils {
     def takeSub(n: Int): Iterator[R] = {
       if (self.isEmpty) {
         self.asInstanceOf[Iterator[R]]
-      }
-      else {
+      } else {
         new Iterator[R] {
           private var nextElement: R = self.next.asInstanceOf[R]
           private var total: Int = nextElement.size
@@ -817,12 +843,10 @@ object CollectionUtils {
               if (self.hasNext) {
                 nextElement = self.next.asInstanceOf[R]
                 total += nextElement.size
-              }
-              else
+              } else
                 total = n + 1
               x
-            }
-            else
+            } else
               throw new NoSuchElementException("next on empty iterator")
           }
         }
