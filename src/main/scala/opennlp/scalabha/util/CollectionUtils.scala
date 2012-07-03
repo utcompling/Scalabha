@@ -601,7 +601,7 @@ object CollectionUtils {
      * @return Map from first items of the pairs to collections of items that have been grouped
      */
     def groupByKey[T, U, That](implicit ev: A <:< (T, U), bf: CanBuildFrom[Repr, U, That]): Map[T, That] =
-      self.groupBy(_._1).mapVals(_.map(_._2).asInstanceOf[That])
+      self.groupBy(_._1).map { case (k, vs) => k -> (bf(self.asInstanceOf[Repr]) ++= vs.map(_._2)).result }
   }
   implicit def enriched_groupByKey_TraversableLike[A, Repr <: Traversable[A]](self: TraversableLike[A, Repr]) = new Enriched_groupByKey_TraversableLike[A, Repr](self)
 
