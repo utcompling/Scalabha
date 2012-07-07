@@ -40,10 +40,8 @@ case class HmmTagger[Sym, Tag](
    * @return			the tagging of the input sequence assigned by the model
    */
   override def tagSequence(sequence: IndexedSeq[Sym]): List[Tag] = {
-    viterbi.tagSequence(sequence, tagDict) match {
-      case Some(tagging) => tagging
-      case None => throw new RuntimeException("No tagging found for '%s'".format(sequence.mkString(" ")))
-    }
+    viterbi.tagSequence(sequence, tagDict).getOrElse(
+      throw new RuntimeException("No tagging found for '%s'".format(sequence.mkString(" "))))
   }
 
 }
