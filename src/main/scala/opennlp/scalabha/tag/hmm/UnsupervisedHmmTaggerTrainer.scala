@@ -204,7 +204,7 @@ trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
     val emissions = CondFreqDist(estimatedEmissionCountsTransformer(expectedEmmissionCounts.toMap))
     val hmm = HmmTagger(transitions, emissions, initialHmm.tagDict)
 
-    LOG.info("\t" + iteration + ": " + avgLogProb)
+    LOG.debug("\t" + iteration + ": " + avgLogProb)
 
     hmmExaminationHook(hmm)
 
