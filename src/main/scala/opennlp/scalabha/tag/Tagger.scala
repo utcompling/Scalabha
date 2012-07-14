@@ -15,7 +15,7 @@ trait Tagger[Sym, Tag] {
    * @param rawSequences	unlabeled data to be tagged
    * @return				sequences tagged by the model
    */
-  def tag(rawSequences: Iterable[IndexedSeq[Sym]]): Iterable[IndexedSeq[(Sym, Tag)]] =
+  def tag(rawSequences: Seq[IndexedSeq[Sym]]): Seq[IndexedSeq[(Sym, Tag)]] =
     (rawSequences zip rawSequences.map(tagSequence)).map(_.zipped.toIndexedSeq)
 
   /**
@@ -24,7 +24,7 @@ trait Tagger[Sym, Tag] {
    * @param sequence 	a single sequence to be tagged
    * @return			the tagging of the input sequence assigned by the model
    */
-  def tagSequence(sequence: IndexedSeq[Sym]): List[Tag]
+  def tagSequence(sequence: IndexedSeq[Sym]): Seq[Tag]
 
 }
 

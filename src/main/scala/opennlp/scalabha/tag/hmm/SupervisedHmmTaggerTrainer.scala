@@ -39,11 +39,11 @@ class SupervisedHmmTaggerTrainer[Sym, Tag](
    * @param tagDict					tag dictionary
    * @return						a trained tagger
    */
-  override def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]], tagDict: TagDict[Sym, Tag]): Tagger[Sym, Tag] = {
+  override def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]], tagDict: TagDict[Sym, Tag]): HmmTagger[Sym, Tag] = {
     val (transitionCounts, emissionCounts) = getCountsFromTagged(taggedTrainSequences)
     val transitionDist = CondFreqDist(transitionCountsTransformer(transitionCounts))
     val emissionDist = CondFreqDist(emissionCountsTransformer(emissionCounts))
-    new HmmTagger(transitionDist, emissionDist, OptionalTagDict(tagDict))
+    new HmmTagger(transitionDist, emissionDist, tagDict.allTags)
   }
 
   /**

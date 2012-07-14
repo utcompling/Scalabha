@@ -21,9 +21,9 @@ import opennlp.scalabha.util.LogNum
 case class HmmTagger[Sym, Tag](
   val transitions: Option[Tag] => Option[Tag] => LogNum,
   val emissions: Option[Tag] => Option[Sym] => LogNum,
-  val tagDict: OptionalTagDict[Sym, Tag])
+  val tagSet: Set[Tag])
   extends Tagger[Sym, Tag] {
-
+  
   private[this] val viterbi =
     new Viterbi(new TagEdgeScorer[Sym, Tag] {
       override def apply(prevSym: Option[Sym], prevTag: Option[Tag], currSym: Option[Sym], currTag: Option[Tag]): LogNum = {
@@ -40,7 +40,7 @@ case class HmmTagger[Sym, Tag](
    * @return			the tagging of the input sequence assigned by the model
    */
   override def tagSequence(sequence: IndexedSeq[Sym]): List[Tag] = {
-    viterbi.tagSequence(sequence, tagDict).getOrElse(
+    viterbi.tagSequence(sequence, tagSet).getOrElse(
       throw new RuntimeException("No tagging found for '%s'".format(sequence.mkString(" "))))
   }
 

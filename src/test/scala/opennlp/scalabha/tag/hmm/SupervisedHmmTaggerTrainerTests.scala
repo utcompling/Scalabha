@@ -15,6 +15,7 @@ import org.apache.log4j.Level
 import org.apache.commons.logging.LogFactory
 import opennlp.scalabha.tag.OptionalTagDict
 import opennlp.scalabha.tag.TagDict
+import opennlp.scalabha.util.LogNum
 
 class SupervisedHmmTaggerTrainerTests {
   val LOG = LogFactory.getLog(classOf[UnsupervisedHmmTaggerTrainerTests])
@@ -74,7 +75,7 @@ class SupervisedHmmTaggerTrainerTests {
     val output = tagger.tag(AsRawFile("data/postag/ic/ictest.txt"))
 
     val gold = TaggedFile("data/postag/ic/ictest.txt")
-    val results = new TaggerEvaluator().evaluate(output, gold, tagger.asInstanceOf[HmmTagger[String, String]].tagDict.unoptioned)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
     assertResultsEqual("""
 		Total:   87.88 (29/33)
 		Known:   87.88 (29/33)
@@ -100,7 +101,7 @@ class SupervisedHmmTaggerTrainerTests {
     val output = tagger.tag(AsRawFile("data/postag/english/entest"))
 
     val gold = TaggedFile("data/postag/english/entest")
-    val results = new TaggerEvaluator().evaluate(output, gold, tagger.asInstanceOf[HmmTagger[String, String]].tagDict.unoptioned)
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
     assertResultsEqual("""
                 Total:   80.91 (19377/23949)
                 Known:   88.72 (19377/21841)
@@ -125,8 +126,8 @@ class SupervisedHmmTaggerTrainerTests {
     LOG.debug("labeledTrain.size = " + train.size)
     LOG.debug("rawTrain.size     = " + 0)
 
-    val trainer: SupervisedTaggerTrainer[String, String] =
-      new SupervisedHmmTaggerTrainer(
+    val trainer =
+      new SupervisedHmmTaggerTrainer[String, String](
         transitionCountsTransformer =
           new TransitionCountsTransformer(tagDict,
             EisnerSmoothingCondCountsTransformer(lambda = 1.0)),
@@ -134,6 +135,43 @@ class SupervisedHmmTaggerTrainerTests {
           new EmissionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))))
     val tagger = trainer.trainSupervised(train, tagDict)
+
+    val output = tagger.tag(gold.map(_.map(_._1)))
+    val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
+    assertResultsEqual("""
+				Total:   91.54 (21924/23949)
+				Known:   96.33 (21039/21841)
+				Unknown: 41.98 (885/2108)
+				Common Mistakes:
+				#Err     Gold      Model
+				152      V        N
+				150      N        J
+				142      N        D
+				141      N        V
+				121      J        N
+				""", results)
+  }
+
+  @Test
+  def en_eisnerSmoothing_TagDictConstrained() {
+    val train = TaggedFile("data/postag/english/entrain")
+    val tagDict = new SimpleTagDictFactory().make(train)
+    val gold = TaggedFile("data/postag/english/entest")
+
+    LOG.debug("tagDictTrain.size = " + tagDict.iterator.ungroup.size)
+    LOG.debug("labeledTrain.size = " + train.size)
+    LOG.debug("rawTrain.size     = " + 0)
+
+    val trainer =
+      new SupervisedHmmTaggerTrainer[String, String](
+        transitionCountsTransformer =
+          new TransitionCountsTransformer(tagDict,
+            EisnerSmoothingCondCountsTransformer(lambda = 1.0)),
+        emissionCountsTransformer =
+          TagDictConstrainedEmissionCountsTransformer(tagDict,
+            EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))))
+    val tagger = trainer.trainSupervised(train, tagDict)
+
     val output = tagger.tag(gold.map(_.map(_._1)))
     val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
     assertResultsEqual("""

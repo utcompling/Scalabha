@@ -63,7 +63,7 @@ class UnsupervisedHmmTaggerTrainerTests {
         new PassthroughCountsTransformer(),
         tagDict,
         trainRaw).make()
-    val unsupervisedTagger = new HmmTagger(initialTransitions, initialEmissions, OptionalTagDict(tagDict))
+    val unsupervisedTagger = new HmmTagger(initialTransitions, initialEmissions, tagDict.allTags)
 
     val output = unsupervisedTagger.tag(gold.map(_.map(_._1)))
     val results = new TaggerEvaluator().evaluate(output, gold, tagDict)

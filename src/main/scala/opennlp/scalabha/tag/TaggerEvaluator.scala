@@ -30,7 +30,8 @@ class TaggerEvaluator[Sym, Tag] {
           if (rsltTag == goldTag)
             knownCorrect += 1
           knownTotal += 1
-        } else {
+        }
+        else {
           if (rsltTag == goldTag)
             unkCorrect += 1
           unkTotal += 1
@@ -62,6 +63,14 @@ case class ScoreResults[Sym, Tag](
     for (((goldTag, rsltTag), count) <- mistakes.toList.sortBy(-_._2).take(5))
       sb.append("%-8d %-8s %-8s".format(count, goldTag, rsltTag))
     sb.mkString("\n")
+  }
+
+  def +(other: ScoreResults[Sym, Tag]) = {
+    ScoreResults[Sym, Tag](
+      correct + other.correct, total + other.total,
+      knownCorrect + other.knownCorrect, knownTotal + other.knownTotal,
+      unkCorrect + other.unkCorrect, unkTotal + other.unkTotal,
+      mistakes +++ other.mistakes)
   }
 
 }
