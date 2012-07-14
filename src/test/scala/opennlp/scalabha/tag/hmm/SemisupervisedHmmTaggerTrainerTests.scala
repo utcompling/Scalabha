@@ -82,7 +82,7 @@ class SemisupervisedHmmTaggerTrainerTests {
           new EmissionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(1., AddLambdaSmoothingCountsTransformer(1.))))
     val semisupervisedAutotagged = semisupervisedTagger.tag(trainRaw)
-    val autosupervisedTagger = supervisedTrainer.trainSupervised(semisupervisedAutotagged, tagDict)
+    val autosupervisedTagger = supervisedTrainer.trainSupervised(semisupervisedAutotagged, tagDict.allTags)
     val autosupervisedOutput = autosupervisedTagger.tag(gold.map(_.map(_._1)))
     val autosupervisedResults = new TaggerEvaluator().evaluate(autosupervisedOutput, gold, tagDict)
 
