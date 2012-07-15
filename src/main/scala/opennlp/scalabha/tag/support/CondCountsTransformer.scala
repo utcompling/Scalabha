@@ -195,7 +195,7 @@ class EisnerSmoothingCondCountsTransformer[A, B](lambda: Double, backoffCountsTr
           val defaultCounts = (allBs -- aCounts.keySet).mapToVal(aDefault)
           val countsWithDefaults = aCounts +++ defaultCounts
 
-          val numSingleCountItems = countsWithDefaults.count(_._2 < 2.0)
+          val numSingleCountItems = countsWithDefaults.count(c => 0.5 < c._2 && c._2 < 1.5)
           val smoothedLambda = lambda * (1e-100 + numSingleCountItems)
           val smoothedBackoff = backoffDist.mapVals(_ * smoothedLambda)
           val smoothedBackoffDefault = backoffDefault * smoothedLambda

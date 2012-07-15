@@ -19,7 +19,7 @@ trait Tagger[Sym, Tag] {
     (rawSequences zip rawSequences.map(tagSequence)).map(_.zipped.toIndexedSeq)
 
   /**
-   * Tag the sequence using this model.  Uses the Viterbi algorithm.
+   * Tag the sequence using this model.
    *
    * @param sequence 	a single sequence to be tagged
    * @return			the tagging of the input sequence assigned by the model
