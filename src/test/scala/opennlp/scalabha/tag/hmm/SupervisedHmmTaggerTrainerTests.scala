@@ -168,8 +168,9 @@ class SupervisedHmmTaggerTrainerTests {
           new TransitionCountsTransformer(tagDict,
             EisnerSmoothingCondCountsTransformer(lambda = 1.0)),
         emissionCountsTransformer =
-          TagDictConstrainedEmissionCountsTransformer(tagDict,
-            EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))))
+          TagDictConstrainedEmissionCountsTransformer(tagDict, allowUnseenWordTypes = true,
+            EisnerSmoothingCondCountsTransformer(lambda = 1.0,
+              backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))))
     val tagger = trainer.trainSupervised(train, tagDict.allTags)
 
     val output = tagger.tag(gold.map(_.map(_._1)))

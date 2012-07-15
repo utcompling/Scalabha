@@ -75,39 +75,55 @@ case class PassthroughCondCountsTransformer[A, B]() extends CondCountsTransforme
  * @param validEntries	zero out entries not found in this set
  * @param delegate		the delegate counter upon which the transformation is performed
  */
-case class ConstrainingCondCountsTransformer[A, B](validEntries: Map[A, Set[B]], delegate: CondCountsTransformer[A, B]) extends CondCountsTransformer[A, B] {
+case class ConstrainingCondCountsTransformer[A, B](validEntries: Map[A, Set[B]], zeroDefaults: Boolean, delegate: CondCountsTransformer[A, B]) extends CondCountsTransformer[A, B] {
   override def apply(counts: DefaultedCondFreqCounts[A, B, Double]) = {
     val resultCounts = delegate(counts)
-    val zeroCountAs = DefaultedCondFreqCounts(validEntries.mapVals(_ => Map[B, Double]())) // a count for every A in validEntries
-    val allBs = (validEntries.values.flatten ++ resultCounts.counts.values.flatMap(_.counts.keySet)).toSet
-    val zeroCountBs = allBs.mapToVal(0.)
-    DefaultedCondFreqCounts(
-      resultCounts.counts.map {
-        case (a, DefaultedFreqCounts(aCounts, aTotalAddition, aDefaultCount)) =>
-          validEntries.get(a) match {
-            case Some(validBs) =>
-              val filtered = aCounts.filterKeys(validBs) +++ zeroCountBs
-              val defaults = (validBs -- aCounts.keySet).mapToVal(aDefaultCount)
-              a -> (filtered +++ defaults +++ zeroCountBs).toMap
-            case None =>
-              a -> Map[B, Double]()
-          }
-      }) +++ zeroCountAs
+    if (zeroDefaults) {
+      val zeroCountAs = DefaultedCondFreqCounts(validEntries.mapVals(_ => Map[B, Double]())) // a count for every A in validEntries
+      val allBs = (validEntries.values.flatten ++ resultCounts.counts.values.flatMap(_.counts.keySet)).toSet
+      val zeroCountBs = allBs.mapToVal(0.)
+      DefaultedCondFreqCounts(
+        resultCounts.counts.map {
+          case (a, DefaultedFreqCounts(aCounts, aTotalAddition, aDefaultCount)) =>
+            validEntries.get(a) match {
+              case Some(validBs) =>
+                val filtered = aCounts.filterKeys(validBs) +++ zeroCountBs
+                val defaults = (validBs -- aCounts.keySet).mapToVal(aDefaultCount)
+                a -> (filtered +++ defaults +++ zeroCountBs).toMap
+              case None =>
+                a -> Map[B, Double]()
+            }
+        }) +++ zeroCountAs
+    }
+    else {
+      val constrainedBs = validEntries.values.flatten.toSet
+      new DefaultedCondFreqCounts(
+        resultCounts.counts.map {
+          case (a, bs @ DefaultedFreqCounts(aCounts, aTotalAddition, aDefaultCount)) =>
+            val zeros =
+              validEntries.get(a) match {
+                case Some(validBs) => (constrainedBs -- validBs)
+                case None => constrainedBs
+              }
+            val filtered = aCounts ++ zeros.mapToVal(0.)
+            a -> DefaultedFreqCounts(filtered, aTotalAddition, aDefaultCount)
+        })
+    }
   }
 }
 
 object ConstrainingCondCountsTransformer {
-  def apply[A, B](validEntries: Map[A, Set[B]]): CondCountsTransformer[A, B] =
-    ConstrainingCondCountsTransformer(validEntries, PassthroughCondCountsTransformer[A, B]())
+  def apply[A, B](validEntries: Map[A, Set[B]], zeroDefaults: Boolean): CondCountsTransformer[A, B] =
+    ConstrainingCondCountsTransformer(validEntries, zeroDefaults, PassthroughCondCountsTransformer[A, B]())
 
-  def apply[A, B](validEntriesOpt: Option[Map[A, Set[B]]], delegate: CondCountsTransformer[A, B]): CondCountsTransformer[A, B] =
+  def apply[A, B](validEntriesOpt: Option[Map[A, Set[B]]], zeroDefaults: Boolean, delegate: CondCountsTransformer[A, B]): CondCountsTransformer[A, B] =
     validEntriesOpt match {
-      case Some(validEntries) => new ConstrainingCondCountsTransformer(validEntries, delegate)
+      case Some(validEntries) => new ConstrainingCondCountsTransformer(validEntries, zeroDefaults, delegate)
       case None => delegate
     }
 
-  def apply[A, B](validEntries: Option[Map[A, Set[B]]]): CondCountsTransformer[A, B] =
-    ConstrainingCondCountsTransformer(validEntries, PassthroughCondCountsTransformer[A, B]())
+  def apply[A, B](validEntries: Option[Map[A, Set[B]]], zeroDefaults: Boolean): CondCountsTransformer[A, B] =
+    ConstrainingCondCountsTransformer(validEntries, zeroDefaults, PassthroughCondCountsTransformer[A, B]())
 }
 
 //////////////////////////////////////

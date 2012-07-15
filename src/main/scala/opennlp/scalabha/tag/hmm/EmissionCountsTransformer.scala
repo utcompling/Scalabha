@@ -30,16 +30,22 @@ object EmissionCountsTransformer {
   }
 }
 
+/**
+ * TODO: This is perhaps too constraining.  It limits the available emissions 
+ * to that based on the tag dictionary, but, unfortunately, that means that 
+ * words _not_ in the tag dictionary are impossible.  We need an option for 
+ * allowing the 'default' counts to not be zeroed.
+ */
 object TagDictConstrainedEmissionCountsTransformer {
-  def apply[Tag, Sym](tagDict: TagDict[Sym, Tag]): EmissionCountsTransformer[Tag, Sym] = {
-    TagDictConstrainedEmissionCountsTransformer(tagDict,
-      PassthroughCondCountsTransformer[Option[Tag], Option[Sym]]())
-  }
+//  def apply[Tag, Sym](tagDict: TagDict[Sym, Tag], allowUnseenWordTypes: Boolean): EmissionCountsTransformer[Tag, Sym] = {
+//    TagDictConstrainedEmissionCountsTransformer(tagDict, !allowUnseenWordTypes,
+//      PassthroughCondCountsTransformer[Option[Tag], Option[Sym]]())
+//  }
 
-  def apply[Tag, Sym](tagDict: TagDict[Sym, Tag], delegate: CondCountsTransformer[Option[Tag], Option[Sym]]): EmissionCountsTransformer[Tag, Sym] = {
-    val c = (OptionalTagDict(tagDict).setIterator.ungroup.map(_.swap) :+ (None,None)).toSet.groupByKey
+  def apply[Tag, Sym](tagDict: TagDict[Sym, Tag], allowUnseenWordTypes: Boolean, delegate: CondCountsTransformer[Option[Tag], Option[Sym]]): EmissionCountsTransformer[Tag, Sym] = {
+    val c = (OptionalTagDict(tagDict).setIterator.ungroup.map(_.swap) :+ (None, None)).toSet.groupByKey
     new EmissionCountsTransformer(
-      new ConstrainingCondCountsTransformer(c,
+      new ConstrainingCondCountsTransformer(c, !allowUnseenWordTypes,
         delegate))
   }
 }
