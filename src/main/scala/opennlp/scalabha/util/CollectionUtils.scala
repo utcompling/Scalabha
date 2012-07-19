@@ -11,6 +11,7 @@ import scala.collection.GenMap
 import scala.collection.mutable
 import scala.collection.GenIterable
 import scala.collection.GenIterableLike
+import scala.util.Random
 
 object CollectionUtils {
 
@@ -340,7 +341,8 @@ object CollectionUtils {
           if (self.hasNext) {
             if (thatItr.hasNext) true
             else throw new RuntimeException("Attempting to zipEqual collections of different lengths.")
-          } else {
+          }
+          else {
             if (thatItr.hasNext) throw new RuntimeException("Attempting to zipEqual collections of different lengths.")
             else false
           }
@@ -891,7 +893,8 @@ object CollectionUtils {
     def takeSub(n: Int): Iterator[R] = {
       if (self.isEmpty) {
         self.asInstanceOf[Iterator[R]]
-      } else {
+      }
+      else {
         new Iterator[R] {
           private var nextElement: R = self.next.asInstanceOf[R]
           private var total: Int = nextElement.size
@@ -904,10 +907,12 @@ object CollectionUtils {
               if (self.hasNext) {
                 nextElement = self.next.asInstanceOf[R]
                 total += nextElement.size
-              } else
+              }
+              else
                 total = n + 1
               x
-            } else
+            }
+            else
               throw new NoSuchElementException("next on empty iterator")
           }
         }
@@ -1053,6 +1058,18 @@ object CollectionUtils {
   }
   implicit def enrich_normalizeValues_Int_GenTraversableLike[T, Repr <: GenTraversable[(T, Int)]](self: GenTraversableLike[(T, Int), Repr]) = new Enriched_normalizeValues_Int_GenTraversableLike(self)
 
+  //////////////////////////////////////////////////////
+  // shuffle
+  //////////////////////////////////////////////////////
+
+  class Enriched_shuffle_GenTraversableOnce[T, CC[X] <: TraversableOnce[X]](xs: CC[T]) {
+    def shuffle(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): CC[T] = {
+      bf(xs) ++= Random.shuffle(xs) result
+    }
+  }
+  implicit def enriched_shuffle_GenTraversableOnce[T, CC[X] <: TraversableOnce[X]](xs: CC[T]) = new Enriched_shuffle_GenTraversableOnce(xs)
+  
+  
   //  class ReversableIterableMap[A, B](map: Map[A, GenTraversableOnce[B]]) {
   //    def reverse(): Map[B, GenTraversableOnce[A]] =
   //      map.ungroup.groupBy(_._2).mapValues(_.map(_._1)).iterator.toMap
