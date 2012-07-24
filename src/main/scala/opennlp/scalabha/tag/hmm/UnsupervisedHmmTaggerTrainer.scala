@@ -28,7 +28,7 @@ import scala.annotation.tailrec
  */
 class UnsupervisedHmmTaggerTrainer[Sym, Tag](
   initialUnsupervisedEmissionDist: Option[Tag] => Option[Sym] => LogNum,
-  override protected val estimatedTransitionCountsTransformer: TransitionCountsTransformer[Tag, Sym],
+  override protected val estimatedTransitionCountsTransformer: TransitionCountsTransformer[Tag],
   override protected val estimatedEmissionCountsTransformer: EmissionCountsTransformer[Tag, Sym],
   override protected val maxIterations: Int = 50,
   override protected val minAvgLogProbChangeForEM: Double = 0.00001)
@@ -79,9 +79,9 @@ class UnsupervisedHmmTaggerTrainer[Sym, Tag](
  * @param minAvgLogProbChangeForEM				stop iterating EM if change in average log probability is less than this threshold
  */
 class SemisupervisedHmmTaggerTrainer[Sym, Tag](
-  initialTransitionCountsTransformer: TransitionCountsTransformer[Tag, Sym],
+  initialTransitionCountsTransformer: TransitionCountsTransformer[Tag],
   initialEmissionCountsTransformer: EmissionCountsTransformer[Tag, Sym],
-  override protected val estimatedTransitionCountsTransformer: TransitionCountsTransformer[Tag, Sym],
+  override protected val estimatedTransitionCountsTransformer: TransitionCountsTransformer[Tag],
   override protected val estimatedEmissionCountsTransformer: EmissionCountsTransformer[Tag, Sym],
   override protected val maxIterations: Int = 50,
   override protected val minAvgLogProbChangeForEM: Double = 0.00001)
@@ -141,7 +141,7 @@ class SemisupervisedHmmTaggerTrainer[Sym, Tag](
  * @param minAvgLogProbChangeForEM					stop iterating EM if change in average log probability is less than this threshold
  */
 trait AbstractEmHmmTaggerTrainer[Sym, Tag] {
-  protected val estimatedTransitionCountsTransformer: TransitionCountsTransformer[Tag, Sym]
+  protected val estimatedTransitionCountsTransformer: TransitionCountsTransformer[Tag]
   protected val estimatedEmissionCountsTransformer: EmissionCountsTransformer[Tag, Sym]
   protected val maxIterations: Int = 50
   protected val minAvgLogProbChangeForEM: Double = 0.00001

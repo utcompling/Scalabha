@@ -1,26 +1,21 @@
 package opennlp.scalabha.tag.hmm
 
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.Pattern.{ -> }
 import opennlp.scalabha.tag.support.DefaultedCondFreqCounts
 import opennlp.scalabha.tag.support._
 import opennlp.scalabha.tag._
 
-class TransitionCountsTransformer[Tag, Sym](tagDict: TagDict[Sym, Tag], delegate: CondCountsTransformer[Option[Tag], Option[Tag]])
+class TransitionCountsTransformer[Tag](delegate: CondCountsTransformer[Option[Tag], Option[Tag]])
   extends CondCountsTransformer[Option[Tag], Option[Tag]] {
-
-  val constraints = {
-    val allTags = OptionalTagDict(tagDict).allTags
-    allTags.mapToVal(allTags + None).toMap + (None -> allTags)
-  }
 
   override def apply(counts: DefaultedCondFreqCounts[Option[Tag], Option[Tag], Double]) = {
     new DefaultedCondFreqCounts(
       delegate(counts).counts.map {
-        case (tag, DefaultedFreqCounts(c, t, d)) =>
-          val filtered = c.filterKeys(constraints(tag))
+        case (tag, dfc @ DefaultedFreqCounts(c, t, d)) =>
           tag -> (tag match {
-            case None => DefaultedFreqCounts(filtered + (None -> 0.), t, d)
-            case _ => DefaultedFreqCounts(filtered, t, d)
+            case None => DefaultedFreqCounts(c + (None -> 0.), t, d)
+            case _ => dfc
           })
       })
   }
@@ -28,7 +23,7 @@ class TransitionCountsTransformer[Tag, Sym](tagDict: TagDict[Sym, Tag], delegate
 }
 
 object TransitionCountsTransformer {
-  def apply[Tag, Sym](tagDict: TagDict[Sym, Tag]) = {
-    new TransitionCountsTransformer(tagDict, PassthroughCondCountsTransformer[Option[Tag], Option[Tag]]())
+  def apply[Tag]() = {
+    new TransitionCountsTransformer(PassthroughCondCountsTransformer[Option[Tag], Option[Tag]]())
   }
 }

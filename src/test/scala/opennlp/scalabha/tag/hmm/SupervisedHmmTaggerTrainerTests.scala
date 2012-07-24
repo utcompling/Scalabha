@@ -31,7 +31,7 @@ class SupervisedHmmTaggerTrainerTests {
     val tagDict = new SimpleTagDictFactory().make(train)
     val trainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(
-        transitionCountsTransformer = TransitionCountsTransformer(tagDict),
+        transitionCountsTransformer = TransitionCountsTransformer(),
         emissionCountsTransformer = EmissionCountsTransformer())
     val tagger: Tagger[String, String] = trainer.trainSupervised(train, tagDict.allTags)
     assertEquals(List("D", "N", "V", "."), tagger.tagSequence("the dog walks . ".split(" ")))
@@ -50,7 +50,7 @@ class SupervisedHmmTaggerTrainerTests {
     val trainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(
         transitionCountsTransformer =
-          new TransitionCountsTransformer(tagDict,
+          new TransitionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0)),
         emissionCountsTransformer =
           new EmissionCountsTransformer(
@@ -68,7 +68,7 @@ class SupervisedHmmTaggerTrainerTests {
     val tagDict = new SimpleTagDictFactory().make(train)
     val trainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(
-        transitionCountsTransformer = TransitionCountsTransformer(tagDict),
+        transitionCountsTransformer = TransitionCountsTransformer(),
         emissionCountsTransformer = EmissionCountsTransformer())
     val tagger: Tagger[String, String] = trainer.trainSupervised(train, tagDict.allTags)
 
@@ -94,7 +94,7 @@ class SupervisedHmmTaggerTrainerTests {
     val tagDict = new SimpleTagDictFactory().make(train)
     val trainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(
-        transitionCountsTransformer = TransitionCountsTransformer(tagDict),
+        transitionCountsTransformer = TransitionCountsTransformer(),
         emissionCountsTransformer = EmissionCountsTransformer())
     val tagger: Tagger[String, String] = trainer.trainSupervised(train, tagDict.allTags)
 
@@ -130,7 +130,7 @@ class SupervisedHmmTaggerTrainerTests {
     val trainer =
       new SupervisedHmmTaggerTrainer[String, String](
         transitionCountsTransformer =
-          new TransitionCountsTransformer(tagDict,
+          new TransitionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0)),
         emissionCountsTransformer =
           new EmissionCountsTransformer(
@@ -172,7 +172,7 @@ class SupervisedHmmTaggerTrainerTests {
     val trainer =
       new SupervisedHmmTaggerTrainer[String, String](
         transitionCountsTransformer =
-          new TransitionCountsTransformer(tagDict,
+          new TransitionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0)),
         emissionCountsTransformer =
           new EmissionCountsTransformer(
@@ -210,7 +210,7 @@ class SupervisedHmmTaggerTrainerTests {
     val trainer =
       new SupervisedHmmTaggerTrainer[String, String](
         transitionCountsTransformer =
-          new TransitionCountsTransformer(tagDict,
+          new TransitionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0)),
         emissionCountsTransformer =
           TagDictConstrainedEmissionCountsTransformer(tagDict, allowUnseenWordTypes = true,
@@ -247,7 +247,7 @@ class SupervisedHmmTaggerTrainerTests {
     val trainer =
       new SupervisedHmmTaggerTrainer[String, String](
         transitionCountsTransformer =
-          new TransitionCountsTransformer(tagDict,
+          new TransitionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0)),
         emissionCountsTransformer =
           TagDictConstrainedEmissionCountsTransformer(tagDict, allowUnseenWordTypes = true,

@@ -60,12 +60,12 @@ class SemisupervisedHmmTaggerTrainerTests {
     val trainer: SemisupervisedTaggerTrainer[String, String] =
       new SemisupervisedHmmTaggerTrainer(
         initialTransitionCountsTransformer =
-          new TransitionCountsTransformer(tagDict,
+          new TransitionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0)),
         initialEmissionCountsTransformer =
           new EmissionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))),
-        estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
+        estimatedTransitionCountsTransformer = TransitionCountsTransformer(),
         estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -76,7 +76,7 @@ class SemisupervisedHmmTaggerTrainerTests {
     val supervisedTrainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(
         transitionCountsTransformer =
-          new TransitionCountsTransformer(tagDict,
+          new TransitionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(1.)),
         emissionCountsTransformer =
           new EmissionCountsTransformer(

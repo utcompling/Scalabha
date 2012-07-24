@@ -121,7 +121,7 @@ class UnsupervisedHmmTaggerTrainerTests {
             new PassthroughCountsTransformer(),
             tagDict,
             trainRaw).make(),
-        estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
+        estimatedTransitionCountsTransformer = TransitionCountsTransformer(),
         estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 1,
         minAvgLogProbChangeForEM = 0.00001)
@@ -156,7 +156,7 @@ class UnsupervisedHmmTaggerTrainerTests {
             new PassthroughCountsTransformer(),
             tagDict,
             trainLab.map(_.map(_._1))).make(),
-        estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
+        estimatedTransitionCountsTransformer = TransitionCountsTransformer(),
         estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -189,7 +189,7 @@ class UnsupervisedHmmTaggerTrainerTests {
             new PassthroughCountsTransformer(),
             tagDict,
             trainLab.map(_.map(_._1))).make(),
-        estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
+        estimatedTransitionCountsTransformer = TransitionCountsTransformer(),
         estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -311,14 +311,14 @@ class UnsupervisedHmmTaggerTrainerTests {
     LOG.debug("labeledTrain.size = " + 0)
     LOG.debug("rawTrain.size     = " + trainRaw.size)
 
-    val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
-      new UnsupervisedHmmTaggerTrainer(
+    val unsupervisedTrainer =
+      new UnsupervisedHmmTaggerTrainer[String, String](
         initialUnsupervisedEmissionDist =
           new EstimatedRawCountUnsupervisedEmissionDistFactory(
             new PassthroughCountsTransformer(),
             tagDict,
             trainRaw).make(),
-        estimatedTransitionCountsTransformer = TransitionCountsTransformer(tagDict),
+        estimatedTransitionCountsTransformer = TransitionCountsTransformer(),
         estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001) {
@@ -336,7 +336,7 @@ class UnsupervisedHmmTaggerTrainerTests {
     val supervisedTrainer: SupervisedTaggerTrainer[String, String] =
       new SupervisedHmmTaggerTrainer(
         transitionCountsTransformer =
-          new TransitionCountsTransformer(tagDict,
+          new TransitionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(1.)),
         emissionCountsTransformer =
           new EmissionCountsTransformer(
