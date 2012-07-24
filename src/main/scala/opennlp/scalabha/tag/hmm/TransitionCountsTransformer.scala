@@ -18,13 +18,10 @@ class TransitionCountsTransformer[Tag, Sym](tagDict: TagDict[Sym, Tag], delegate
       delegate(counts).counts.map {
         case (tag, DefaultedFreqCounts(c, t, d)) =>
           val filtered = c.filterKeys(constraints(tag))
-          //val results =
           tag -> (tag match {
             case None => DefaultedFreqCounts(filtered + (None -> 0.), t, d)
             case _ => DefaultedFreqCounts(filtered, t, d)
           })
-        //println(results)
-        //results
       })
   }
 

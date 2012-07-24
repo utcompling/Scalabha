@@ -5,6 +5,10 @@ import opennlp.scalabha.tag.support.Viterbi
 import opennlp.scalabha.tag.OptionalTagDict
 import opennlp.scalabha.tag.Tagger
 import opennlp.scalabha.util.LogNum
+import opennlp.scalabha.util.Pattern
+import opennlp.scalabha.util.Pattern.{ -> }
+import opennlp.scalabha.util.CollectionUtils._
+import scala.annotation.tailrec
 
 /**
  * Hidden Markov Model for tagging.
@@ -24,7 +28,7 @@ case class HmmTagger[Sym, Tag](
   val tagSet: Set[Tag])
   extends Tagger[Sym, Tag] {
 
-  private[this] val viterbi = new Viterbi(new HmmEdgeScorer(transitions, emissions))
+  private[this] val viterbi = new Viterbi(new HmmEdgeScorer(transitions, emissions), tagSet)
 
   /**
    * Tag the sequence using this model.  Uses the Viterbi algorithm.
@@ -33,7 +37,7 @@ case class HmmTagger[Sym, Tag](
    * @return			the tagging of the input sequence assigned by the model
    */
   override def tagSequence(sequence: IndexedSeq[Sym]): List[Tag] = {
-    viterbi.tagSequence(sequence, tagSet).getOrElse(
+    viterbi.tagSequence(sequence).getOrElse(
       throw new RuntimeException("No tagging found for '%s'".format(sequence.mkString(" "))))
   }
 
@@ -45,23 +49,35 @@ case class HmmTagger[Sym, Tag](
  * constrained counts transformers, this class will be faster since Viterbi
  * won't bother exploring those zero-probability values.
  */
-case class HardConstraintHmmTagger[Sym, Tag](
-  val transitions: Option[Tag] => Option[Tag] => LogNum,
-  val emissions: Option[Tag] => Option[Sym] => LogNum,
-  val tagDict: Option[OptionalTagDict[Sym, Tag]],
-  val tagSet: Option[Set[Tag]],
-  val validTransitions: Option[Map[Option[Tag], Set[Option[Tag]]]])
+class HardConstraintHmmTagger[Sym, Tag](
+  val viterbi: Viterbi[Sym, Tag])
   extends Tagger[Sym, Tag] {
 
-  private[this] val viterbi = new Viterbi(new HmmEdgeScorer(transitions, emissions))
+  def this(
+    transitions: Option[Tag] => Option[Tag] => LogNum,
+    emissions: Option[Tag] => Option[Sym] => LogNum,
+    tagSet: Set[Tag]) =
+    this(new Viterbi(new HmmEdgeScorer(transitions, emissions), tagSet))
 
-  private[this] val tag = (sequence: Seq[Sym] @unchecked) =>
-    (tagDict, tagSet, validTransitions) match {
-      case (Some(e), None, None) => viterbi.tagSequence(sequence, e)
-      case (Some(e), None, Some(t)) => viterbi.tagSequence(sequence, e, t)
-      case (None, Some(s), Some(t)) => viterbi.tagSequence(sequence, s, t)
-      case (None, Some(s), None) => viterbi.tagSequence(sequence, s)
-    }
+  def this(
+    transitions: Option[Tag] => Option[Tag] => LogNum,
+    emissions: Option[Tag] => Option[Sym] => LogNum,
+    tagDict: OptionalTagDict[Sym, Tag]) =
+    this(new Viterbi(new HmmEdgeScorer(transitions, emissions), tagDict))
+
+  def this(
+    transitions: Option[Tag] => Option[Tag] => LogNum,
+    emissions: Option[Tag] => Option[Sym] => LogNum,
+    tagSet: Set[Tag],
+    validTransitions: Map[Option[Tag], Set[Option[Tag]]]) =
+    this(new Viterbi(new HmmEdgeScorer(transitions, emissions), tagSet, validTransitions))
+
+  def this(
+    transitions: Option[Tag] => Option[Tag] => LogNum,
+    emissions: Option[Tag] => Option[Sym] => LogNum,
+    tagDict: OptionalTagDict[Sym, Tag],
+    validTransitions: Map[Option[Tag], Set[Option[Tag]]]) =
+    this(new Viterbi(new HmmEdgeScorer(transitions, emissions), tagDict, validTransitions))
 
   /**
    * Tag the sequence using this model.  Uses the Viterbi algorithm.
@@ -70,17 +86,7 @@ case class HardConstraintHmmTagger[Sym, Tag](
    * @return			the tagging of the input sequence assigned by the model
    */
   override def tagSequence(sequence: IndexedSeq[Sym]): List[Tag] = {
-    tag(sequence).getOrElse(throw new RuntimeException("No tagging found for '%s'".format(sequence.mkString(" "))))
-  }
-}
-
-object HardConstraintHmmTagger {
-  def apply[Sym, Tag](
-    hmmTagger: HmmTagger[Sym, Tag],
-    tagDict: Option[OptionalTagDict[Sym, Tag]],
-    tagSet: Option[Set[Tag]],
-    validTransitions: Option[Map[Option[Tag], Set[Option[Tag]]]]) = {
-    new HardConstraintHmmTagger(hmmTagger.transitions, hmmTagger.emissions, tagDict, tagSet, validTransitions)
+    viterbi.tagSequence(sequence).getOrElse(throw new RuntimeException("No tagging found for '%s'".format(sequence.mkString(" "))))
   }
 }
 

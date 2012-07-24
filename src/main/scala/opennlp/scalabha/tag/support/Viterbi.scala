@@ -8,23 +8,27 @@ import opennlp.scalabha.util.Pattern
 import opennlp.scalabha.util.Pattern.{ -> }
 
 /**
- * A generic implementation of the Viterbi algorithm.
+ * A generic implementation of the Viterbi algorithm for finding the most
+ * likely tagging for the sequence.
  *
- * @param edgeScorer	Class for calculating the probability of a symbol/tag transition
+ * @param edgeScorer		class for calculating the probability of a symbol/tag transition
+ * @param tagDict			tag dictionary indicating which words can be used with which tags
+ * @param tagTransitions	valid tag-tag transitions
  */
-class Viterbi[Sym, Tag](edgeScorer: TagEdgeScorer[Sym, Tag]) {
+class Viterbi[Sym, Tag](
+  edgeScorer: TagEdgeScorer[Sym, Tag],
+  tagDict: OptionalTagDict[Sym, Tag],
+  tagTransitions: Map[Option[Tag], Set[Option[Tag]]]) {
 
   /**
    * Find the most likely tagging for the sequence given no constraints on
-   * which tags can be associated with which symbols or tag-tag transitions
+   * tag-tag transitions
    *
    * @param sequence		sequence to be tagged
-   * @param tagSet			set of all tags
+   * @param tagDict			tag dictionary indicating which words can be used with which tags
    */
-  def tagSequence(sequence: Seq[Sym], tagSet: Set[Tag]): Option[List[Tag]] = {
-    val allTags = tagSet.map(Option(_)) + None
-    tagSequence(sequence, tagSet, allTags.mapToVal(allTags).toMap)
-  }
+  def this(edgeScorer: TagEdgeScorer[Sym, Tag], tagDict: OptionalTagDict[Sym, Tag]) =
+    this(edgeScorer, tagDict, { val allTags = tagDict.allTags + None; allTags.mapToVal(allTags).toMap })
 
   /**
    * Find the most likely tagging for the sequence given no constraints on
@@ -34,31 +38,25 @@ class Viterbi[Sym, Tag](edgeScorer: TagEdgeScorer[Sym, Tag]) {
    * @param tagSet			set of all tags
    * @param tagTransitions	valid tag-tag transitions
    */
-  def tagSequence(sequence: Seq[Sym], tagSet: Set[Tag], tagTransitions: Map[Option[Tag], Set[Option[Tag]]]): Option[List[Tag]] = {
-    tagSequence(sequence, OptionalTagDict(SimpleTagDict(Map[Sym, Set[Tag]](), tagSet)), tagTransitions)
-  }
+  def this(edgeScorer: TagEdgeScorer[Sym, Tag], tagSet: Set[Tag], tagTransitions: Map[Option[Tag], Set[Option[Tag]]]) =
+    this(edgeScorer, OptionalTagDict(SimpleTagDict(Map[Sym, Set[Tag]](), tagSet)), tagTransitions)
 
   /**
    * Find the most likely tagging for the sequence given no constraints on
-   * tag-tag transitions
+   * which tags can be associated with which symbols or tag-tag transitions
    *
    * @param sequence		sequence to be tagged
-   * @param tagDict			tag dictionary indicating which words can be used with which tags
-   * @param tagTransitions	valid tag-tag transitions
+   * @param tagSet			set of all tags
    */
-  def tagSequence(sequence: Seq[Sym], tagDict: OptionalTagDict[Sym, Tag]): Option[List[Tag]] = {
-    val allTags = tagDict.allTags + None
-    tagSequence(sequence, tagDict, allTags.mapToVal(allTags).toMap)
-  }
+  def this(edgeScorer: TagEdgeScorer[Sym, Tag], tagSet: Set[Tag]) =
+    this(edgeScorer, OptionalTagDict(SimpleTagDict(Map[Sym, Set[Tag]](), tagSet)))
 
   /**
    * Find the most likely tagging for the sequence.
    *
    * @param sequence		sequence to be tagged
-   * @param tagDict			tag dictionary indicating which words can be used with which tags
-   * @param tagTransitions	valid tag-tag transitions
    */
-  def tagSequence(sequence: Seq[Sym], tagDict: OptionalTagDict[Sym, Tag], tagTransitions: Map[Option[Tag], Set[Option[Tag]]]): Option[List[Tag]] = {
+  def tagSequence(sequence: Seq[Sym]): Option[List[Tag]] = {
     // viterbi(t)(j) = the probability of the most likely subsequence of states 
     // that accounts for the first t observations and ends in state j.
 
@@ -81,12 +79,11 @@ class Viterbi[Sym, Tag](edgeScorer: TagEdgeScorer[Sym, Tag]) {
               .toMap
               .filter(_._2.nonEmpty) // remove tags that don't transition anywhere
           val bestTransitions = transitionScores.mapVals(_.maxBy(_._2)) // get the previous tag with the highest probability (and its score)
-          if (bestTransitions.nonEmpty) {
+          if (bestTransitions.nonEmpty)
             Some(
               bestTransitions.mapVals(_._2), // update viterbi for the next row
               bestTransitions.mapVals(_._1) :: backpointers, // append new backpointers
               currSym)
-          }
           else
             None
         case (None, _) => None
