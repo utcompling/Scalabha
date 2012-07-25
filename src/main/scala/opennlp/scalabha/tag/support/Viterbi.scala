@@ -56,7 +56,7 @@ class Viterbi[Sym, Tag](
    *
    * @param sequence		sequence to be tagged
    */
-  def tagSequence(sequence: Seq[Sym]): Option[List[Tag]] = {
+  def tagSequence(sequence: Seq[Sym]): Option[IndexedSeq[Tag]] = {
     // viterbi(t)(j) = the probability of the most likely subsequence of states 
     // that accounts for the first t observations and ends in state j.
 
@@ -96,14 +96,14 @@ class Viterbi[Sym, Tag](
   /**
    * Backtrack through the backpointer maps to recover the optimal tag sequence.
    */
-  private def backtrack(backpointers: List[Map[Option[Tag], Option[Tag]]]): List[Option[Tag]] = {
+  private def backtrack(backpointers: List[Map[Option[Tag], Option[Tag]]]): IndexedSeq[Option[Tag]] = {
     @tailrec def inner(backpointers: List[Map[Option[Tag], Option[Tag]]], curTag: Option[Tag], tags: List[Option[Tag]]): List[Option[Tag]] =
       backpointers match {
         case Nil => assert(curTag == None); tags
         case currPointers :: previousPointers => inner(previousPointers, currPointers(curTag), curTag :: tags)
       }
     val Pattern.Map(None -> lastTag) :: previousPointers = backpointers
-    inner(previousPointers, lastTag, Nil)
+    inner(previousPointers, lastTag, Nil).toIndexedSeq
   }
 }
 

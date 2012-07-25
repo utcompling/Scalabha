@@ -36,10 +36,8 @@ case class HmmTagger[Sym, Tag](
    * @param sequence 	a single sequence to be tagged
    * @return			the tagging of the input sequence assigned by the model
    */
-  override def tagSequence(sequence: IndexedSeq[Sym]): List[Tag] = {
-    viterbi.tagSequence(sequence).getOrElse(
-      throw new RuntimeException("No tagging found for '%s'".format(sequence.mkString(" "))))
-  }
+  override def tagSequence(sequence: IndexedSeq[Sym]) =
+    viterbi.tagSequence(sequence)
 
 }
 
@@ -85,9 +83,9 @@ class HardConstraintHmmTagger[Sym, Tag](
    * @param sequence 	a single sequence to be tagged
    * @return			the tagging of the input sequence assigned by the model
    */
-  override def tagSequence(sequence: IndexedSeq[Sym]): List[Tag] = {
-    viterbi.tagSequence(sequence).getOrElse(throw new RuntimeException("No tagging found for '%s'".format(sequence.mkString(" "))))
-  }
+  override def tagSequence(sequence: IndexedSeq[Sym]) =
+    viterbi.tagSequence(sequence)
+
 }
 
 /**
@@ -101,8 +99,6 @@ class HmmEdgeScorer[Sym, Tag](
   override def apply(prevSym: Option[Sym], prevTag: Option[Tag], currSym: Option[Sym], currTag: Option[Tag]): LogNum = {
     val t = transitions(prevTag)(currTag) // probability of transition to current
     val e = emissions(currTag)(currSym) // probability of observing current symbol
-    //        if (t > LogNum.zero && e > LogNum.zero)
-    //          println("%s\t%s\t(%s %s)\t(%s %s)".format(t, e, prevSym, prevTag, currSym, currTag))
     t * e
   }
 }
