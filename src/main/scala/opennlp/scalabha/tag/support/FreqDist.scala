@@ -1,6 +1,7 @@
 package opennlp.scalabha.tag.support
 
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.Pattern.{ -> }
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
 import org.apache.commons.logging.LogFactory
@@ -53,7 +54,7 @@ object FreqDist {
    */
   def apply[B, N](resultCounts: DefaultedFreqCounts[B, N])(implicit num: Numeric[N]): MultinomialFreqDist[B] = {
     val DefaultedFreqCounts(counts, totalAddition, defaultCount) = resultCounts
-    val total = num.plus(counts.values.sum, totalAddition)
+    val total = resultCounts.total
     if (total == num.zero)
       FreqDist.empty[B]
     else {
@@ -95,7 +96,7 @@ object CondFreqDist {
    * @tparam B	the conditioned item being counted; P(B|A).
    */
   def apply[A, B, N: Numeric](counts: Map[A, Map[B, N]]): A => MultinomialFreqDist[B] = {
-    apply(DefaultedCondFreqCounts(counts))
+    apply(DefaultedCondFreqCounts.fromMap(counts))
   }
 
   /**
@@ -116,7 +117,8 @@ object CondFreqDist {
    * @tparam A	the conditioning item being counted; P(B|A).
    * @tparam B	the conditioned item being counted; P(B|A).
    */
-  def apply[A, B, N: Numeric](resultCounts: DefaultedCondFreqCounts[A, B, N]): A => MultinomialFreqDist[B] = {
-    resultCounts.counts.mapVals(FreqDist(_)).withDefaultValue(FreqDist.empty)
+  def apply[A, B, N](resultCounts: DefaultedCondFreqCounts[A, B, N])(implicit num: Numeric[N]): A => MultinomialFreqDist[B] = {
+    val DefaultedCondFreqCounts(counts, unseenContextProb) = resultCounts
+    counts.mapVals(FreqDist(_)).withDefaultValue(FreqDist.static(unseenContextProb))
   }
 }

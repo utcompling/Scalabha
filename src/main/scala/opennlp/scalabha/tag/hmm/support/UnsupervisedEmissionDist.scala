@@ -111,6 +111,6 @@ class EstimatedRawCountUnsupervisedEmissionDistFactory[Tag, Sym](
     val startEnd: (Option[Tag], DefaultedFreqCounts[Option[Sym], Double]) =
       (None -> DefaultedFreqCounts(Map(None -> 1.)))
 
-    CondFreqDist(new DefaultedCondFreqCounts(liftedCounts + startEnd))
+    CondFreqDist(DefaultedCondFreqCounts(liftedCounts + startEnd))
   }
 }

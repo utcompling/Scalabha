@@ -12,7 +12,7 @@ class EmissionCountsTransformer[Tag, Sym](delegate: CondCountsTransformer[Option
   extends CondCountsTransformer[Option[Tag], Option[Sym]] {
 
   override def apply(counts: DefaultedCondFreqCounts[Option[Tag], Option[Sym], Double]) = {
-    new DefaultedCondFreqCounts(
+    DefaultedCondFreqCounts(
       delegate(counts).counts.map {
         case (tag, DefaultedFreqCounts(c, t, d)) =>
           tag -> (tag match {
@@ -31,16 +31,16 @@ object EmissionCountsTransformer {
 }
 
 /**
- * TODO: This is perhaps too constraining.  It limits the available emissions 
- * to that based on the tag dictionary, but, unfortunately, that means that 
- * words _not_ in the tag dictionary are impossible.  We need an option for 
+ * TODO: This is perhaps too constraining.  It limits the available emissions
+ * to that based on the tag dictionary, but, unfortunately, that means that
+ * words _not_ in the tag dictionary are impossible.  We need an option for
  * allowing the 'default' counts to not be zeroed.
  */
 object TagDictConstrainedEmissionCountsTransformer {
-//  def apply[Tag, Sym](tagDict: TagDict[Sym, Tag], allowUnseenWordTypes: Boolean): EmissionCountsTransformer[Tag, Sym] = {
-//    TagDictConstrainedEmissionCountsTransformer(tagDict, !allowUnseenWordTypes,
-//      PassthroughCondCountsTransformer[Option[Tag], Option[Sym]]())
-//  }
+  //  def apply[Tag, Sym](tagDict: TagDict[Sym, Tag], allowUnseenWordTypes: Boolean): EmissionCountsTransformer[Tag, Sym] = {
+  //    TagDictConstrainedEmissionCountsTransformer(tagDict, !allowUnseenWordTypes,
+  //      PassthroughCondCountsTransformer[Option[Tag], Option[Sym]]())
+  //  }
 
   def apply[Tag, Sym](tagDict: TagDict[Sym, Tag], allowUnseenWordTypes: Boolean, delegate: CondCountsTransformer[Option[Tag], Option[Sym]]): EmissionCountsTransformer[Tag, Sym] = {
     val c = (OptionalTagDict(tagDict).setIterator.ungroup.map(_.swap) :+ (None, None)).toSet.groupByKey

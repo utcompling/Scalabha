@@ -10,7 +10,7 @@ class TransitionCountsTransformer[Tag](delegate: CondCountsTransformer[Option[Ta
   extends CondCountsTransformer[Option[Tag], Option[Tag]] {
 
   override def apply(counts: DefaultedCondFreqCounts[Option[Tag], Option[Tag], Double]) = {
-    new DefaultedCondFreqCounts(
+    DefaultedCondFreqCounts(
       delegate(counts).counts.map {
         case (tag, dfc @ DefaultedFreqCounts(c, t, d)) =>
           tag -> (tag match {

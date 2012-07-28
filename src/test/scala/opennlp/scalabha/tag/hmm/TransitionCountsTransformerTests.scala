@@ -12,7 +12,7 @@ class TransitionCountsTransformerTests {
   @Test
   def test_1 {
     val t = new TransitionCountsTransformer[Symbol](PassthroughCondCountsTransformer())
-    val counts = DefaultedCondFreqCounts[Option[Symbol], Option[Symbol], Double](
+    val counts = DefaultedCondFreqCounts.fromMap[Option[Symbol], Option[Symbol], Double](
       Map[Option[Symbol], Map[Option[Symbol], Double]](
         Some('A) -> Map(Some('a) -> 1, Some('b) -> 2, None -> 3),
         Some('B) -> Map(Some('c) -> 4, Some('d) -> 5),
@@ -32,7 +32,7 @@ class TransitionCountsTransformerTests {
   @Test
   def test_2 {
     val t = TransitionCountsTransformer[Symbol]()
-    val counts = DefaultedCondFreqCounts[Option[Symbol], Option[Symbol], Double](
+    val counts = DefaultedCondFreqCounts.fromMap[Option[Symbol], Option[Symbol], Double](
       Map[Option[Symbol], Map[Option[Symbol], Double]](
         Some('A) -> Map(Some('a) -> 1, Some('b) -> 2, None -> 3),
         Some('B) -> Map(Some('c) -> 4, Some('d) -> 5),
