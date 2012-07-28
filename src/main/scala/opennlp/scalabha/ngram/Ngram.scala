@@ -40,7 +40,7 @@ case class NgramTrainer[T](
   n: Int,
   countsTransformer: CondCountsTransformer[Seq[Option[T]], Option[T]]) {
 
-  def train(sentences: TraversableOnce[Seq[T]]) = {
+  def apply(sentences: TraversableOnce[Seq[T]]) = {
     new Ngram(CondFreqDist(
       countsTransformer(
         sentences
@@ -67,7 +67,7 @@ object Ngram {
     val filename = "data/postag/english/enraw20k"
     val lines = io.Source.fromFile(filename).getLines
     val sentences = lines.take(20000).split("###")
-    val model = trainer.train(sentences)
+    val model = trainer(sentences)
 
     println("P('of the') = " + model.seqProb(List("of", "the")))   // LogNum(0.327944068166918)
     println("P('of a') = " + model.seqProb(List("of", "a")))       // LogNum(0.04391522831549001)
