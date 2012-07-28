@@ -7,7 +7,7 @@ import opennlp.scalabha.util.LogNum
 import scala.collection.immutable.TreeMap
 import scala.annotation.tailrec
 
-class Ngram[T](cfd: Seq[Option[T]] => MultinomialFreqDist[Option[T]], n: Int) {
+case class Ngram[T](cfd: Seq[Option[T]] => MultinomialFreqDist[Option[T]], n: Int) {
 
   def sentenceProb(sentence: Seq[T]): LogNum = {
     liftedSeqProb(Seq.fill(n - 1)(None) ++ sentence.map(Option(_)) :+ None)
@@ -36,7 +36,7 @@ class Ngram[T](cfd: Seq[Option[T]] => MultinomialFreqDist[Option[T]], n: Int) {
 
 }
 
-class NgramTrainer[T](
+case class NgramTrainer[T](
   n: Int,
   countsTransformer: CondCountsTransformer[Seq[Option[T]], Option[T]]) {
 
