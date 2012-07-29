@@ -19,21 +19,26 @@ class MultinomialFreqDist[T](val distValues: Iterable[(T, LogNum)], default: Log
 
   val dist = distValues.toMap
 
-  /*protected*/ lazy val sampler =
-    RedBlackTree(
-      distValues.toList.filter(_._2 > LogNum.zero)
-        .scanLeft((None: Option[T], LogNum.zero)) { case ((ta, tb), (xa, xb)) => (Some(xa), tb + xb) }
-        .collect { case (Some(x), p) => (x, p) }
-        .map(_.swap): _*)
-  /*protected*/ lazy val lastSampleKey = sampler.tree.last
+  /*protected*/ lazy val (sampler, lastSampleKey) = {
+    val vs = (Vector() ++ distValues).filter(_._2 > LogNum.zero).sortBy(_._2).reverse
+    var running = LogNum.zero
+    val xs =
+      for ((v, n) <- vs) yield {
+        running += n
+        v -> running
+      }
+    (xs, running)
+  }
 
   protected lazy val random = new Random
 
   override def apply(key: T) = dist.getOrElse(key, default)
   def iterator = distValues.iterator
 
+  /*protected*/ def findSample(key: LogNum) = sampler.find(_._2 >= key)
+
   override def sample(): T = {
-    sampler.find(random.nextDouble * lastSampleKey).get
+    findSample(lastSampleKey * random.nextDouble).get._1
   }
 
   override def toString = "MultinomialFreqDist(%s)".format(distValues)
@@ -44,75 +49,15 @@ object MultinomialFreqDist {
     new MultinomialFreqDist[T](dist, default)
   }
 
-  object RedBlackTree {
-    def apply[A, B](items: (A, B)*)(implicit ord: Ordering[A]) = {
-      val redBlack = new TreeMap[A, B] ++ items
-      val treeField = redBlack.getClass.getDeclaredField("tree")
-      treeField.setAccessible(true)
-      new RedBlackTree(treeField.get(redBlack).asInstanceOf[RedBlack[A]#Tree[B]])(ord)
-    }
-  }
-
-  object Tree {
-    def unapply[A, B](t: RedBlack[A]#Tree[B]) = t match {
-      case n: RedBlack[A]#RedTree[B] => Some(n.key, n.value, n.left, n.right)
-      case n: RedBlack[A]#BlackTree[B] => Some(n.key, n.value, n.left, n.right)
-      case _ => None
-    }
-  }
-
-  object Empty {
-    def unapply[A, B](t: RedBlack[A]#Tree[B]) = t match {
-      case n: RedBlack[A]#RedTree[B] => None
-      case n: RedBlack[A]#BlackTree[B] => None
-      case _ => Some()
-    }
-  }
-
-  class RedBlackTree[A, B](val tree: RedBlack[A]#Tree[B])(implicit ord: Ordering[A]) {
-    private val LOG = LogFactory.getLog(RedBlackTree.getClass)
-
-    /*
-     * Find the value of the smallest key greater than or equal to the search term
-     */
-    def find(searchKey: A): Option[B] = {
-      @tailrec
-      def inner(searchKey: A, tree: RedBlack[A]#Tree[B], bestSoFar: Option[B]): Option[B] = tree match {
-        case Tree(`searchKey`, value, left, right) =>
-          Some(value)
-        case Tree(key, value, left @ Tree(lkey, lvalue, lleft, lright), right @ Tree(rkey, rvalue, rleft, rright)) =>
-          if (ord.lt(searchKey, key))
-            inner(searchKey, left, Some(value))
-          else
-            inner(searchKey, right, bestSoFar)
-        case Tree(key, value, left @ Tree(lkey, lvalue, lleft, lright), _) =>
-          if (ord.lteq(searchKey, lkey))
-            inner(searchKey, left, Some(value))
-          else
-            Some(value)
-        case Tree(key, value, _, right @ Tree(rkey, rvalue, rleft, rright)) =>
-          if (ord.lt(searchKey, key))
-            Some(value)
-          else
-            inner(searchKey, right, bestSoFar)
-        case Tree(key, value, _, _) => // Terminal node
-          if (ord.lt(searchKey, key))
-            Some(value)
-          else {
-            bestSoFar
-          }
-      }
-      inner(searchKey, tree, None)
-    }
-  }
-
   def main(args: Array[String]) {
     {
       val values = (1 to 10).mapTo(i => 1.toLogNum)
       val dist = new MultinomialFreqDist(values)
       val sampler = dist.sampler
+      println(sampler)
+      println(dist.lastSampleKey)
       for (x <- (0 to 10))
-        println(sampler.find(x + LogNum(.5)))
+        println(dist.findSample(x + LogNum(.5)))
     }
     {
       val probs = Map('N -> .5, 'V -> .3, 'D -> .2).mapVals(_.toLogNum)
@@ -120,7 +65,7 @@ object MultinomialFreqDist {
       println((1 to 100000).map(_ => dist.sample).counts.normalizeValues.toSeq.sortBy(-_._2))
     }
     {
-      val probs = { var i = .5; (1 to 10).mapToVal({ i *= 2; 1 / i }).normalizeValues }.toList
+      val probs = { var i = .5; (1 to 100).mapToVal({ i *= 2; 1 / i }).normalizeValues }.toList
       println(probs)
       val dist = new MultinomialFreqDist(probs.toMap.mapVals(_.toLogNum))
       println((1 to 100000).map(_ => dist.sample).counts.normalizeValues.toList.sortBy(-_._2))
