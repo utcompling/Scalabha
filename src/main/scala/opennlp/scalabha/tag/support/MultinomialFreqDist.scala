@@ -14,31 +14,33 @@ import scala.collection.immutable.RedBlack
 import opennlp.scalabha.tag.support.MultinomialFreqDist._
 import org.apache.commons.logging.LogFactory
 
-class MultinomialFreqDist[T](dist: Map[T, LogNum], default: LogNum = LogNum.zero) extends DiscreteDistribution[T] {
+class MultinomialFreqDist[T](val distValues: Iterable[(T, LogNum)], default: LogNum = LogNum.zero) extends DiscreteDistribution[T] {
   private val LOG = LogFactory.getLog(MultinomialFreqDist.getClass)
 
-  protected lazy val sampler =
+  val dist = distValues.toMap
+
+  /*protected*/ lazy val sampler =
     RedBlackTree(
-      dist.toList.filter(_._2 > LogNum.zero)
+      distValues.toList.filter(_._2 > LogNum.zero)
         .scanLeft((None: Option[T], LogNum.zero)) { case ((ta, tb), (xa, xb)) => (Some(xa), tb + xb) }
         .collect { case (Some(x), p) => (x, p) }
         .map(_.swap): _*)
-  protected lazy val lastSampleKey = sampler.tree.last
+  /*protected*/ lazy val lastSampleKey = sampler.tree.last
 
   protected lazy val random = new Random
 
   override def apply(key: T) = dist.getOrElse(key, default)
-  def iterator = dist.iterator
+  def iterator = distValues.iterator
 
   override def sample(): T = {
     sampler.find(random.nextDouble * lastSampleKey).get
   }
 
-  override def toString = "MultinomialFreqDist(%s)".format(dist)
+  override def toString = "MultinomialFreqDist(%s)".format(distValues)
 }
 
 object MultinomialFreqDist {
-  def apply[T](dist: Map[T, LogNum], default: LogNum = LogNum.zero) = {
+  def apply[T](dist: Iterable[(T, LogNum)], default: LogNum = LogNum.zero) = {
     new MultinomialFreqDist[T](dist, default)
   }
 
@@ -71,46 +73,57 @@ object MultinomialFreqDist {
     private val LOG = LogFactory.getLog(RedBlackTree.getClass)
 
     /*
-       * Find the value of the smallest key greater than or equal to the search term
-       */
+     * Find the value of the smallest key greater than or equal to the search term
+     */
     def find(searchKey: A): Option[B] = {
-      @tailrec def inner(searchKey: A, tree: RedBlack[A]#Tree[B]): Option[RedBlack[A]#Tree[B]] = tree match {
+      @tailrec
+      def inner(searchKey: A, tree: RedBlack[A]#Tree[B], bestSoFar: Option[B]): Option[B] = tree match {
         case Tree(`searchKey`, value, left, right) =>
-          Some(tree)
+          Some(value)
         case Tree(key, value, left @ Tree(lkey, lvalue, lleft, lright), right @ Tree(rkey, rvalue, rleft, rright)) =>
           if (ord.lt(searchKey, key))
-            if (ord.lteq(searchKey, lkey))
-              inner(searchKey, left)
-            else
-              Some(tree)
+            inner(searchKey, left, Some(value))
           else
-            inner(searchKey, right)
+            inner(searchKey, right, bestSoFar)
         case Tree(key, value, left @ Tree(lkey, lvalue, lleft, lright), _) =>
           if (ord.lteq(searchKey, lkey))
-            inner(searchKey, left)
+            inner(searchKey, left, Some(value))
           else
-            Some(tree)
+            Some(value)
         case Tree(key, value, _, right @ Tree(rkey, rvalue, rleft, rright)) =>
           if (ord.lt(searchKey, key))
-            Some(tree)
+            Some(value)
           else
-            inner(searchKey, right)
+            inner(searchKey, right, bestSoFar)
         case Tree(key, value, _, _) => // Terminal node
           if (ord.lt(searchKey, key))
-            Some(tree)
+            Some(value)
           else {
-            LOG.info("Cannot find key '%s' with last value '%s'".format(searchKey, tree.last))
-            None
+            bestSoFar
           }
       }
-      inner(searchKey, tree).map { case Tree(_, value, _, _) => value }
+      inner(searchKey, tree, None)
     }
   }
 
   def main(args: Array[String]) {
-    val probs = Map('N -> .4, 'V -> .3, 'D -> .2).mapVals(_.toLogNum)
-    val dist = new MultinomialFreqDist(probs)
-    println(dist.sample)
-    println((1 to 100000).map(_ => dist.sample).counts.normalizeValues)
+    {
+      val values = (1 to 10).mapTo(i => 1.toLogNum)
+      val dist = new MultinomialFreqDist(values)
+      val sampler = dist.sampler
+      for (x <- (0 to 10))
+        println(sampler.find(x + LogNum(.5)))
+    }
+    {
+      val probs = Map('N -> .5, 'V -> .3, 'D -> .2).mapVals(_.toLogNum)
+      val dist = new MultinomialFreqDist(probs)
+      println((1 to 100000).map(_ => dist.sample).counts.normalizeValues.toSeq.sortBy(-_._2))
+    }
+    {
+      val probs = { var i = .5; (1 to 10).mapToVal({ i *= 2; 1 / i }).normalizeValues }.toList
+      println(probs)
+      val dist = new MultinomialFreqDist(probs.toMap.mapVals(_.toLogNum))
+      println((1 to 100000).map(_ => dist.sample).counts.normalizeValues.toList.sortBy(-_._2))
+    }
   }
 }
