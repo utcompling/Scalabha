@@ -38,7 +38,10 @@ class MultinomialFreqDist[T](val distValues: Iterable[(T, LogNum)], default: Log
   /*protected*/ def findSample(key: LogNum) = sampler.find(_._2 >= key)
 
   override def sample(): T = {
-    findSample(lastSampleKey * random.nextDouble).get._1
+    findSample(lastSampleKey * random.nextDouble) match {
+      case Some((t, _)) => t
+      case None => throw new RuntimeException("Could not sample from: " + { val s = distValues.toString; if (s.length <= 50) s else s.take(47) + "..." })
+    }
   }
 
   override def toString = "MultinomialFreqDist(%s)".format(distValues)
