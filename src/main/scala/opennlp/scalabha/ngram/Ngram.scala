@@ -6,8 +6,11 @@ import opennlp.scalabha.tag.support._
 import opennlp.scalabha.util.LogNum
 import scala.collection.immutable.TreeMap
 import scala.annotation.tailrec
+import scala.collection.generic.CanBuildFrom
 
-case class Ngram[T](cfd: Seq[Option[T]] => MultinomialFreqDist[Option[T]], n: Int) {
+trait Ngram[T, S] {
+  def n: Int
+  def cfd: Seq[Option[T]] => MultinomialFreqDist[Option[T]]
 
   /**
    * Calculate the probability of the given COMPLETE sequence.  This method
@@ -43,14 +46,18 @@ case class Ngram[T](cfd: Seq[Option[T]] => MultinomialFreqDist[Option[T]], n: In
   /**
    * Generate a random complete sequence based on this n-gram model.
    */
-  def generate(): List[T] = {
-    def inner(cur: Seq[Option[T]]): List[T] = {
+  def generate(implicit bf: CanBuildFrom[S, T, S]): S = {
+    val b = bf()
+    @tailrec def inner(cur: Seq[Option[T]]) {
       cfd(cur).sample match {
-        case None => Nil
-        case next => next.get :: inner(cur.drop(1) :+ next)
+        case None =>
+        case next =>
+          b += next.get
+          inner(cur.drop(1) :+ next)
       }
     }
     inner(Seq.fill(n - 1)(None))
+    b.result
   }
 
 }
@@ -59,8 +66,8 @@ case class NgramTrainer[T](
   n: Int,
   countsTransformer: CondCountsTransformer[Seq[Option[T]], Option[T]]) {
 
-  def apply[S <% Seq[T]](sentences: TraversableOnce[S]) = {
-    new Ngram(CondFreqDist(
+  def apply[S <% Seq[T]](sentences: TraversableOnce[S]): Ngram[T, S] = {
+    new Ngram.ImplicitGeneratingNgram[T, S](n, CondFreqDist(
       countsTransformer(
         sentences
           .flatMap { sentence =>
@@ -70,11 +77,16 @@ case class NgramTrainer[T](
           }
           .toIterator
           .groupByKey
-          .mapVals(_.counts))), n)
+          .mapVals(_.counts))))
   }
 }
 
 object Ngram {
+  class SeqGeneratingNgram[T](override val n: Int, override val cfd: Seq[Option[T]] => MultinomialFreqDist[Option[T]]) extends Ngram[T, Seq[T]]
+  class ImplicitGeneratingNgram[T, S](override val n: Int, override val cfd: Seq[Option[T]] => MultinomialFreqDist[Option[T]]) extends Ngram[T, S]
+
+  def apply[T](n: Int, cfd: Seq[Option[T]] => MultinomialFreqDist[Option[T]]) = new SeqGeneratingNgram[T](n, cfd)
+  def unapply[T, S](ngram: Ngram[T, S]) = Some(ngram.n, ngram.cfd)
 
   def main(args: Array[String]) {
 
@@ -94,9 +106,13 @@ object Ngram {
       println("P('of some') = " + model.seqProb(List("of", "some"))) // LogNum(2.18483722962637E-4)
 
       (1 to 10).par.foreach { _ => println(model.generate.mkString(" ")) }
+
+      val Ngram(n, cfd) = model
+      val model2 = Ngram(n, cfd)
+      model2.generate
     }
 
-    if (false) {
+    {
       val N = 4
       val countsTransformer = PassthroughCondCountsTransformer[Seq[Option[Char]], Option[Char]]()
       //val countsTransformer = UnseenContextProbSettingCondCountsTransformer[Seq[Option[Char]], Option[Char]](LogNum(.05), AddLambdaSmoothingCondCountsTransformer(1.))
@@ -109,7 +125,11 @@ object Ngram {
       val words = sentences.flatten.collect { case LettersRe(w) => w }
       val model = trainer(words)
 
-      (1 to 50).foreach { _ => println(model.generate.mkString("")) }
+      (1 to 50).foreach { _ => println(model.generate) }
+
+      val Ngram(n, cfd) = model
+      val model2 = Ngram(n, cfd)
+      model2.generate
     }
 
   }
