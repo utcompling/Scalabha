@@ -37,21 +37,38 @@ object Pattern {
   }
 
   object Range {
-    val RangeRE = """^(\d+)-(\d*)$""".r
-    def unapplySeq(s: String): Option[Seq[Int]] = Some((
-      s.split(",").flatMap {
-        case UnapplyInt(i) => i.toInt to i.toInt
-        case RangeRE(b, e) => b.toInt to e.toInt
-      }).toSet.toList.sorted)
+    val RangeRE = """^(\d+)-(\d+)$""".r
+    def unapply(s: String): Option[Seq[Int]] = Some(
+      s.replaceAll("\\s+", "").split(",").flatMap {
+        case UnapplyInt(i) => i to i
+        case RangeRE(UnapplyInt(b), UnapplyInt(e)) if b <= e => b to e
+      })
   }
 
   class Range(max: Int) {
     val OpenRangeRE = """^(\d+)-$""".r
-    def unapplySeq(s: String): Option[Seq[Int]] = Some((
-      s.split(",").flatMap {
-        case OpenRangeRE(b) => b.toInt to max
-        case Range(r @ _*) => r
-      }).toSet.toList.sorted)
+    def unapply(s: String): Option[Seq[Int]] = Some(
+      s.replaceAll("\\s+", "").split(",").flatMap {
+        case OpenRangeRE(UnapplyInt(b)) => b to max
+        case Range(r) => r
+      })
+  }
+
+  def makeRangeString(seq: Seq[Int]): String = {
+    assert(seq.exists(_ >= 0), "negative numbers are not permitted")
+    (-2 +: seq).sliding(2).foldLeft(Vector[Vector[Int]]()) {
+      case ((z :+ c), Seq(a, b)) =>
+        if (a != b - 1)
+          (z :+ c) :+ Vector(b)
+        else
+          (z :+ (c :+ b))
+      case (z, Seq(a, b)) =>
+        z :+ Vector(b)
+    }
+      .map {
+        case Seq(x) => x.toString
+        case s => s.head + "-" + s.last
+      }.mkString(",")
   }
 
   object +: {
