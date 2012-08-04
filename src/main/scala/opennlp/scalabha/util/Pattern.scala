@@ -5,7 +5,7 @@ object Pattern {
 
   object UnapplyInt {
     def x = 1
-    val IntRE = """^(\d+)$""".r
+    val IntRE = """^(-?\d+)$""".r
     def unapply(v: String): Option[Int] = v match {
       case IntRE(s) => Some(s.toInt)
       case _ => None
@@ -14,7 +14,7 @@ object Pattern {
   //  implicit def int2unapplyInt(objA: Int.type) = UnapplyInt
 
   object UnapplyDouble {
-    val DoubleRE = """^(\d+\.?\d*|\d*\.?\d+)$""".r
+    val DoubleRE = """^(-?\d+\.?\d*|-?\d*\.?\d+)$""".r
     def unapply(v: String): Option[Double] = v match {
       case DoubleRE(s) => Some(s.toDouble)
       case _ => None
