@@ -91,6 +91,50 @@ class NgramTests {
     assertEqualsProb(LogNum((1 / 25.) * (.05) * (3 / 15.)), ngram.sentenceProb("at"))
   }
 
+  @Test
+  def test_main_wordNgrams() {
+    val N = 2
+    val countsTransformer = PassthroughCondCountsTransformer[Seq[Option[String]], Option[String]]()
+    //val countsTransformer = AddLambdaSmoothingCondCountsTransformer[Seq[Option[String]], Option[String]](0.01)
+    val trainer = new NgramTrainer(N, countsTransformer)
+
+    val filename = "data/postag/english/enraw20k"
+    val lines = io.Source.fromFile(filename).getLines
+    val sentences = lines.take(20000).split("###")
+    val model = trainer(sentences)
+
+    println("P('of the') = " + model.seqProb(List("of", "the"))) // LogNum(0.327944068166918)
+    println("P('of a') = " + model.seqProb(List("of", "a"))) // LogNum(0.04391522831549001)
+    println("P('of some') = " + model.seqProb(List("of", "some"))) // LogNum(2.18483722962637E-4)
+
+    (1 to 10).par.foreach { _ => println(model.generate.mkString(" ")) }
+
+    val Ngram(n, cfd) = model
+    val model2 = Ngram(n, cfd)
+    model2.generate
+  }
+
+  @Test
+  def test_main_letterNgrams() {
+    val N = 4
+    val countsTransformer = PassthroughCondCountsTransformer[Seq[Option[Char]], Option[Char]]()
+    //val countsTransformer = UnseenContextProbSettingCondCountsTransformer[Seq[Option[Char]], Option[Char]](LogNum(.05), AddLambdaSmoothingCondCountsTransformer(1.))
+    val trainer = new NgramTrainer(N, countsTransformer)
+
+    val filename = "data/postag/english/enraw20k"
+    val lines = io.Source.fromFile(filename).getLines
+    val sentences = lines.take(20000).split("###")
+    val LettersRe = """([a-z]+)""".r
+    val words = sentences.flatten.collect { case LettersRe(w) => w }
+    val model = trainer(words)
+
+    (1 to 50).foreach { _ => println(model.generate) }
+
+    val Ngram(n, cfd) = model
+    val model2 = Ngram(n, cfd)
+    model2.generate
+  }
+
   def assertEqualsProb(a: LogNum, b: LogNum) {
     assertEquals(a.toDouble, b.toDouble, 0.001)
   }
