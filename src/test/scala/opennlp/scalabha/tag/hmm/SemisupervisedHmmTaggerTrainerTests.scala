@@ -24,28 +24,28 @@ class SemisupervisedHmmTaggerTrainerTests {
     val tagDict = new SimpleTagDictFactory().make(tagDictTrain)
     val (semisupervisedResults, autosupervisedResults) = runUnsupervisedTrainingTest(tagDict, tagDictTrain)
     assertResultsEqual("""
-		Total:   83.81 (20071/23949)
-		Known:   93.34 (20040/21469)
-		Unknown: 1.25 (31/2480)
-		Common Mistakes:
-		#Err     Gold      Model
-		1359     N        .
-		393      V        .
-		341      J        .
-		246      V        N
-    	229      C        .
+                Total:   15.68 (3755/23949)
+                Known:   17.42 (3739/21469)
+                Unknown: 0.65 (16/2480)
+                Common Mistakes:
+                #Err     Gold      Model
+                6272     N        .
+                2758     V        .
+                2218     I        .
+                1824     D        .
+                1499     J        .
     	""", semisupervisedResults)
     assertResultsEqual("""
-		Total:   90.42 (21655/23949)
-		Known:   96.01 (20613/21469)
-		Unknown: 42.02 (1042/2480)
-		Common Mistakes:
-		#Err     Gold      Model
-		185      V        N
-		180      N        J
-		168      N        D
-		156      N        V
-		115      J        N
+                Total:   86.41 (20694/23949)
+                Known:   90.63 (19458/21469)
+                Unknown: 49.84 (1236/2480)
+                Common Mistakes:
+                #Err     Gold      Model
+                345      N        J
+                314      V        N
+                223      N        V
+                183      J        N
+                154      N        M
     	""", autosupervisedResults)
   }
 
