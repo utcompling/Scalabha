@@ -1,19 +1,10 @@
 package opennlp.scalabha.tag.hmm
 
-import scala.annotation.tailrec
-import scala.io.Source
-import opennlp.scalabha.tag._
-import opennlp.scalabha.tag.support._
-import opennlp.scalabha.util.CollectionUtils._
-import opennlp.scalabha.util.Pattern.{ +:, :+ }
-import opennlp.scalabha.tag.SupervisedTaggerTrainer
-import opennlp.scalabha.tag.UnsupervisedTaggerTrainer
-import opennlp.scalabha.tag.hmm.support._
 import org.apache.commons.logging.LogFactory
-import opennlp.scalabha.util.LogNum
-import opennlp.scalabha.util.LogNum._
-import scala.collection.GenTraversableOnce
-import scala.collection.mutable.ListBuffer
+
+import opennlp.scalabha.tag.SupervisedTaggerTrainer
+import opennlp.scalabha.tag.support.CondFreqDist
+import opennlp.scalabha.util.CollectionUtils._
 
 /**
  * Factory for training a Hidden Markov Model tagger directly from labeled data.

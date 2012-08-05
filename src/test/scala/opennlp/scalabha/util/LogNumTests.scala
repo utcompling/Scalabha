@@ -1,8 +1,7 @@
-package opennlp.scalabha.tag.support
+package opennlp.scalabha.util
 
 import org.junit.Assert._
 import org.junit.Test
-import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
 
 class LogNumTests {
@@ -18,6 +17,11 @@ class LogNumTests {
     assertEqualsLog(d, b - a)
     assertEqualsLog(c, d * a)
     assertEqualsLog(d, c / a)
+    
+    assertEqualsLog(b, a max b)
+    assertEqualsLog(b, b max a)
+    assertEqualsLog(a, a min b)
+    assertEqualsLog(a, b min a)
 
     assertEqualsLog(b, 2 + a)
     assertEqualsLog(b, 2L + a)

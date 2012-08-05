@@ -1,7 +1,8 @@
 package opennlp.scalabha.tag
 
-import opennlp.scalabha.util.CollectionUtils._
 import collection.mutable.{ Map => MMap, Set => MSet, Buffer }
+
+import opennlp.scalabha.util.CollectionUtils._
 
 class TaggerEvaluator[Sym, Tag] {
 
@@ -60,7 +61,7 @@ case class ScoreResults[Sym, Tag](
     sb.append("Unknown: " + accStr(unkCorrect, unkTotal))
     sb.append("Common Mistakes:")
     sb.append("#Err     Gold      Model")
-    for (((goldTag, rsltTag), count) <- mistakes.toList.sortBy(-_._2).take(5))
+    for (((goldTag, rsltTag), count) <- mistakes.toVector.sortBy(-_._2).take(5))
       sb.append("%-8d %-8s %-8s".format(count, goldTag, rsltTag))
     sb.mkString("\n")
   }

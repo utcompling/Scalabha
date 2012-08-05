@@ -1,13 +1,6 @@
 package opennlp.scalabha.tag.support
 
 import opennlp.scalabha.util.CollectionUtils._
-import scala.collection.immutable.MapProxy
-import scala.collection.generic.CanBuildFrom
-import scala.collection.generic.CanBuildFrom
-import scala.collection.mutable.MapBuilder
-import scala.collection.GenTraversableOnce
-import scala.collection.immutable.SetProxy
-import scala.collection.GenTraversable
 import opennlp.scalabha.util.LogNum
 
 /**

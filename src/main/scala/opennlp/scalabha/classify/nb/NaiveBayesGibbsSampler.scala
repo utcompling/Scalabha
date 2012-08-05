@@ -1,20 +1,18 @@
 package opennlp.scalabha.classify.nb
 
 import scala.annotation.tailrec
-import scala.collection.mutable.{Buffer => MSeq}
-import scala.collection.mutable.{Map => MMap}
+import scala.collection.mutable.{ Buffer => MSeq }
 
 import org.apache.commons.logging.LogFactory
 
 import opennlp.scalabha.classify.ClassifierEvaluator
 import opennlp.scalabha.tag.support.CondFreqDist
 import opennlp.scalabha.tag.support.FreqDist
-import opennlp.scalabha.tag.support.MultinomialFreqDist
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.Collections.History
+import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
 import opennlp.scalabha.util.Stats.DirichletSampler
-import opennlp.scalabha.util.LogNum
 
 /**
  * Gibbs Sampler for Naive Bayes.
@@ -35,7 +33,7 @@ class NaiveBayesGibbsSampler[L, T](
   labelPseudocounts: L => Int = Function.const(1) _,
   wordDistributionPseudocounts: L => (T => Int) = Function.const(Function.const(1) _) _,
   evaluator: Option[ClassifierEvaluator[L, T]] = None) {
-  private val LOG = LogFactory.getLog("NaiveBayesGibbsSampler")
+  private val LOG = LogFactory.getLog(classOf[NaiveBayesGibbsSampler[L, T]])
 
   def apply(
     unlabeledData: TraversableOnce[Seq[T]],
@@ -47,7 +45,7 @@ class NaiveBayesGibbsSampler[L, T](
     // 
 
     // Labeled document word counts. Organized by label.
-    val labDocs = labeledData.toIterator.groupByKey.mapVals(_.map(_.counts)) +++ labelList.mapToVal(List()).toMap
+    val labDocs = labeledData.toIterator.groupByKey.mapVals(_.map(_.counts)) +++ labelList.mapToVal(Vector())
 
     //
     // Stable
@@ -178,13 +176,10 @@ class NaiveBayesGibbsSampler[L, T](
     }.toMap
   }
 
-  private def makeClassifier(labDocs: Map[L, List[Map[T, Int]]], labels: History[MSeq[L]], wordDists: History[Map[L, Map[T, LogNum]]]) = {
+  private def makeClassifier(labDocs: Map[L, Seq[Map[T, Int]]], labels: History[MSeq[L]], wordDists: History[Map[L, Map[T, LogNum]]]) = {
     val labeledLabelCounts = labDocs.mapVals(_.size)
-    val labelDocDist = FreqDist(labeledLabelCounts +++ labels.iterator.toList.transpose.map(_.counts.maxBy(_._2)._1).counts)
+    val labelDocDist = FreqDist(labeledLabelCounts +++ labels.iterator.toIndexedSeq.transpose.map(_.counts.maxBy(_._2)._1).counts)
     val labelFeatDist = CondFreqDist(wordDists.iterator.flatten.groupByKey.mapVals(_.sumByKey))
     NaiveBayesClassifier(labelDocDist, labelFeatDist, labelList.toSet)
   }
-
-  class EnrichedWithToMMap[K, V](self: Iterable[(K, V)]) { def toMMap = MMap() ++ self.toSeq }
-  implicit def addToMMap[K, V](self: Iterable[(K, V)]): EnrichedWithToMMap[K, V] = new EnrichedWithToMMap(self)
 }

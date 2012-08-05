@@ -1,18 +1,12 @@
 package opennlp.scalabha.tag.support
 
+import scala.util.Random
+
+import org.apache.commons.logging.LogFactory
+
+import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
-import opennlp.scalabha.util.CollectionUtils._
-import opennlp.scalabha.util.Pattern.{ +:, :+ }
-import scala.annotation.tailrec
-import scala.util.Random
-import scala.collection.immutable.TreeMap
-import scala.collection.mutable.Builder
-import scala.collection.generic.CanBuildFrom
-import scala.collection.generic.ImmutableSortedMapFactory
-import scala.collection.immutable.RedBlack
-import opennlp.scalabha.tag.support.MultinomialFreqDist._
-import org.apache.commons.logging.LogFactory
 
 class MultinomialFreqDist[T](val distValues: Iterable[(T, LogNum)], default: LogNum = LogNum.zero) extends DiscreteDistribution[T] {
   private val LOG = LogFactory.getLog(MultinomialFreqDist.getClass)
@@ -20,7 +14,7 @@ class MultinomialFreqDist[T](val distValues: Iterable[(T, LogNum)], default: Log
   val dist = distValues.toMap
 
   /*protected*/ lazy val (sampler, lastSampleKey) = {
-    val vs = (Vector() ++ distValues).filter(_._2 > LogNum.zero).sortBy(_._2).reverse
+    val vs = distValues.toIndexedSeq.filter(_._2 > LogNum.zero).sortBy(_._2).reverse
     var running = LogNum.zero
     val xs =
       for ((v, n) <- vs) yield {
@@ -65,13 +59,13 @@ object MultinomialFreqDist {
     {
       val probs = Map('N -> .5, 'V -> .3, 'D -> .2).mapVals(_.toLogNum)
       val dist = new MultinomialFreqDist(probs)
-      println((1 to 100000).map(_ => dist.sample).counts.normalizeValues.toSeq.sortBy(-_._2))
+      println((1 to 100000).map(_ => dist.sample).counts.normalizeValues.toVector.sortBy(-_._2))
     }
     {
-      val probs = { var i = .5; (1 to 100).mapToVal({ i *= 2; 1 / i }).normalizeValues }.toList
+      val probs = { var i = .5; (1 to 100).mapToVal({ i *= 2; 1 / i }).normalizeValues }.toIndexedSeq
       println(probs)
       val dist = new MultinomialFreqDist(probs.toMap.mapVals(_.toLogNum))
-      println((1 to 100000).map(_ => dist.sample).counts.normalizeValues.toList.sortBy(-_._2))
+      println((1 to 100000).map(_ => dist.sample).counts.normalizeValues.toVector.sortBy(-_._2))
     }
   }
 }

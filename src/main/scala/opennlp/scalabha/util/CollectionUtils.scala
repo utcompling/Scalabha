@@ -1,16 +1,14 @@
 package opennlp.scalabha.util
 
-import scala.collection.generic.CanBuildFrom
-import scala.collection.mutable.Builder
-import scala.collection.mutable.ListBuffer
+import scala.collection.GenIterable
+import scala.collection.GenIterableLike
 import scala.collection.GenTraversable
 import scala.collection.GenTraversableLike
 import scala.collection.GenTraversableOnce
 import scala.collection.TraversableLike
-import scala.collection.GenMap
+import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable
-import scala.collection.GenIterable
-import scala.collection.GenIterableLike
+import scala.collection.mutable.Builder
 import scala.util.Random
 
 object CollectionUtils {
@@ -66,43 +64,10 @@ object CollectionUtils {
   implicit def enriched_countCompare_GenTraversableOnce[A](self: GenTraversableOnce[A]) = new Enriched_countCompare_GenTraversableOnce(self)
 
   //////////////////////////////////////////////////////
-  // split(delim: A): List[List[A]]
+  // split(delim: A): Iterator[Repr[A]]
   //   - Split this collection on each occurrence of the delimiter 
   //   - Inspired by String.split
   //////////////////////////////////////////////////////
-
-  class Enriched_split_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
-    /**
-     * Split this collection on each occurrence of the delimiter.  Delimiters
-     * do not appear in the output.
-     *
-     * Inspired by String.split
-     *
-     * @param delim	The delimiter upon which to split.
-     */
-    def split[That](delim: A)(implicit bf: CanBuildFrom[Repr, A, That]): Iterator[That] = {
-      val itr = self.toIterator
-
-      new Iterator[That] {
-        def next(): That = {
-          if (!itr.hasNext) throw new RuntimeException("next on empty iterator")
-
-          val b = bf(self.asInstanceOf[Repr])
-          while (itr.hasNext) {
-            val x = itr.next
-            if (x == delim)
-              return b.result
-            else
-              b += x
-          }
-          return b.result
-        }
-
-        def hasNext() = itr.hasNext
-      }
-    }
-  }
-  implicit def enriched_split_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) = new Enriched_split_GenTraversableLike(self)
 
   class Enriched_split_Iterator[A](self: Iterator[A]) {
     /**
@@ -113,8 +78,8 @@ object CollectionUtils {
      *
      * @param delim	The delimiter upon which to split.
      */
-    def split(delim: A): Iterator[List[A]] =
-      split(delim, ListBuffer[A]())
+    def split(delim: A): Iterator[Vector[A]] =
+      split(delim, Vector.newBuilder[A])
 
     /**
      * Split this collection on each occurrence of the delimiter.  Delimiters
@@ -125,15 +90,13 @@ object CollectionUtils {
      * @param delim	The delimiter upon which to split.
      */
     def split[That](delim: A, builder: => Builder[A, That])(): Iterator[That] = {
-      val itr = self.toIterator
-
       new Iterator[That] {
         def next(): That = {
-          if (!itr.hasNext) throw new RuntimeException("next on empty iterator")
+          if (!self.hasNext) throw new RuntimeException("next on empty iterator")
 
           val b = builder
-          while (itr.hasNext) {
-            val x = itr.next
+          while (self.hasNext) {
+            val x = self.next
             if (x == delim)
               return b.result
             else
@@ -142,16 +105,30 @@ object CollectionUtils {
           return b.result
         }
 
-        def hasNext() = itr.hasNext
+        def hasNext() = self.hasNext
       }
     }
   }
   implicit def enriched_split_Iterator[A](self: Iterator[A]) = new Enriched_split_Iterator(self)
 
+  class Enriched_split_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
+    /**
+     * Split this collection on each occurrence of the delimiter.  Delimiters
+     * do not appear in the output.
+     *
+     * Inspired by String.split
+     *
+     * @param delim	The delimiter upon which to split.
+     */
+    def split[That](delim: A)(implicit bf: CanBuildFrom[Repr, A, That]): Iterator[That] =
+      self.toIterator.split(delim, bf(self.asInstanceOf[Repr]))
+  }
+  implicit def enriched_split_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) = new Enriched_split_GenTraversableLike(self)
+
   //////////////////////////////////////////////////////
   // splitAt(n: Int) 
   //   - Split this collection at the specified index 
-  //   - Inspired by String.splitAt
+  //   - Extend Traversable.splitAt to Iterator
   //////////////////////////////////////////////////////
 
   class Enriched_splitAt_Iterator[A](self: Iterator[A]) {
@@ -160,47 +137,38 @@ object CollectionUtils {
      * iterator must be exhausted completely before the items in the 'second'
      * iterator can be accessed.
      *
-     * Inspired by String.splitAt
+     * Inspired by Traversable.splitAt
      *
      * @param n	The index at which to split the collection
      * @return	a pair: the items before the split point and the items
      *          starting with the split point
      */
     def splitAt(n: Int): (Iterator[A], Iterator[A]) = {
-      val splitter = new LazyIteratorSplitter(self, n)
-      (splitter.first, splitter.second)
+      var i = 0
+
+      val first: Iterator[A] =
+        new Iterator[A] {
+          def next(): A =
+            if (hasNext) { i += 1; self.next }
+            else throw new RuntimeException("first has already been read completely")
+
+          def hasNext() = i < n && self.hasNext
+        }
+
+      val second: Iterator[A] =
+        new Iterator[A] {
+          def next(): A =
+            if (i < n) throw new RuntimeException("first has NOT YET been read completely")
+            else if (hasNext) { i += 1; self.next }
+            else throw new RuntimeException("first has already been read completely")
+
+          def hasNext() = self.hasNext
+        }
+
+      (first, second)
     }
   }
   implicit def enriched_splitAt_Iterator[A](self: Iterator[A]) = new Enriched_splitAt_Iterator(self)
-
-  /**
-   * Safely split an Iterator.  Has two fields 'first' and 'second', for the
-   * portions before and after the split.  The 'first' iterator must be
-   * exhausted completely before the items in the 'second' iterator can be
-   * accessed.
-   */
-  class LazyIteratorSplitter[T](itr: Iterator[T], splitAt: Int) {
-    var i = 0
-
-    val first: Iterator[T] =
-      new Iterator[T] {
-        def next(): T =
-          if (hasNext) { i += 1; itr.next }
-          else throw new RuntimeException("first has already been read completely")
-
-        def hasNext() = i < splitAt && itr.hasNext
-      }
-
-    val second: Iterator[T] =
-      new Iterator[T] {
-        def next(): T =
-          if (i < splitAt) throw new RuntimeException("first has NOT YET been read completely")
-          else if (hasNext) { i += 1; itr.next }
-          else throw new RuntimeException("first has already been read completely")
-
-        def hasNext() = itr.hasNext
-      }
-  }
 
   //////////////////////////////////////////////////////
   // sumBy[B: Numeric](f: A => B): B
@@ -311,10 +279,7 @@ object CollectionUtils {
      */
     def mapToVal[B](v: => B): Iterator[(A, B)] = new Iterator[(A, B)] {
       def hasNext = self.hasNext
-      def next() = {
-        val x = self.next
-        x -> v
-      }
+      def next() = self.next -> v
     }
   }
   implicit def enriched_mapToVal_Iterator[A](self: Iterator[A]) = new Enriched_mapToVal_Iterator(self)
@@ -474,9 +439,6 @@ object CollectionUtils {
       for ((k, v) <- self) b += k -> f(v)
       b.result
     }
-
-    @deprecated("use mapVals")
-    def mapValuesStrict[R, That](f: U => R)(implicit bf: CanBuildFrom[Repr, (T, R), That]) = mapVals(f)(bf)
   }
   implicit def enriched_mapVals_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) = new Enriched_mapVals_GenTraversableLike(self)
 
@@ -489,9 +451,6 @@ object CollectionUtils {
      * @return a collection of pairs
      */
     def mapVals[R](f: U => R) = self.mapValues(f)
-
-    @deprecated("use mapVals")
-    def mapValuesStrict[R](f: U => R) = mapVals(f)
   }
   implicit def enrich_mapVals_Iterator[T, U](self: Iterator[(T, U)]) = new Enriched_mapVals_Iterator(self)
 
@@ -540,21 +499,21 @@ object CollectionUtils {
 
   //////////////////////////////////////////////////////
   // groupBy(f: A => K): Repr[(R,U)]
-  //   - Make List.groupBy functionality available to Iterator
+  //   - Make Traversable.groupBy functionality available to Iterator
   //////////////////////////////////////////////////////
 
   class Enriched_groupBy_Iterator[A](self: Iterator[A]) {
     /**
-     * Same functionality as List.groupBy(f)
+     * Same functionality as Traversable.groupBy(f)
      *
      * @param f	function mapping items to new keys
      * @return Map from new keys to original items
      */
-    def groupBy[K](f: A => K): Map[K, List[A]] =
-      this.groupBy(f, ListBuffer[A]())
+    def groupBy[K](f: A => K): Map[K, Vector[A]] =
+      this.groupBy(f, Vector.newBuilder[A])
 
     /**
-     * Same functionality as List.groupBy(f)
+     * Same functionality as Traversable.groupBy(f)
      *
      * @param f	function mapping items to new keys
      * @param builder	a builder to construct collections of items that have been grouped
@@ -613,8 +572,8 @@ object CollectionUtils {
      *
      * @return Map from first items of the pairs to collections of items that have been grouped
      */
-    def groupByKey[T, U](implicit ev: A <:< (T, U)): Map[T, List[U]] =
-      this.groupByKey(ListBuffer[U]())
+    def groupByKey[T, U](implicit ev: A <:< (T, U)): Map[T, Vector[U]] =
+      this.groupByKey(Vector.newBuilder[U])
 
     /**
      * For a collection of pairs, group by the first item in the pair.
@@ -809,7 +768,7 @@ object CollectionUtils {
 
   class Enriched_zip_Iterator[A](self: Iterator[A]) {
     /**
-     * Same functionality as List.zip(that)
+     * Same functionality as Iterable.zip(that)
      *
      * @param that	collection to zip with
      * @return Iterator of zipped pairs
@@ -825,8 +784,8 @@ object CollectionUtils {
   //////////////////////////////////////////////////////
 
   class Enriched_unzip_Iterator[T, U](self: Iterator[(T, U)]) {
-    def unzip(): (List[T], List[U]) =
-      this.unzip(ListBuffer[T](), ListBuffer[U]())
+    def unzip(): (Vector[T], Vector[U]) =
+      this.unzip(Vector.newBuilder[T], Vector.newBuilder[U])
 
     def unzip[ThatT <: Iterable[T], ThatU <: Iterable[U]](tBuilder: => Builder[T, ThatT], uBuilder: => Builder[U, ThatU]): (ThatT, ThatU) = {
       val tBldr = tBuilder
@@ -1068,8 +1027,7 @@ object CollectionUtils {
     }
   }
   implicit def enriched_shuffle_GenTraversableOnce[T, CC[X] <: TraversableOnce[X]](xs: CC[T]) = new Enriched_shuffle_GenTraversableOnce(xs)
-  
-  
+
   //  class ReversableIterableMap[A, B](map: Map[A, GenTraversableOnce[B]]) {
   //    def reverse(): Map[B, GenTraversableOnce[A]] =
   //      map.ungroup.groupBy(_._2).mapValues(_.map(_._1)).iterator.toMap
@@ -1078,7 +1036,7 @@ object CollectionUtils {
   //
   //  class ReversableMap[A, B](map: Map[A, B]) {
   //    def reverse(): Map[B, Iterable[A]] =
-  //      map.toList.groupBy(_._2).mapValues(_.map(_._1)).iterator.toMap
+  //      map.toIndexedSeq.groupBy(_._2).mapValues(_.map(_._1)).iterator.toMap
   //  }
   //  implicit def map2reversableMap[A, B](map: Map[A, B]) = new ReversableMap(map)
 
@@ -1095,4 +1053,21 @@ object CollectionUtils {
   object UniversalSet {
     def apply[A]() = new UniversalSet[A]
   }
+
+  //////////////////////////////////////////////////////
+  // Conversion (.toX) methods
+  //////////////////////////////////////////////////////
+  class EnrichedWithToMMap[K, V](self: TraversableOnce[(K, V)]) {
+    def toMMap =
+      if (self.isEmpty) mutable.Map.empty[K, V]
+      else mutable.Map.newBuilder[K, V] ++= self result
+  }
+  implicit def addToMMap[K, V](self: TraversableOnce[(K, V)]) = new EnrichedWithToMMap(self)
+
+  class EnrichedWithToVector[A](self: TraversableOnce[A]) {
+    def toVector =
+      if (self.isEmpty) Vector.empty[A]
+      else Vector.newBuilder[A] ++= self result
+  }
+  implicit def addToVector[A](self: TraversableOnce[A]) = new EnrichedWithToVector(self)
 }

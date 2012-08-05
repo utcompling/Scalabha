@@ -48,6 +48,9 @@ final class LogNum(val logValue: Double) extends Ordered[LogNum] {
   override def hashCode(): Int = toDouble ##
 
   override def compare(that: LogNum) = logValue.compare(that.logValue)
+  def max(that: LogNum) = if(this.logValue > that.logValue) this else that
+  def min(that: LogNum) = if(this.logValue < that.logValue) this else that
+  
   def approx(o: LogNum, tolerance: Double): Boolean = {
     if (this == LogNum.zero && o == LogNum.zero)
       true

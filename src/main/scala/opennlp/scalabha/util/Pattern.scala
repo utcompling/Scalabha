@@ -1,4 +1,5 @@
 package opennlp.scalabha.util
+
 import scala.collection.generic.CanBuildFrom
 
 object Pattern {
@@ -23,11 +24,11 @@ object Pattern {
   //  implicit def double2unapplyDouble(objA: Double.type) = UnapplyDouble
 
   object Map {
-    def unapplySeq[A, B](m: Map[A, B]): Option[Seq[(A, B)]] = Some(m.toList)
+    def unapplySeq[A, B](m: Map[A, B]): Option[Seq[(A, B)]] = Some(m.toIndexedSeq)
   }
 
   object Set {
-    def unapplySeq[A](s: Set[A]): Option[Seq[A]] = Some(s.toList)
+    def unapplySeq[A](s: Set[A]): Option[Seq[A]] = Some(s.toIndexedSeq)
   }
 
   object -> {
@@ -73,8 +74,8 @@ object Pattern {
 
   object +: {
     def unapply[CC, A, That](seq: CC)(implicit asSeq: CC => Seq[A], cbf: CanBuildFrom[CC, A, That]): Option[(A, That)] = {
-      if (seq.size >= 1)
-        Some(seq.head, (cbf(seq) ++= seq.tail).result)
+      if (seq.nonEmpty)
+        Some(seq.head, cbf(seq) ++= seq.tail result)
       else
         None
     }
@@ -82,8 +83,8 @@ object Pattern {
 
   object :+ {
     def unapply[CC, A, That](seq: CC)(implicit asSeq: CC => Seq[A], cbf: CanBuildFrom[CC, A, That]): Option[(That, A)] = {
-      if (seq.size >= 1)
-        Some((cbf(seq) ++= seq.dropRight(1)).result, seq.last)
+      if (seq.nonEmpty)
+        Some(cbf(seq) ++= seq.dropRight(1) result, seq.last)
       else
         None
     }
@@ -91,7 +92,7 @@ object Pattern {
 
   object Iterable {
     def unapplySeq[T](s: Iterable[T]): Option[Seq[T]] =
-      Some(s.toSeq)
+      Some(s.toIndexedSeq)
   }
 
 }

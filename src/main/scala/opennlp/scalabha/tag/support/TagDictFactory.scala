@@ -1,11 +1,10 @@
 package opennlp.scalabha.tag.support
 
-import opennlp.scalabha.util.CollectionUtils._
-import opennlp.scalabha.util.LogNum
-import opennlp.scalabha.util.LogNum._
-import opennlp.scalabha.tag.TagDict
 import opennlp.scalabha.tag.SimpleTagDict
 import opennlp.scalabha.tag.SimpleWeightedTagDict
+import opennlp.scalabha.tag.TagDict
+import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.LogNum._
 
 /**
  * Factory for creating a tag dictionary (mapping from symbols to valid tags)
@@ -67,7 +66,7 @@ class SimpleWeightedTagDictFactory[Sym, Tag]() extends TagDictFactory[Sym, Tag] 
 class TopSymTagPairTagDictFactory[Sym, Tag](numSymTagPairs: Int) extends TagDictFactory[Sym, Tag] {
   def make(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
     val wordTagPairCounts = taggedTrainSequences.flatten.counts
-    val topWordTagPairs = wordTagPairCounts.toList.sortBy(-_._2).map(_._1).take(numSymTagPairs)
+    val topWordTagPairs = wordTagPairCounts.toVector.sortBy(-_._2).map(_._1).take(numSymTagPairs)
     val tagDict = topWordTagPairs.toSet.groupByKey
     val fullTagset = wordTagPairCounts.keySet.map(_._2)
     SimpleTagDict(tagDict, fullTagset)
@@ -86,7 +85,7 @@ class TopSymTagPairTagDictFactory[Sym, Tag](numSymTagPairs: Int) extends TagDict
 class FullTopSymTagDictFactory[Sym, Tag](numSym: Int, fullTagset: Set[Tag]) extends TagDictFactory[Sym, Tag] {
   def make(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
     val wordCounts = taggedTrainSequences.flatten.map(_._1).counts
-    val topWords = wordCounts.toList.sortBy(-_._2).map(_._1).take(numSym)
+    val topWords = wordCounts.toVector.sortBy(-_._2).map(_._1).take(numSym)
     val fullTagDict = taggedTrainSequences.flatten.toSet.groupByKey
     val tagDict = topWords.mapTo(fullTagDict).toMap
     SimpleTagDict(tagDict, fullTagset)
@@ -110,7 +109,7 @@ class DefaultLimitingTagDictFactory[Sym, Tag](maxNumberOfDefaultTags: Int, deleg
         .ungroup
         .map(_.swap).toSet
         .groupByKey
-        .mapVals(_.size).toList
+        .mapVals(_.size).toVector
         .sortBy(-_._2)
         .take(maxNumberOfDefaultTags)
         .map(_._1).toSet

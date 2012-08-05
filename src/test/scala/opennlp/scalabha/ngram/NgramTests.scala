@@ -135,8 +135,8 @@ class NgramTests {
     model2.generate
   }
 
-  def assertEqualsProb(a: LogNum, b: LogNum) {
-    assertEquals(a.toDouble, b.toDouble, 0.001)
+  def assertEqualsProb(expected: LogNum, model: LogNum) {
+    assertEquals(expected.toDouble, model.toDouble, 0.0000001)
   }
 
 }

@@ -1,9 +1,13 @@
 package opennlp.scalabha.tag.hmm
 
-import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.tag.OptionalTagDict
+import opennlp.scalabha.tag.TagDict
+import opennlp.scalabha.tag.support.CondCountsTransformer
+import opennlp.scalabha.tag.support.ConstrainingCondCountsTransformer
 import opennlp.scalabha.tag.support.DefaultedCondFreqCounts
-import opennlp.scalabha.tag.support._
-import opennlp.scalabha.tag._
+import opennlp.scalabha.tag.support.DefaultedFreqCounts
+import opennlp.scalabha.tag.support.PassthroughCondCountsTransformer
+import opennlp.scalabha.util.CollectionUtils._
 
 /**
  *

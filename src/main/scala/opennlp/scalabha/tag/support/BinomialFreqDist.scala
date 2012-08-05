@@ -1,12 +1,11 @@
 package opennlp.scalabha.tag.support
 
+import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
-import opennlp.scalabha.util.CollectionUtils._
-import org.apache.commons.logging.LogFactory
 
 class BinomialFreqDist[T](label0: T, label1: T, firstProb: LogNum)
-  extends MultinomialFreqDist((List(label0, label1) zip List(firstProb, 1 - firstProb)).toMap, LogNum.zero) {
+  extends MultinomialFreqDist(Map(label0 -> firstProb, label1 -> (1 - firstProb)), LogNum.zero) {
 
   override def sample(): T = {
     if (random.nextDouble.toLogNum < firstProb)

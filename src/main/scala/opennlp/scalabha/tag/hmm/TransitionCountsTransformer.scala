@@ -1,10 +1,9 @@
 package opennlp.scalabha.tag.hmm
 
-import opennlp.scalabha.util.CollectionUtils._
-import opennlp.scalabha.util.Pattern.{ -> }
+import opennlp.scalabha.tag.support.CondCountsTransformer
 import opennlp.scalabha.tag.support.DefaultedCondFreqCounts
-import opennlp.scalabha.tag.support._
-import opennlp.scalabha.tag._
+import opennlp.scalabha.tag.support.DefaultedFreqCounts
+import opennlp.scalabha.tag.support.PassthroughCondCountsTransformer
 
 class TransitionCountsTransformer[Tag](delegate: CondCountsTransformer[Option[Tag], Option[Tag]])
   extends CondCountsTransformer[Option[Tag], Option[Tag]] {

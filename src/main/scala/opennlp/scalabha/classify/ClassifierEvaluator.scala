@@ -12,7 +12,7 @@ trait ClassifierEvaluator[L, T] {
 }
 
 class SimpleClassifierEvaluator[L, T](gold: Seq[(L, Seq[T])]) extends ClassifierEvaluator[L, T] {
-  private val LOG = LogFactory.getLog("ClassifierEvaluator")
+  private val LOG = LogFactory.getLog(classOf[SimpleClassifierEvaluator[L, T]])
 
   override def apply(classifier: Classifier[L, T]) = {
     var correct = 0
@@ -49,7 +49,7 @@ case class ClassifierEvaluatorResult[L](
     if (total - correct > 0) {
       sb.append("  mistakes\n")
       sb.append("    gold\tmodel\tcount\n")
-      for ((l, (r, c)) <- mistakes.ungroup.toList.sortBy { case (l, (r, c)) => -c })
+      for ((l, (r, c)) <- mistakes.ungroup.toVector.sortBy { case (l, (r, c)) => -c })
         sb.append("    %s\t%s\t%s (%s)\n".format(l, r, c, c.toDouble / (total - correct)))
     }
     sb.append("  model output dist = %s\n".format(resultsDist))

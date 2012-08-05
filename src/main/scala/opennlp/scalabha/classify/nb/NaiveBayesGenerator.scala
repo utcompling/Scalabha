@@ -3,8 +3,8 @@ package opennlp.scalabha.classify.nb
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 
-import opennlp.scalabha.tag.support.DiscreteDistribution
 import opennlp.scalabha.tag.support.BinomialFreqDist
+import opennlp.scalabha.tag.support.DiscreteDistribution
 import opennlp.scalabha.tag.support.FreqDist
 import opennlp.scalabha.util.LogNum
 
@@ -20,7 +20,7 @@ class NaiveBayesGenerator[L, F](
   }
 
   def generate(label: L, numFeatures: Int): (L, Seq[F]) = {
-    val features = Seq.fill(numFeatures)(featureProb(label).sample)
+    val features = Vector.fill(numFeatures)(featureProb(label).sample)
     (label, features)
   }
 }

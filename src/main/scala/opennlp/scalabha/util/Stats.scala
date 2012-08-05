@@ -7,7 +7,7 @@ import scalanlp.stats.distributions.Dirichlet
 object Stats {
 
   case class DirichletSampler[L, N: Numeric](labels: Iterable[L], pseudocounts: L => N) {
-    private[this] val labelList = labels.toList
+    private[this] val labelList = labels.toIndexedSeq
     private[this] val dirichlet = Dirichlet(labelList.map(l => implicitly[Numeric[N]].toDouble(pseudocounts(l))).toArray)
 
     def sample: Map[L, LogNum] = (labelList zipEqual dirichlet.sample.toList.map(_.toLogNum)).toMap

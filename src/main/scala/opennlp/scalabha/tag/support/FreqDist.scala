@@ -1,10 +1,10 @@
 package opennlp.scalabha.tag.support
 
+import org.apache.commons.logging.LogFactory
+
 import opennlp.scalabha.util.CollectionUtils._
-import opennlp.scalabha.util.Pattern.{ -> }
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
-import org.apache.commons.logging.LogFactory
 
 /**
  * Utilities for frequency distributions: functions to probabilities: P(B).

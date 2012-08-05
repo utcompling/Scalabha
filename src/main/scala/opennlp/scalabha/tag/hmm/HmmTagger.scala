@@ -1,14 +1,10 @@
 package opennlp.scalabha.tag.hmm
 
-import opennlp.scalabha.tag.support.TagEdgeScorer
-import opennlp.scalabha.tag.support.Viterbi
 import opennlp.scalabha.tag.OptionalTagDict
 import opennlp.scalabha.tag.Tagger
+import opennlp.scalabha.tag.support.TagEdgeScorer
+import opennlp.scalabha.tag.support.Viterbi
 import opennlp.scalabha.util.LogNum
-import opennlp.scalabha.util.Pattern
-import opennlp.scalabha.util.Pattern.{ -> }
-import opennlp.scalabha.util.CollectionUtils._
-import scala.annotation.tailrec
 
 /**
  * Hidden Markov Model for tagging.
@@ -36,7 +32,7 @@ case class HmmTagger[Sym, Tag](
    * @param sequence 	a single sequence to be tagged
    * @return			the tagging of the input sequence assigned by the model
    */
-  override def tagSequence(sequence: IndexedSeq[Sym]) =
+  override protected def tagSequence(sequence: IndexedSeq[Sym]) =
     viterbi.tagSequence(sequence)
 
 }
@@ -83,7 +79,7 @@ class HardConstraintHmmTagger[Sym, Tag](
    * @param sequence 	a single sequence to be tagged
    * @return			the tagging of the input sequence assigned by the model
    */
-  override def tagSequence(sequence: IndexedSeq[Sym]) =
+  override protected def tagSequence(sequence: IndexedSeq[Sym]) =
     viterbi.tagSequence(sequence)
 
 }

@@ -1,10 +1,18 @@
 package opennlp.scalabha.classify.nb
 
 import scala.collection.mutable
-import opennlp.scalabha.classify._
-import opennlp.scalabha.util._
+import opennlp.scalabha.classify.Classifier
+import opennlp.scalabha.classify.ClassifierTrainer
+import opennlp.scalabha.classify.Instance
+import opennlp.scalabha.tag.support.AddLambdaSmoothingCondCountsTransformer
+import opennlp.scalabha.tag.support.CondCountsTransformer
+import opennlp.scalabha.tag.support.CountsTransformer
+import opennlp.scalabha.tag.support.CondFreqDist
+import opennlp.scalabha.tag.support.FreqDist
+import opennlp.scalabha.tag.support.PassthroughCondCountsTransformer
+import opennlp.scalabha.tag.support.PassthroughCountsTransformer
 import opennlp.scalabha.util.CollectionUtils._
-import opennlp.scalabha.tag.support._
+import opennlp.scalabha.util.LogNum
 
 /**
  * The naive Bayes classifier as a trait: defining common functionality that
@@ -44,15 +52,10 @@ case class NaiveBayesClassifier[L, T](
  * @tparam L the class of labels used by the classifiers created
  * @tparam T the class of value used for the features
  */
-case class OnlineNaiveBayesClassifierTrainer[L, T](val lambda: Double)
+case class OnlineNaiveBayesClassifierTrainer[L, T](
+  labelDocCountsTransformer: CountsTransformer[L] = PassthroughCountsTransformer[L](),
+  labelFeatureCountsTransformer: CondCountsTransformer[L, T] = PassthroughCondCountsTransformer[L, T]())
   extends ClassifierTrainer[L, T] {
-
-  val labelDocCountsTransformer = PassthroughCountsTransformer[L]()
-  val labelFeatureCountsTransformer =
-    if (lambda == 0)
-      PassthroughCondCountsTransformer[L, T]()
-    else
-      AddLambdaSmoothingCondCountsTransformer[L, T](lambda)
 
   val labelDocCounter = mutable.Map[L, Int]().withDefaultValue(0)
   val labelFeatureCounter = mutable.Map[L, mutable.Map[T, Int]]()
@@ -63,7 +66,6 @@ case class OnlineNaiveBayesClassifierTrainer[L, T](val lambda: Double)
   }
 
   def apply(labeledDocuments: TraversableOnce[(L, Instance[T])]) = {
-
     labeledDocuments.foreach {
       case (label, document) => {
         labelDocCounter(label) += 1
@@ -77,11 +79,22 @@ case class OnlineNaiveBayesClassifierTrainer[L, T](val lambda: Double)
     }
 
     val labelDocDist = FreqDist(labelDocCountsTransformer(labelDocCounter))
-    val labelFeatDist =
-      CondFreqDist(labelFeatureCountsTransformer(labelFeatureCounter))
+    val labelFeatDist = CondFreqDist(labelFeatureCountsTransformer(labelFeatureCounter))
     NaiveBayesClassifier[L, T](
       labelDocDist,
       labelFeatDist,
       labelDocCounter.keys.toSet)
+  }
+}
+
+object OnlineNaiveBayesClassifierTrainer {
+  def apply[L, T](lambda: Double): OnlineNaiveBayesClassifierTrainer[L, T] = {
+    val labelFeatureCountsTransformer =
+      if (lambda == 0)
+        PassthroughCondCountsTransformer[L, T]()
+      else
+        AddLambdaSmoothingCondCountsTransformer[L, T](lambda)
+    new OnlineNaiveBayesClassifierTrainer(
+      labelFeatureCountsTransformer = labelFeatureCountsTransformer)
   }
 }

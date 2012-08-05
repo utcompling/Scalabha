@@ -34,8 +34,8 @@ class SupervisedHmmTaggerTrainerTests {
         transitionCountsTransformer = TransitionCountsTransformer(),
         emissionCountsTransformer = EmissionCountsTransformer())
     val tagger: Tagger[String, String] = trainer.trainSupervised(train, tagDict.allTags)
-    assertEquals(Vector("D", "N", "V", "."), tagger.tagSequence("the dog walks . ".split(" ")))
-    assertEquals(Vector("D", "N", "V", "."), tagger.tagSequence("a cat walks . ".split(" ")))
+    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("the dog walks . ".split(" "))))
+    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("a cat walks . ".split(" "))))
   }
 
   @Test
@@ -56,9 +56,9 @@ class SupervisedHmmTaggerTrainerTests {
           new EmissionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))))
     val tagger: Tagger[String, String] = trainer.trainSupervised(train, tagDict.allTags)
-    assertEquals(Vector("D", "N", "V", "."), tagger.tagSequence("the dog walks . ".split(" ")))
-    assertEquals(Vector("D", "N", "V", "."), tagger.tagSequence("a cat meows . ".split(" ")))
-    assertEquals(Vector("D", "N", "V", "."), tagger.tagSequence("this bird chirps . ".split(" ")))
+    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("the dog walks . ".split(" "))))
+    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("a cat meows . ".split(" "))))
+    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("this bird chirps . ".split(" "))))
   }
 
   @Test

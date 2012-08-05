@@ -1,12 +1,14 @@
 package opennlp.scalabha.ngram
 
-import opennlp.scalabha.util.CollectionUtils._
-import opennlp.scalabha.util.Pattern.{ :+, +: }
-import opennlp.scalabha.tag.support._
-import opennlp.scalabha.util.LogNum
-import scala.collection.immutable.TreeMap
 import scala.annotation.tailrec
 import scala.collection.generic.CanBuildFrom
+
+import opennlp.scalabha.tag.support.CondCountsTransformer
+import opennlp.scalabha.tag.support.CondFreqDist
+import opennlp.scalabha.tag.support.MultinomialFreqDist
+import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.LogNum
+import opennlp.scalabha.util.Pattern.{ :+ }
 
 trait Ngram[T, S] {
   def n: Int
@@ -18,7 +20,7 @@ trait Ngram[T, S] {
    * the probability.
    */
   def sentenceProb(sentence: Seq[T]): LogNum = {
-    liftedSeqProb(Seq.fill(n - 1)(None) ++ sentence.map(Option(_)) :+ None)
+    liftedSeqProb(Vector.fill(n - 1)(None) ++ sentence.map(Option(_)) :+ None)
   }
 
   /**
@@ -39,7 +41,7 @@ trait Ngram[T, S] {
   def liftedSeqProb(seq: Seq[Option[T]]): LogNum = {
     seq
       .sliding(n)
-      .map { case context :+ word => cfd(context.toSeq)(word) }
+      .map { case context :+ word => cfd(context.toIndexedSeq)(word) }
       .product
   }
 
@@ -56,7 +58,7 @@ trait Ngram[T, S] {
           inner(cur.drop(1) :+ next)
       }
     }
-    inner(Seq.fill(n - 1)(None))
+    inner(Vector.fill(n - 1)(None))
     b.result
   }
 

@@ -1,9 +1,11 @@
 package opennlp.scalabha.tag.support
 
+import scala.annotation.tailrec
+import opennlp.scalabha.tag.OptionalTagDict
+import opennlp.scalabha.tag.SimpleTagDict
+import opennlp.scalabha.tag.Tagger
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
-import opennlp.scalabha.tag._
-import scala.annotation.tailrec
 import opennlp.scalabha.util.Pattern
 import opennlp.scalabha.util.Pattern.{ -> }
 
@@ -18,7 +20,8 @@ import opennlp.scalabha.util.Pattern.{ -> }
 class Viterbi[Sym, Tag](
   edgeScorer: TagEdgeScorer[Sym, Tag],
   tagDict: OptionalTagDict[Sym, Tag],
-  tagTransitions: Map[Option[Tag], Set[Option[Tag]]]) {
+  tagTransitions: Map[Option[Tag], Set[Option[Tag]]])
+  extends Tagger[Sym, Tag] {
 
   /**
    * Find the most likely tagging for the sequence given no constraints on
@@ -56,7 +59,7 @@ class Viterbi[Sym, Tag](
    *
    * @param sequence		sequence to be tagged
    */
-  def tagSequence(sequence: Seq[Sym]): Option[IndexedSeq[Tag]] = {
+  override def tagSequence(sequence: IndexedSeq[Sym]): Option[IndexedSeq[Tag]] = {
     // viterbi(t)(j) = the probability of the most likely subsequence of states 
     // that accounts for the first t observations and ends in state j.
 

@@ -1,16 +1,22 @@
 package opennlp.scalabha.tag.hmm
 
+import scala.annotation.tailrec
+
 import org.apache.commons.logging.LogFactory
-import opennlp.scalabha.tag.support._
-import opennlp.scalabha.tag._
+
+import opennlp.scalabha.tag.OptionalTagDict
+import opennlp.scalabha.tag.SemisupervisedTaggerTrainer
+import opennlp.scalabha.tag.TagDict
+import opennlp.scalabha.tag.Tagger
+import opennlp.scalabha.tag.UnsupervisedTaggerTrainer
+import opennlp.scalabha.tag.support.CondFreqCounts
+import opennlp.scalabha.tag.support.CondFreqDist
+import opennlp.scalabha.tag.support.DefaultedCondFreqCounts
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
 import opennlp.scalabha.util.Pattern
 import opennlp.scalabha.util.Pattern.{ -> }
-import opennlp.scalabha.util.LogNum
-import scala.collection.GenIterable
-import opennlp.scalabha.tag.hmm.support._
-import scala.annotation.tailrec
 
 /**
  * Factory for training a Hidden Markov Model tagger from a combination of
