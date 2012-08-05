@@ -1,10 +1,11 @@
 package opennlp.scalabha.tag.support
 
-import opennlp.scalabha.util.CollectionUtils._
-import opennlp.scalabha.util.Pattern
+import scala.collection.{ Map => CMap }
+import scala.util.Random
+
 import org.apache.commons.logging.LogFactory
-import util.Random
-import collection.{ Map => CMap }
+
+import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
 
 /**
@@ -214,10 +215,10 @@ class EisnerSmoothingCondCountsTransformer[A, B](lambda: Double, backoffCountsTr
       resultCounts.map {
         case (a, DefaultedFreqCounts(aCounts, aTotalAdd, aDefault)) =>
           // Replace any missing counts with the default
-          val defaultCounts = (allBs -- aCounts.keySet).mapToVal(aDefault)
-          val countsWithDefaults = aCounts +++ defaultCounts
+          val defaultCounts = (allBs -- aCounts.keySet).iterator.mapToVal(aDefault)
+          val countsWithDefaults = aCounts ++ defaultCounts  
 
-          val numSingleCountItems = countsWithDefaults.count(c => 0.5 < c._2 && c._2 < 1.5)
+          val numSingleCountItems = aCounts.count(c => 0.5 < c._2 && c._2 < 1.5)
           val smoothedLambda = lambda * (1e-100 + numSingleCountItems)
           val smoothedBackoff = backoffDist.mapVals(_ * smoothedLambda)
           val smoothedBackoffDefault = backoffDefault * smoothedLambda
