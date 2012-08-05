@@ -1,5 +1,7 @@
 package opennlp.scalabha.tag
 
+import opennlp.scalabha.util.CollectionUtils._
+
 /**
  * Tag sequences of symbols.
  *
@@ -15,10 +17,8 @@ trait Tagger[Sym, Tag] {
    * @return				sequences tagged by the model
    */
   def tag(rawSequences: Seq[IndexedSeq[Sym]]): Seq[IndexedSeq[(Sym, Tag)]] =
-    (rawSequences zip rawSequences.map(tagSequence)).map {
-      case (ws, ts) => ts.map(ws zip _).getOrElse(
-        throw new RuntimeException("could not tag sentence: '%s'".format(ws.mkString(" "))))
-    }
+    (rawSequences zip tagAll(rawSequences)).mapt((ws, tagged) =>
+      tagged.getOrElse(throw new RuntimeException("could not tag sentence: '%s'".format(ws.mkString(" ")))))
 
   /**
    * Tag each sequence using this model.
@@ -28,7 +28,7 @@ trait Tagger[Sym, Tag] {
    */
   def tagAll(rawSequences: Seq[IndexedSeq[Sym]]): Seq[Option[IndexedSeq[(Sym, Tag)]]] =
     (rawSequences zip tags(rawSequences)).map { case (ws, ts) => ts.map(ws zip _) }
-  
+
   /**
    * Tag each sequence using this model.
    *
