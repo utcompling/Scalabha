@@ -23,6 +23,11 @@ trait TagDict[Sym, Tag] {
    */
   final def contains(s: Sym): Boolean = doGetSet(s).isDefined
 
+  /**
+   * Does this symbol/tag entry exist in the tag dict (excluding defaults)?
+   */
+  final def contains(s: Sym, t: Tag): Boolean = doGetSet(s).exists(_(t))
+
   final def allTags = setIterator.flatMap(_._2).toSet ++ defaultSet
   final def symbols: Set[Sym] = setIterator.map(_._1).toSet
   def setIterator: Iterator[(Sym, Set[Tag])]
