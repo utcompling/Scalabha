@@ -6,6 +6,7 @@ import java.io.BufferedReader
 import java.io.FileReader
 import java.io.File
 import scala.io.BufferedSource
+import scala.io.Source
 
 object FileUtils {
   var FILE_SEPARATOR = System.getProperty("file.separator")
@@ -50,7 +51,7 @@ object FileUtils {
    * file is closed when finished.
    */
   def readUsing[R](filename: String)(block: BufferedSource => R): R = {
-    using(io.Source.fromFile(filename))(block)
+    using(Source.fromFile(filename))(block)
   }
 
   /**
@@ -58,7 +59,48 @@ object FileUtils {
    * file is closed when finished.
    */
   def readUsing[R](file: File)(block: BufferedSource => R): R = {
-    using(io.Source.fromFile(file))(block)
+    using(Source.fromFile(file))(block)
+  }
+
+  /**
+   * Get an Iterator over the lines in the file.  The file will automatically
+   * close itself when the end of the file is reached.  This gets around the 
+   * problem of having to all of your processing inside the `using` block.
+   */
+  def readLines(filename: String): Iterator[String] = {
+    readLines(new File(filename))
+  }
+
+  /**
+   * Get an Iterator over the lines in the file.  The file will automatically
+   * close itself when the end of the file is reached.  This gets around the 
+   * problem of having to all of your processing inside the `using` block.
+   */
+  def readLines(file: File): Iterator[String] = {
+    val resource = Source.fromFile(file)
+    val blockItr = resource.getLines
+    var finished = false
+    new Iterator[String] {
+      override def next() = {
+        hasNext()
+        if (finished) throw new NoSuchElementException("next on empty iterator")
+        val n = blockItr.next
+        hasNext()
+        n
+      }
+      override def hasNext() = {
+        if (finished)
+          false
+        else {
+          val hn = blockItr.hasNext
+          if (!hn) {
+            finished = true
+            if (resource != null) resource.close()
+          }
+          hn
+        }
+      }
+    }
   }
 
   /**
