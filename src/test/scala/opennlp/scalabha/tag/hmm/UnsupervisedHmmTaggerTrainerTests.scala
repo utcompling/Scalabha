@@ -123,6 +123,7 @@ class UnsupervisedHmmTaggerTrainerTests {
             trainRaw).make(),
         estimatedTransitionCountsTransformer = TransitionCountsTransformer(),
         estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
+        hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         maxIterations = 1,
         minAvgLogProbChangeForEM = 0.00001)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainRaw)
@@ -158,6 +159,7 @@ class UnsupervisedHmmTaggerTrainerTests {
             trainLab.map(_.map(_._1))).make(),
         estimatedTransitionCountsTransformer = TransitionCountsTransformer(),
         estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
+        hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._1)))
@@ -191,6 +193,7 @@ class UnsupervisedHmmTaggerTrainerTests {
             trainLab.map(_.map(_._1))).make(),
         estimatedTransitionCountsTransformer = TransitionCountsTransformer(),
         estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
+        hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainLab.map(_.map(_._1)))
@@ -320,6 +323,7 @@ class UnsupervisedHmmTaggerTrainerTests {
             trainRaw).make(),
         estimatedTransitionCountsTransformer = TransitionCountsTransformer(),
         estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
+        hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001) {
         //        protected override def hmmExaminationHook(hmm: HmmTagger[String, String]) {
@@ -340,9 +344,10 @@ class UnsupervisedHmmTaggerTrainerTests {
             EisnerSmoothingCondCountsTransformer(1.)),
         emissionCountsTransformer =
           new EmissionCountsTransformer(
-            EisnerSmoothingCondCountsTransformer(1., AddLambdaSmoothingCountsTransformer(1.))))
+            EisnerSmoothingCondCountsTransformer(1., AddLambdaSmoothingCountsTransformer(1.))),
+        hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags))
     val unsupervisedAutotagged = unsupervisedTagger.tag(trainRaw)
-    val autosupervisedTagger = supervisedTrainer.trainSupervised(unsupervisedAutotagged, tagDict.allTags)
+    val autosupervisedTagger = supervisedTrainer.trainSupervised(unsupervisedAutotagged)
     val autosupervisedOutput = autosupervisedTagger.tag(gold.map(_.map(_._1)))
     val autosupervisedResults = new TaggerEvaluator().evaluate(autosupervisedOutput, gold, tagDict)
 

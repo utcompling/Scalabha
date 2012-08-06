@@ -49,6 +49,21 @@ class SemisupervisedHmmTaggerTrainerTests {
     	""", autosupervisedResults)
   }
 
+  @Test
+  def en_smallTagDict_tdConstEmTraining() {
+    // TODO: WRITE THIS TEST
+  }
+
+  @Test
+  def en_smallTagDict_tdConstEmTagging() {
+    // TODO: WRITE THIS TEST
+  }
+
+  @Test
+  def en_smallTagDict_tdConstEmTrainingAndEmTagging() {
+    // TODO: WRITE THIS TEST
+  }
+
   private def runUnsupervisedTrainingTest(tagDict: TagDict[String, String], trainLab: Seq[IndexedSeq[(String, String)]]) = {
     val trainRaw = RawFile("data/postag/english/enraw20k")
     val gold = TaggedFile("data/postag/english/entest")
@@ -65,6 +80,7 @@ class SemisupervisedHmmTaggerTrainerTests {
         initialEmissionCountsTransformer =
           new EmissionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))),
+        hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         estimatedTransitionCountsTransformer = TransitionCountsTransformer(),
         estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
         maxIterations = 20,
@@ -80,9 +96,10 @@ class SemisupervisedHmmTaggerTrainerTests {
             EisnerSmoothingCondCountsTransformer(1.)),
         emissionCountsTransformer =
           new EmissionCountsTransformer(
-            EisnerSmoothingCondCountsTransformer(1., AddLambdaSmoothingCountsTransformer(1.))))
+            EisnerSmoothingCondCountsTransformer(1., AddLambdaSmoothingCountsTransformer(1.))),
+        hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags))
     val semisupervisedAutotagged = semisupervisedTagger.tag(trainRaw)
-    val autosupervisedTagger = supervisedTrainer.trainSupervised(semisupervisedAutotagged, tagDict.allTags)
+    val autosupervisedTagger = supervisedTrainer.trainSupervised(semisupervisedAutotagged)
     val autosupervisedOutput = autosupervisedTagger.tag(gold.map(_.map(_._1)))
     val autosupervisedResults = new TaggerEvaluator().evaluate(autosupervisedOutput, gold, tagDict)
 

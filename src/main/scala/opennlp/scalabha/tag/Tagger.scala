@@ -63,7 +63,7 @@ trait SupervisedTaggerTrainer[Sym, Tag] {
    * @param tagDict					a tag dictionary
    * @return						a trained Tagger
    */
-  def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]], tagSet: Set[Tag]): Tagger[Sym, Tag]
+  def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag]
 
 }
 

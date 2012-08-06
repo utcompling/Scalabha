@@ -42,11 +42,24 @@ trait OptionalTagDict[Sym, Tag] extends TagDict[Option[Sym], Option[Tag]] {
 }
 
 object OptionalTagDict {
-  def apply[Sym, Tag](tagDict: UnweightedTagDict[Sym, Tag]) = OptionalUnweightedTagDict(tagDict)
-  def apply[Sym, Tag](tagDict: WeightedTagDict[Sym, Tag]) = OptionalWeightedTagDict(tagDict)
+  def apply[Sym, Tag](tagDict: UnweightedTagDict[Sym, Tag]) = new OptionalUnweightedTagDict(tagDict)
+  def apply[Sym, Tag](tagDict: WeightedTagDict[Sym, Tag]) = new OptionalWeightedTagDict(tagDict)
   def apply[Sym, Tag](tagDict: TagDict[Sym, Tag]) = tagDict match {
-    case d: UnweightedTagDict[Sym, Tag] => OptionalUnweightedTagDict(d)
-    case d: WeightedTagDict[Sym, Tag] => OptionalWeightedTagDict(d)
+    case d: UnweightedTagDict[Sym, Tag] => new OptionalUnweightedTagDict(d)
+    case d: WeightedTagDict[Sym, Tag] => new OptionalWeightedTagDict(d)
+  }
+}
+
+////////////////////////////////
+// Strict TagDict
+////////////////////////////////
+
+object StrictTagDict {
+  def apply[Sym, Tag](tagDict: OptionalUnweightedTagDict[Sym, Tag]) = new OptionalUnweightedTagDict(tagDict.unoptioned) { override val default = Set[Option[Tag]]() }
+  def apply[Sym, Tag](tagDict: OptionalWeightedTagDict[Sym, Tag]) = new OptionalWeightedTagDict(tagDict.unoptioned) { override val default = Map[Option[Tag], LogNum]() }
+  def apply[Sym, Tag](tagDict: OptionalTagDict[Sym, Tag]): OptionalTagDict[Sym, Tag] = tagDict match {
+    case d: OptionalUnweightedTagDict[Sym, Tag] => new OptionalUnweightedTagDict(d.unoptioned) { override val default = Set[Option[Tag]]() }
+    case d: OptionalWeightedTagDict[Sym, Tag] => new OptionalWeightedTagDict(d.unoptioned) { override val default = Map[Option[Tag], LogNum]() }
   }
 }
 
@@ -89,9 +102,9 @@ class OptionalUnweightedTagDict[Sym, Tag](tagDict: UnweightedTagDict[Sym, Tag])
   override def iterator = optioned.iterator
 }
 
-object OptionalUnweightedTagDict {
-  def apply[Sym, Tag](tagDict: UnweightedTagDict[Sym, Tag]) = new OptionalUnweightedTagDict(tagDict)
-}
+//object OptionalUnweightedTagDict {
+//  def apply[Sym, Tag](tagDict: UnweightedTagDict[Sym, Tag]) = new OptionalUnweightedTagDict(tagDict)
+//}
 
 ////////////////////////////////
 // Weighted TagDict
@@ -136,9 +149,9 @@ class OptionalWeightedTagDict[Sym, Tag](tagDict: WeightedTagDict[Sym, Tag])
   override def iterator = optioned.iterator
 }
 
-object OptionalWeightedTagDict {
-  def apply[Sym, Tag](tagDict: WeightedTagDict[Sym, Tag]) = new OptionalWeightedTagDict(tagDict)
-}
+//object OptionalWeightedTagDict {
+//  def apply[Sym, Tag](tagDict: WeightedTagDict[Sym, Tag]) = new OptionalWeightedTagDict(tagDict)
+//}
 
 ///////////////////////
 // Fake Weighted TagDict

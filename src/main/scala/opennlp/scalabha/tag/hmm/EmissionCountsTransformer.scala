@@ -46,10 +46,10 @@ object TagDictConstrainedEmissionCountsTransformer {
   //      PassthroughCondCountsTransformer[Option[Tag], Option[Sym]]())
   //  }
 
-  def apply[Tag, Sym](tagDict: TagDict[Sym, Tag], allowUnseenWordTypes: Boolean, delegate: CondCountsTransformer[Option[Tag], Option[Sym]]): EmissionCountsTransformer[Tag, Sym] = {
+  def apply[Tag, Sym](tagDict: TagDict[Sym, Tag], delegate: CondCountsTransformer[Option[Tag], Option[Sym]]): EmissionCountsTransformer[Tag, Sym] = {
     val c = (OptionalTagDict(tagDict).setIterator.ungroup.map(_.swap) :+ (None, None)).toSet.groupByKey
     new EmissionCountsTransformer(
-      new ConstrainingCondCountsTransformer(c, !allowUnseenWordTypes,
+      new ConstrainingCondCountsTransformer(c, false,
         delegate))
   }
 }

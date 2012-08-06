@@ -17,7 +17,8 @@ import opennlp.scalabha.util.CollectionUtils._
  */
 class SupervisedHmmTaggerTrainer[Sym, Tag](
   transitionCountsTransformer: TransitionCountsTransformer[Tag],
-  emissionCountsTransformer: EmissionCountsTransformer[Tag, Sym])
+  emissionCountsTransformer: EmissionCountsTransformer[Tag, Sym],
+  hmmTaggerFactory: HmmTaggerFactory[Sym, Tag])
   extends SupervisedTaggerTrainer[Sym, Tag] {
 
   private val LOG = LogFactory.getLog(classOf[SupervisedHmmTaggerTrainer[Sym, Tag]]);
@@ -30,11 +31,11 @@ class SupervisedHmmTaggerTrainer[Sym, Tag](
    * @param tagDict					tag dictionary
    * @return						a trained tagger
    */
-  override def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]], tagSet: Set[Tag]): HmmTagger[Sym, Tag] = {
+  override def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): HmmTagger[Sym, Tag] = {
     val (transitionCounts, emissionCounts) = getCountsFromTagged(taggedTrainSequences)
     val transitionDist = CondFreqDist(transitionCountsTransformer(transitionCounts))
     val emissionDist = CondFreqDist(emissionCountsTransformer(emissionCounts))
-    new HmmTagger(transitionDist, emissionDist, tagSet)
+    hmmTaggerFactory(transitionDist, emissionDist)
   }
 
   /**

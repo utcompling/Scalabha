@@ -14,7 +14,7 @@ import opennlp.scalabha.util.LogNum
  *
  * @param transitions		function giving the conditional probability of a tag given its previous tag
  * @param emissions			function giving the probability of a symbol given a tag
- * @param tagDict			tag dictionary representing the valid tags for a given symbol
+ * @param tagSet			the set of all possible tags
  *
  * NOTE: Start and end symbols and tags are represented by None.
  */
@@ -24,7 +24,7 @@ case class HmmTagger[Sym, Tag](
   val tagSet: Set[Tag])
   extends Tagger[Sym, Tag] {
 
-  private[this] val viterbi = new Viterbi(new HmmEdgeScorer(transitions, emissions), tagSet)
+  protected[this] val viterbi = new Viterbi(new HmmEdgeScorer(transitions, emissions), tagSet)
 
   /**
    * Tag the sequence using this model.  Uses the Viterbi algorithm.
@@ -44,45 +44,85 @@ case class HmmTagger[Sym, Tag](
  * won't bother exploring those zero-probability values.
  */
 class HardConstraintHmmTagger[Sym, Tag](
-  val viterbi: Viterbi[Sym, Tag])
-  extends Tagger[Sym, Tag] {
-
-  def this(
-    transitions: Option[Tag] => Option[Tag] => LogNum,
-    emissions: Option[Tag] => Option[Sym] => LogNum,
-    tagSet: Set[Tag]) =
-    this(new Viterbi(new HmmEdgeScorer(transitions, emissions), tagSet))
+  transitions: Option[Tag] => Option[Tag] => LogNum,
+  emissions: Option[Tag] => Option[Sym] => LogNum,
+  tagSet: Set[Tag],
+  override protected[this] val viterbi: Viterbi[Sym, Tag])
+  extends HmmTagger[Sym, Tag](transitions, emissions, tagSet) {
 
   def this(
     transitions: Option[Tag] => Option[Tag] => LogNum,
     emissions: Option[Tag] => Option[Sym] => LogNum,
     tagDict: OptionalTagDict[Sym, Tag]) =
-    this(new Viterbi(new HmmEdgeScorer(transitions, emissions), tagDict))
+    this(transitions, emissions, tagDict.unoptioned.allTags, new Viterbi(new HmmEdgeScorer(transitions, emissions), tagDict))
 
   def this(
     transitions: Option[Tag] => Option[Tag] => LogNum,
     emissions: Option[Tag] => Option[Sym] => LogNum,
     tagSet: Set[Tag],
     validTransitions: Map[Option[Tag], Set[Option[Tag]]]) =
-    this(new Viterbi(new HmmEdgeScorer(transitions, emissions), tagSet, validTransitions))
+    this(transitions, emissions, tagSet, new Viterbi(new HmmEdgeScorer(transitions, emissions), tagSet, validTransitions))
 
   def this(
     transitions: Option[Tag] => Option[Tag] => LogNum,
     emissions: Option[Tag] => Option[Sym] => LogNum,
     tagDict: OptionalTagDict[Sym, Tag],
     validTransitions: Map[Option[Tag], Set[Option[Tag]]]) =
-    this(new Viterbi(new HmmEdgeScorer(transitions, emissions), tagDict, validTransitions))
-
-  /**
-   * Tag the sequence using this model.  Uses the Viterbi algorithm.
-   *
-   * @param sequence 	a single sequence to be tagged
-   * @return			the tagging of the input sequence assigned by the model
-   */
-  override protected def tagSequence(sequence: IndexedSeq[Sym]) =
-    viterbi.tagSequence(sequence)
+    this(transitions, emissions, tagDict.unoptioned.allTags, new Viterbi(new HmmEdgeScorer(transitions, emissions), tagDict, validTransitions))
 
 }
+
+object HardConstraintHmmTagger {
+  def apply[Sym, Tag](
+    hmmTagger: HmmTagger[Sym, Tag],
+    tagDict: OptionalTagDict[Sym, Tag], allowUnseenWordTypes: Boolean) =
+    new HardConstraintHmmTagger(hmmTagger.transitions, hmmTagger.emissions, tagDict.unoptioned.allTags,
+      new Viterbi(new HmmEdgeScorer(hmmTagger.transitions, hmmTagger.emissions), tagDict))
+
+  def apply[Sym, Tag](
+    hmmTagger: HmmTagger[Sym, Tag],
+    tagSet: Set[Tag],
+    validTransitions: Map[Option[Tag], Set[Option[Tag]]]) =
+    new HardConstraintHmmTagger(hmmTagger.transitions, hmmTagger.emissions, tagSet,
+      new Viterbi(new HmmEdgeScorer(hmmTagger.transitions, hmmTagger.emissions), tagSet, validTransitions))
+
+  def apply[Sym, Tag](
+    hmmTagger: HmmTagger[Sym, Tag],
+    tagDict: OptionalTagDict[Sym, Tag], allowUnseenWordTypes: Boolean,
+    validTransitions: Map[Option[Tag], Set[Option[Tag]]]) =
+    new HardConstraintHmmTagger(hmmTagger.transitions, hmmTagger.emissions, tagDict.unoptioned.allTags,
+      new Viterbi(new HmmEdgeScorer(hmmTagger.transitions, hmmTagger.emissions), tagDict, validTransitions))
+}
+
+//////////////////////////////
+// HmmTagger Factories
+//////////////////////////////
+
+trait HmmTaggerFactory[Sym, Tag] {
+  def apply(
+    transitions: Option[Tag] => Option[Tag] => LogNum,
+    emissions: Option[Tag] => Option[Sym] => LogNum): HmmTagger[Sym, Tag]
+}
+
+class SimpleHmmTaggerFactory[Sym, Tag](tagSet: Set[Tag]) extends HmmTaggerFactory[Sym, Tag] {
+  override def apply(
+    transitions: Option[Tag] => Option[Tag] => LogNum,
+    emissions: Option[Tag] => Option[Sym] => LogNum): HmmTagger[Sym, Tag] = {
+    HmmTagger(transitions, emissions, tagSet)
+  }
+}
+
+class HardTagDictConstraintHmmTaggerFactory[Sym, Tag](tagDict: OptionalTagDict[Sym, Tag]) extends HmmTaggerFactory[Sym, Tag] {
+  override def apply(
+    transitions: Option[Tag] => Option[Tag] => LogNum,
+    emissions: Option[Tag] => Option[Sym] => LogNum): HmmTagger[Sym, Tag] = {
+    new HardConstraintHmmTagger(transitions, emissions, tagDict)
+  }
+}
+
+//////////////////////////////
+// Edge Scorer
+//////////////////////////////
 
 /**
  * Edge Scorer used for Viterbi HMM tagging
