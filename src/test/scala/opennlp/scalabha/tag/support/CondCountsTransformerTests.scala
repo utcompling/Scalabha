@@ -113,7 +113,8 @@ class CondCountsTransformerTests {
   @Test
   def test_ConstrainingCondCountsTransformer_DefaultCounts_double() {
     val transformer =
-      new ConstrainingCondCountsTransformer[Char, Symbol](validEntries = Map('A' -> Set('a, 'b, 'd), 'B' -> Set('a, 'b), 'D' -> Set('d)),
+      new ConstrainingCondCountsTransformer[Char, Symbol](
+        validEntries = Map('A' -> Set('a, 'b, 'd), 'B' -> Set('a, 'b), 'D' -> Set('d)),
         zeroDefaults = true,
         delegate = MockCondCountsTransformer(
           DefaultedCondFreqCounts(Map(

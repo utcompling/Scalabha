@@ -112,10 +112,11 @@ object ConditionedCountsTransformer {
 //////////////////////////////////////
 
 /**
- * CondCountsTransformer decorator that zero out counts for entries not found in
+ * CondCountsTransformer decorator that zeros out counts for entries not found in
  * validEntries.
  *
  * @param validEntries	zero out entries not found in this set
+ * @param zeroDefaults	if false, unseen B values will left as their defaults and not zeroed
  * @param delegate		the delegate counter upon which the transformation is performed
  */
 case class ConstrainingCondCountsTransformer[A, B](validEntries: Map[A, Set[B]], zeroDefaults: Boolean, delegate: CondCountsTransformer[A, B]) extends CondCountsTransformer[A, B] {
