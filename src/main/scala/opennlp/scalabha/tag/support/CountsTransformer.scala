@@ -74,7 +74,7 @@ case class PassthroughCountsTransformer[B]() extends CountsTransformer[B] {
  * @param delegate		the delegate counter upon which the transformation is performed
  */
 case class ConstrainingCountsTransformer[B](validEntries: Set[B], delegate: CountsTransformer[B]) extends CountsTransformer[B] {
-  override def apply(counts: DefaultedFreqCounts[B, Double]) = {
+  override def apply(counts: DefaultedFreqCounts[B, Double]): DefaultedFreqCounts[B, Double] = {
     val DefaultedFreqCounts(resultCounts, totalAddition, defaultCount) = delegate(counts)
     val zeroCounts = DefaultedFreqCounts(resultCounts.mapVals(_ => 0.)) // a count for every B in validEntries
     DefaultedFreqCounts(validEntries.mapTo(b => resultCounts.getOrElse(b, defaultCount)).toMap) +++ zeroCounts

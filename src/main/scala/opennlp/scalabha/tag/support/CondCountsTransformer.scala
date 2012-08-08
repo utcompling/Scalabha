@@ -67,20 +67,6 @@ case class PassthroughCondCountsTransformer[A, B]() extends CondCountsTransforme
 }
 
 //////////////////////////////////////
-// implementation that overwrites the unseenContextProb
-//////////////////////////////////////
-
-/**
- * CondCountsTransformer that overwrites the unseenContextProb
- */
-case class UnseenContextProbSettingCondCountsTransformer[A, B](unseenContextProb: LogNum, delegate: CondCountsTransformer[A, B]) extends CondCountsTransformer[A, B] {
-  override def apply(counts: DefaultedCondFreqCounts[A, B, Double]) = {
-    val DefaultedCondFreqCounts(resultCounts, _) = delegate(counts)
-    DefaultedCondFreqCounts(resultCounts, unseenContextProb)
-  }
-}
-
-//////////////////////////////////////
 // Conditioned count transforming implementation
 //////////////////////////////////////
 
@@ -89,7 +75,7 @@ case class UnseenContextProbSettingCondCountsTransformer[A, B](unseenContextProb
  */
 case class ConditionedCountsTransformer[A, B](bCountsTransformer: CountsTransformer[B], delegate: CondCountsTransformer[A, B]) extends CondCountsTransformer[A, B] {
   override def apply(counts: DefaultedCondFreqCounts[A, B, Double]) = {
-    val DefaultedCondFreqCounts(resultCounts, unseenContextProb) = delegate(counts)
+    val DefaultedCondFreqCounts(resultCounts) = delegate(counts)
 
     val allBs = resultCounts.flatMap(_._2.counts.keySet).toSet // collect all Bs across all As
 
@@ -98,7 +84,7 @@ case class ConditionedCountsTransformer[A, B](bCountsTransformer: CountsTransfor
         case DefaultedFreqCounts(c, t, d) =>
           val defaultCounts = (allBs -- c.keySet).mapToVal(d)
           bCountsTransformer(DefaultedFreqCounts(c +++ defaultCounts, t, d))
-      }, unseenContextProb)
+      })
   }
 }
 
@@ -121,7 +107,7 @@ object ConditionedCountsTransformer {
  */
 case class ConstrainingCondCountsTransformer[A, B](validEntries: Map[A, Set[B]], zeroDefaults: Boolean, delegate: CondCountsTransformer[A, B]) extends CondCountsTransformer[A, B] {
   override def apply(counts: DefaultedCondFreqCounts[A, B, Double]) = {
-    val DefaultedCondFreqCounts(resultCounts, unseenContextProb) = delegate(counts)
+    val DefaultedCondFreqCounts(resultCounts) = delegate(counts)
     if (zeroDefaults) {
       val zeroCountAs = DefaultedCondFreqCounts.fromMap(validEntries.mapVals(_ => Map[B, Double]())) // a count for every A in validEntries
       val allBs = (validEntries.values.flatten ++ resultCounts.values.flatMap(_.counts.keySet)).toSet
@@ -151,7 +137,7 @@ case class ConstrainingCondCountsTransformer[A, B](validEntries: Map[A, Set[B]],
               }
             val filtered = aCounts ++ zeros.mapToVal(0.)
             a -> DefaultedFreqCounts(filtered, aTotalAddition, aDefaultCount)
-        }, unseenContextProb)
+        })
     }
   }
 }
@@ -200,7 +186,7 @@ class EisnerSmoothingCondCountsTransformer[A, B](lambda: Double, backoffCountsTr
   private val LOG = LogFactory.getLog(classOf[EisnerSmoothingCondCountsTransformer[A, B]])
 
   override def apply(counts: DefaultedCondFreqCounts[A, B, Double]) = {
-    val DefaultedCondFreqCounts(resultCounts, unseenContextProb) = delegate(counts)
+    val DefaultedCondFreqCounts(resultCounts) = delegate(counts)
 
     // Compute backoff: probability of B regardless of A
     val totalBackoffCounts = resultCounts.values.map(_.simpleCounts).reduce(_ +++ _)
@@ -217,7 +203,7 @@ class EisnerSmoothingCondCountsTransformer[A, B](lambda: Double, backoffCountsTr
         case (a, DefaultedFreqCounts(aCounts, aTotalAdd, aDefault)) =>
           // Replace any missing counts with the default
           val defaultCounts = (allBs -- aCounts.keySet).iterator.mapToVal(aDefault)
-          val countsWithDefaults = aCounts ++ defaultCounts  
+          val countsWithDefaults = aCounts ++ defaultCounts
 
           val numSingleCountItems = aCounts.count(c => 0.5 < c._2 && c._2 < 1.5)
           val smoothedLambda = lambda * (1e-100 + numSingleCountItems)
@@ -228,7 +214,7 @@ class EisnerSmoothingCondCountsTransformer[A, B](lambda: Double, backoffCountsTr
           val smoothedTotalAddition = aTotalAdd + smoothedBackoffDefault
 
           (a, DefaultedFreqCounts(smoothedCounts, smoothedTotalAddition, smoothedDefaultCount))
-      }, unseenContextProb)
+      })
   }
 }
 
@@ -253,7 +239,7 @@ case class RandomCondCountsTransformer[A, B](maxCount: Int, delegate: CondCounts
   private val rand = new Random(0) // static seed ensures results are reproducible
 
   override def apply(counts: DefaultedCondFreqCounts[A, B, Double]) = {
-    val DefaultedCondFreqCounts(resultCounts, unseenContextProb) = delegate(counts)
+    val DefaultedCondFreqCounts(resultCounts) = delegate(counts)
 
     val allBs = resultCounts.flatMap(_._2.counts.keySet).toSet // collect all Bs across all As
 
@@ -263,7 +249,7 @@ case class RandomCondCountsTransformer[A, B](maxCount: Int, delegate: CondCounts
           val defaultCounts = (allBs -- c.keySet).mapToVal(d)
           val scaled = (c +++ defaultCounts).mapVals(_ + rand.nextInt(maxCount + 1))
           DefaultedFreqCounts(scaled, t, d)
-      }, unseenContextProb)
+      })
   }
 }
 

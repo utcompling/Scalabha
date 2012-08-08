@@ -49,30 +49,14 @@ object DefaultedFreqCounts {
  * @tparam B	the conditioned item being counted; P(B|A).
  * @tparam N	the Numeric type of the count
  */
-case class DefaultedCondFreqCounts[A, B, N: Numeric](counts: Map[A, DefaultedFreqCounts[B, N]], unseenContextProb: LogNum) {
-  def +++(that: DefaultedCondFreqCounts[A, B, N]): DefaultedCondFreqCounts[A, B, N] = {
-    val countsSum = (counts.iterator ++ that.counts).groupByKey.mapVals(_.reduce(_ +++ _))
-
-    if (unseenContextProb == implicitly[Numeric[N]].zero)
-      DefaultedCondFreqCounts(countsSum, unseenContextProb)
-
-    else if (that.unseenContextProb == implicitly[Numeric[N]].zero)
-      DefaultedCondFreqCounts(countsSum, that.unseenContextProb)
-
-    else {
-      assert(unseenContextProb == that.unseenContextProb)
-      DefaultedCondFreqCounts(countsSum, unseenContextProb)
-    }
-  }
+case class DefaultedCondFreqCounts[A, B, N: Numeric](counts: Map[A, DefaultedFreqCounts[B, N]]) {
+  def +++(that: DefaultedCondFreqCounts[A, B, N]): DefaultedCondFreqCounts[A, B, N] =
+    DefaultedCondFreqCounts((counts.iterator ++ that.counts).groupByKey.mapVals(_.reduce(_ +++ _)))
 
   def simpleCounts = counts.mapVals(_.simpleCounts)
 }
 
 object DefaultedCondFreqCounts {
-  def apply[A, B, N: Numeric](counts: Map[A, DefaultedFreqCounts[B, N]]): DefaultedCondFreqCounts[A, B, N] =
-    DefaultedCondFreqCounts(counts, LogNum.zero)
   def fromMap[A, B, N: Numeric](counts: Map[A, Map[B, N]]): DefaultedCondFreqCounts[A, B, N] =
-    DefaultedCondFreqCounts(counts.mapVals(c => DefaultedFreqCounts(c)), LogNum.zero)
-  def fromMap[A, B, N: Numeric](counts: Map[A, Map[B, N]], unseenContextProb: LogNum): DefaultedCondFreqCounts[A, B, N] =
-    DefaultedCondFreqCounts(counts.mapVals(c => DefaultedFreqCounts(c)), unseenContextProb)
+    DefaultedCondFreqCounts(counts.mapVals(c => DefaultedFreqCounts(c)))
 }

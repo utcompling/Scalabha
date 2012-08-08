@@ -6,7 +6,6 @@ import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.Pattern.{ :+ }
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.tag.support.PassthroughCondCountsTransformer
-import opennlp.scalabha.tag.support.UnseenContextProbSettingCondCountsTransformer
 import opennlp.scalabha.tag.support.AddLambdaSmoothingCondCountsTransformer
 import opennlp.scalabha.tag.support.PassthroughCountsTransformer
 import opennlp.scalabha.test.TestUtils._
@@ -41,14 +40,15 @@ class NgramTests {
     assertEqualsProb(LogNum(2 / 3.), ngram.liftedSeqProb(Seq(Some('a'), Some('t'), None)))
     assertEqualsProb(LogNum(0 / 3.), ngram.liftedSeqProb(Seq(Some('a'), Some('t'), Some('a'))))
     assertEqualsProb(LogNum(0 / 3.), ngram.liftedSeqProb(Seq(Some('a'), Some('t'), Some('z'))))
-    assertEqualsProb(LogNum(0.), ngram.liftedSeqProb(Seq(Some('z'), Some('z'), Some('a'))))
+    assertEqualsProb(LogNum(3 / 39.), ngram.liftedSeqProb(Seq(Some('z'), Some('z'), Some('a'))))
+    assertEqualsProb(LogNum(0 / 39.), ngram.liftedSeqProb(Seq(Some('z'), Some('z'), Some('z'))))
 
     assertEqualsProb(LogNum((1 / 13.) * (1 / 1.) * (1 / 1.) * (1 / 1.)), ngram.sentenceProb("dog"))
     assertEqualsProb(LogNum((2 / 13.) * (2 / 2.) * (1 / 2.) * (1 / 1.)), ngram.sentenceProb("the"))
     assertEqualsProb(LogNum((2 / 13.) * (2 / 2.) * (1 / 2.) * (2 / 2.) * (2 / 3.)), ngram.sentenceProb("that"))
     assertEqualsProb(LogNum((1 / 13.) * (1 / 1.) * (2 / 2.) * (1 / 3.) * (0 / 1.)), ngram.sentenceProb("hate"))
     assertEqualsProb(LogNum((8 / 13.) * (8 / 8.)), ngram.sentenceProb("."))
-    assertEqualsProb(LogNum((0 / 13.) * (0.) * (2 / 3.)), ngram.sentenceProb("at"))
+    assertEqualsProb(LogNum((0 / 13.) * (0 / 39.) * (2 / 3.)), ngram.sentenceProb("at"))
 
     assertException(ngram.seqProb("x")) { case e: IllegalArgumentException => assertEquals("requirement failed: seq must have length at least N=3", e.getMessage) }
     assertException(ngram.liftedSeqProb(Seq(Option('x')))) { case e: IllegalArgumentException => assertEquals("requirement failed: seq must have length at least N=3", e.getMessage) }
@@ -56,9 +56,7 @@ class NgramTests {
 
   @Test
   def test_smoothed() {
-    val counter =
-      UnseenContextProbSettingCondCountsTransformer[Seq[Option[Char]], Option[Char]](LogNum(.05),
-        AddLambdaSmoothingCondCountsTransformer(1.))
+    val counter = AddLambdaSmoothingCondCountsTransformer[Seq[Option[Char]], Option[Char]](1.)
     val ngram =
       NgramTrainer[Char](3, counter)
         .apply("that dog hates the cat . . . . . . . .".split(" "))
@@ -86,14 +84,15 @@ class NgramTests {
     assertEqualsProb(LogNum(3 / 15.), ngram.liftedSeqProb(Seq(Some('a'), Some('t'), None)))
     assertEqualsProb(LogNum(1 / 15.), ngram.liftedSeqProb(Seq(Some('a'), Some('t'), Some('a'))))
     assertEqualsProb(LogNum(1 / 15.), ngram.liftedSeqProb(Seq(Some('a'), Some('t'), Some('z'))))
-    assertEqualsProb(LogNum(.05), ngram.liftedSeqProb(Seq(Some('z'), Some('z'), Some('a'))))
+    assertEqualsProb(LogNum(18 / 219.), ngram.liftedSeqProb(Seq(Some('z'), Some('z'), Some('a'))))
+    assertEqualsProb(LogNum(1 / 219.), ngram.liftedSeqProb(Seq(Some('z'), Some('z'), Some('z'))))
 
     assertEqualsProb(LogNum((2 / 25.) * (2 / 13.) * (2 / 13.) * (2 / 13.)), ngram.sentenceProb("dog"))
     assertEqualsProb(LogNum((3 / 25.) * (3 / 14.) * (2 / 14.) * (2 / 13.)), ngram.sentenceProb("the"))
     assertEqualsProb(LogNum((3 / 25.) * (3 / 14.) * (2 / 14.) * (3 / 14.) * (3 / 15.)), ngram.sentenceProb("that"))
     assertEqualsProb(LogNum((2 / 25.) * (2 / 13.) * (3 / 14.) * (2 / 15.) * (1 / 13.)), ngram.sentenceProb("hate"))
     assertEqualsProb(LogNum((9 / 25.) * (9 / 20.)), ngram.sentenceProb("."))
-    assertEqualsProb(LogNum((1 / 25.) * (.05) * (3 / 15.)), ngram.sentenceProb("at"))
+    assertEqualsProb(LogNum((1 / 25.) * (20 / 219.) * (3 / 15.)), ngram.sentenceProb("at"))
 
     assertException(ngram.seqProb("x")) { case e: IllegalArgumentException => assertEquals("requirement failed: seq must have length at least N=3", e.getMessage) }
     assertException(ngram.liftedSeqProb(Seq(Option('x')))) { case e: IllegalArgumentException => assertEquals("requirement failed: seq must have length at least N=3", e.getMessage) }

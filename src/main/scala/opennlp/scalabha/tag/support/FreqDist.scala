@@ -118,7 +118,12 @@ object CondFreqDist {
    * @tparam B	the conditioned item being counted; P(B|A).
    */
   def apply[A, B, N](resultCounts: DefaultedCondFreqCounts[A, B, N])(implicit num: Numeric[N]): A => MultinomialFreqDist[B] = {
-    val DefaultedCondFreqCounts(counts, unseenContextProb) = resultCounts
-    counts.mapVals(FreqDist(_)).withDefaultValue(FreqDist.static(unseenContextProb))
+    val DefaultedCondFreqCounts(counts) = resultCounts
+    val summedBackoffCounts = counts.values.foldLeft(DefaultedFreqCounts(Map[B, N](), num.zero, num.zero)) {
+      case (DefaultedFreqCounts(zc, zt, zd), DefaultedFreqCounts(c, t, d)) =>
+        val x = DefaultedFreqCounts(zc +++ c, num.plus(zt, t), num.plus(zd, d))
+        x
+    }
+    counts.mapVals(FreqDist(_)).withDefaultValue(FreqDist(summedBackoffCounts))
   }
 }

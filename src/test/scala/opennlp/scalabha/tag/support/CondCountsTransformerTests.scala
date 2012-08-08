@@ -33,6 +33,9 @@ class CondCountsTransformerTests {
     assertEqualsProb(LogNum.one, d('C')('a))
     assertEqualsProb(LogNum.zero, d('C')('b))
     assertEqualsProb(LogNum.zero, d('C')('def))
+    assertEqualsProb(LogNum(8. / 15.), d('Z')('a))
+    assertEqualsProb(LogNum(7. / 15.), d('Z')('b))
+    assertEqualsProb(LogNum.zero, d('Z')('def))
   }
 
   @Test
@@ -66,17 +69,17 @@ class CondCountsTransformerTests {
      * 
      * After constraining:
      *  
-     *     |  A  |  B  |  C  |  D  |
-     *   ==+=====+=====+=====+=====+
-     *   a |  5  |  6  |  0  |  0  |
-     *   b |  4  |  3  |  0  |  0  |
-     *   c |  0  |  0  |  0  |  0  |
-     *   d |  2  |  0  |  0  |  0  |
-     * def |  0  |  0  |  0  |  0  |
-     *   ==+=====+=====+=====+=====+
-     *     | 11  |  9  |  0  |  0  |
-     *     |+ 0  |  0  |  0  |  0  |
-     * tot | 11  |  9  |  0  |  0  |
+     *     |  A  |  B  |  C  |  D  | tot
+     *   ==+=====+=====+=====+=====+=====
+     *   a |  5  |  6  |  0  |  0  | 11
+     *   b |  4  |  3  |  0  |  0  |  7
+     *   c |  0  |  0  |  0  |  0  |  0
+     *   d |  2  |  0  |  0  |  0  |  2
+     * def |  0  |  0  |  0  |  0  |  0
+     *   ==+=====+=====+=====+=====+=====
+     *     | 11  |  9  |  0  |  0  | 20
+     *     |+ 0  |  0  |  0  |  0  |  0
+     * tot | 11  |  9  |  0  |  0  | 20
      * 
      */
 
@@ -108,6 +111,11 @@ class CondCountsTransformerTests {
     assertEqualsProb(LogNum.zero, d('D')('c))
     assertEqualsProb(LogNum.zero, d('D')('d))
     assertEqualsProb(LogNum.zero, d('D')('def))
+    assertEqualsProb(LogNum(11. / 20.), d('Z')('a))
+    assertEqualsProb(LogNum(7. / 20.), d('Z')('b))
+    assertEqualsProb(LogNum(0. / 20.), d('Z')('c))
+    assertEqualsProb(LogNum(2. / 20.), d('Z')('d))
+    assertEqualsProb(LogNum(0. / 20.), d('Z')('def))
   }
 
   @Test
@@ -142,17 +150,17 @@ class CondCountsTransformerTests {
      * 
      * After constraining:
      *  
-     *     |  A  |  B  |  C  |  D  |
-     *   ==+=====+=====+=====+=====+
-     *   a |  5  |  6  |  0  |  0  |
-     *   b |  4  |  3  |  0  |  0  |
-     *   c |  0  |  0  |  0  |  0  |
-     *   d |  2  |  0  |  0  |  0  |
-     * def |  0  |  0  |  0  |  0  |
-     *   ==+=====+=====+=====+=====+
-     *     | 11  |  9  |  0  |  0  |
-     *     |+ 0  |  0  |  0  |  0  |
-     * tot | 11  |  9  |  0  |  0  |
+     *     |  A  |  B  |  C  |  D  | tot
+     *   ==+=====+=====+=====+=====+=====
+     *   a |  5  |  6  |  0  |  0  | 11
+     *   b |  4  |  3  |  0  |  0  |  7
+     *   c |  0  |  0  |  0  |  0  |  0
+     *   d |  2  |  0  |  0  |  0  |  2
+     * def |  0  |  0  |  0  |  0  |  0
+     *   ==+=====+=====+=====+=====+=====
+     *     | 11  |  9  |  0  |  0  | 20
+     *     |+ 0  |  0  |  0  |  0  |  0
+     * tot | 11  |  9  |  0  |  0  | 20
      * 
      */
 
@@ -184,6 +192,11 @@ class CondCountsTransformerTests {
     assertEqualsProb(LogNum.zero, d('D')('c))
     assertEqualsProb(LogNum.zero, d('D')('d))
     assertEqualsProb(LogNum.zero, d('D')('def))
+    assertEqualsProb(LogNum(11. / 20.), d('Z')('a))
+    assertEqualsProb(LogNum(7. / 20.), d('Z')('b))
+    assertEqualsProb(LogNum(0. / 20.), d('Z')('c))
+    assertEqualsProb(LogNum(2. / 20.), d('Z')('d))
+    assertEqualsProb(LogNum(0. / 20.), d('Z')('def))
   }
 
   @Test
@@ -219,17 +232,17 @@ class CondCountsTransformerTests {
      * 
      * After constraining:
      *  
-     *     |  A  |  B  |  C  |  D  |
-     *   ==+=====+=====+=====+=====+
-     *   a |  5  |  6  |  0  |  0  |
-     *   b |  4  |  -  |  0  |  0  |
-     *   c |  7  |  9  |  -  |  -  |
-     *   d |  -  |  0  |  0  |  -  |
-     * def |  2  |  3  |  1  |  -  |
-     *   ==+=====+=====+=====+=====+
-     *     | 16  | 15  |  0  |  0  |
-     *     |+ 4  |  3  |  5  |  -  |
-     * tot | 20  | 18  |  5  |  0  |
+     *     |  A  |  B  |  C  |  D  | tot 
+     *   ==+=====+=====+=====+=====+=====
+     *   a |  5  |  6  |  0  |  0  | 11
+     *   b |  4  |  -  |  0  |  0  |  4
+     *   c |  7  |  9  |  -  |  -  | 16
+     *   d |  -  |  0  |  0  |  -  |  0
+     * def |  2  |  3  |  1  |  -  |  6
+     *   ==+=====+=====+=====+=====+=====
+     *     | 16  | 15  |  0  |  0  | 31
+     *     |+ 4  |  3  |  5  |  -  | 12
+     * tot | 20  | 18  |  5  |  0  | 43
      * 
      */
 
@@ -256,11 +269,16 @@ class CondCountsTransformerTests {
     assertEqualsProb(LogNum(1. / 5.), d('C')('c))
     assertEqualsProb(LogNum(0. / 5.), d('C')('d))
     assertEqualsProb(LogNum(1. / 5.), d('C')('def))
-    assertEqualsProb(LogNum.zero, d('D')('a))
-    assertEqualsProb(LogNum.zero, d('D')('b))
-    assertEqualsProb(LogNum.zero, d('D')('c))
-    assertEqualsProb(LogNum.zero, d('D')('d))
-    assertEqualsProb(LogNum.zero, d('D')('def))
+    assertEqualsProb(LogNum(11 / 43.), d('D')('a))
+    assertEqualsProb(LogNum(4 / 43.), d('D')('b))
+    assertEqualsProb(LogNum(16 / 43.), d('D')('c))
+    assertEqualsProb(LogNum(0 / 43.), d('D')('d))
+    assertEqualsProb(LogNum(6 / 43.), d('D')('def))
+    assertEqualsProb(LogNum(11 / 43.), d('Z')('a))
+    assertEqualsProb(LogNum(4 / 43.), d('Z')('b))
+    assertEqualsProb(LogNum(16 / 43.), d('Z')('c))
+    assertEqualsProb(LogNum(0 / 43.), d('Z')('d))
+    assertEqualsProb(LogNum(6 / 43.), d('Z')('def))
   }
 
   @Test
@@ -293,17 +311,17 @@ class CondCountsTransformerTests {
      * 
      * After smoothing:
      *  
-     *     |   A   |   B   |   C   |   D   |
-     *   ==+=======+=======+=======+=======+
-     *   a |  5.1  |  6.1  |  8.1  |   -   |
-     *   b |  4.1  |  3.1  |  1.1  |   -   |
-     *   c |  7.1  |  9.1  |  1.1  |   -   |
-     *   d |   -   |   -   |   -   |   -   |
-     * def |  2.1  |  3.1  |  1.1  |   -   |
-     *   ==+=======+=======+=======+=======+
-     *     |  16.3 |  18.3 | 10.3  |   -   |
-     *     | + 3.1 |   4.1 |  5.1  |   -   |
-     * tot |  19.4 |  22.4 | 15.4  |   -   |
+     *     |   A   |   B   |   C   |   D   |  tot
+     *   ==+=======+=======+=======+=======+=======
+     *   a |  5.1  |  6.1  |  8.1  |   -   | 19.3
+     *   b |  4.1  |  3.1  |  1.1  |   -   |  8.3
+     *   c |  7.1  |  9.1  |  1.1  |   -   | 17.3
+     *   d |   -   |   -   |   -   |   -   |   - 
+     * def |  2.1  |  3.1  |  1.1  |   -   |  6.3
+     *   ==+=======+=======+=======+=======+=======
+     *     |  16.3 |  18.3 | 10.3  |   -   | 45.9
+     *     | + 3.1 |   4.1 |  5.1  |   -   | 12.3
+     * tot |  19.4 |  22.4 | 15.4  |   -   | 57.2
      */
 
     val counts = DefaultedCondFreqCounts(Map(
@@ -330,6 +348,16 @@ class CondCountsTransformerTests {
     assertEqualsProb(LogNum(1.1 / 15.4), d('C')('c))
     assertEqualsProb(LogNum(1.1 / 15.4), d('C')('d))
     assertEqualsProb(LogNum(1.1 / 15.4), d('C')('def))
+    assertEqualsProb(LogNum(19.3 / 57.2), d('D')('a))
+    assertEqualsProb(LogNum(8.3 / 57.2), d('D')('b))
+    assertEqualsProb(LogNum(17.3 / 57.2), d('D')('c))
+    assertEqualsProb(LogNum(6.3 / 57.2), d('D')('d))
+    assertEqualsProb(LogNum(6.3 / 57.2), d('D')('def))
+    assertEqualsProb(LogNum(19.3 / 57.2), d('Z')('a))
+    assertEqualsProb(LogNum(8.3 / 57.2), d('Z')('b))
+    assertEqualsProb(LogNum(17.3 / 57.2), d('Z')('c))
+    assertEqualsProb(LogNum(6.3 / 57.2), d('Z')('d))
+    assertEqualsProb(LogNum(6.3 / 57.2), d('Z')('def))
   }
 
   @Test
@@ -378,17 +406,17 @@ class CondCountsTransformerTests {
      * 
      * After smoothing:
      *  
-     *     |   A   |   B   |   C   |   D   |
-     *   ==+=======+=======+=======+=======+
-     *   a |  5.1  |  6.1  |  0.1  |  0.1  |
-     *   b |  4.1  |  3.1  |  0.1  |  0.1  |
-     *   c |  0.1  |  0.1  |  0.1  |  0.1  |
-     *   d |  2.1  |  0.1  |  0.1  |  0.1  |
-     * def |  0.1  |  0.1  |  0.1  |  0.1  |
-     *   ==+=======+=======+=======+=======+
-     *     |  11.4 |  9.4  |  0.4  |  0.4  |
-     *     | + 0.1 |  0.1  |  0.1  |  0.1  |
-     * tot |  11.5 |  9.5  |  0.5  |  0.5  |
+     *     |   A   |   B   |   C   |   D   |  tot
+     *   ==+=======+=======+=======+=======+=======
+     *   a |  5.1  |  6.1  |  0.1  |  0.1  | 11.4
+     *   b |  4.1  |  3.1  |  0.1  |  0.1  |  7.4
+     *   c |  0.1  |  0.1  |  0.1  |  0.1  |  0.4
+     *   d |  2.1  |  0.1  |  0.1  |  0.1  |  2.4
+     * def |  0.1  |  0.1  |  0.1  |  0.1  |  0.4
+     *   ==+=======+=======+=======+=======+=======
+     *     |  11.4 |  9.4  |  0.4  |  0.4  | 19.6
+     *     | + 0.1 |  0.1  |  0.1  |  0.1  |  0.4
+     * tot |  11.5 |  9.5  |  0.5  |  0.5  | 22.0
      */
 
     val counts = DefaultedCondFreqCounts(Map(
@@ -419,6 +447,11 @@ class CondCountsTransformerTests {
     assertEqualsProb(LogNum(0.1 / 0.5), d('D')('c))
     assertEqualsProb(LogNum(0.1 / 0.5), d('D')('d))
     assertEqualsProb(LogNum(0.1 / 0.5), d('D')('def))
+    assertEqualsProb(LogNum(11.4 / 22.0), d('Z')('a))
+    assertEqualsProb(LogNum(7.4 / 22.0), d('Z')('b))
+    assertEqualsProb(LogNum(0.4 / 22.0), d('Z')('c))
+    assertEqualsProb(LogNum(2.4 / 22.0), d('Z')('d))
+    assertEqualsProb(LogNum(0.4 / 22.0), d('Z')('def))
   }
 
   @Test
@@ -467,17 +500,17 @@ class CondCountsTransformerTests {
      * 
      * After constraining:
      *  
-     *     |   A   |   B   |   C   |   D   |
-     *   ==+=======+=======+=======+=======+
-     *   a |  5.1  |  6.1  |   0   |   0   |
-     *   b |  4.1  |  3.1  |   0   |   0   |
-     *   c |   0   |   0   |   0   |   0   |
-     *   d |  2.1  |   0   |   0   |   0   |
-     * def |   0   |   0   |   0   |   0   |
-     *   ==+=======+=======+=======+=======+
-     *     |  11.3 |  9.2  |   0   |   0   |
-     *     | + 0   |   0   |   0   |   0   |
-     * tot |  11.3 |  9.2  |   0   |   0   |
+     *     |   A   |   B   |   C   |   D   |  tot
+     *   ==+=======+=======+=======+=======+=======
+     *   a |  5.1  |  6.1  |   0   |   0   | 11.2
+     *   b |  4.1  |  3.1  |   0   |   0   |  7.2
+     *   c |   0   |   0   |   0   |   0   |  0.0
+     *   d |  2.1  |   0   |   0   |   0   |  2.1
+     * def |   0   |   0   |   0   |   0   |  0.0
+     *   ==+=======+=======+=======+=======+=======
+     *     |  11.3 |  9.2  |   0   |   0   | 20.5
+     *     | + 0   |   0   |   0   |   0   |  0.0
+     * tot |  11.3 |  9.2  |   0   |   0   | 20.5
      * 
      */
 
@@ -510,6 +543,11 @@ class CondCountsTransformerTests {
     assertEqualsProb(LogNum.zero, d('D')('c))
     assertEqualsProb(LogNum.zero, d('D')('d))
     assertEqualsProb(LogNum.zero, d('D')('def))
+    assertEqualsProb(LogNum(11.2 / 20.5), d('Z')('a))
+    assertEqualsProb(LogNum(7.2 / 20.5), d('Z')('b))
+    assertEqualsProb(LogNum(0.0 / 20.5), d('Z')('c))
+    assertEqualsProb(LogNum(2.1 / 20.5), d('Z')('d))
+    assertEqualsProb(LogNum(0.0 / 20.5), d('Z')('def))
   }
 
   @Test
@@ -563,18 +601,18 @@ class CondCountsTransformerTests {
      * 
      * After smoothing:
      *  
-     *     |             A            |            B             |             C            |
-     *   ==+==========================+==========================+==========================+
-     *   a | 5 + .2 * 3 * (19.1/44.7) | 6 + .2 * 2 * (19.1/44.7) | 8 + .2 * 0 * (19.1/44.7) |
-     *   b | 4 + .2 * 3 * ( 4.1/44.7) | 3 + .2 * 2 * ( 4.1/44.7) | 1 + .2 * 0 * ( 4.1/44.7) |
-     *   c | 7 + .2 * 3 * (16.1/44.7) | 9 + .2 * 2 * (16.1/44.7) | 1 + .2 * 0 * (16.1/44.7) |
-     *   x | 1 + .2 * 3 * ( 2.1/44.7) | 1 + .2 * 2 * ( 2.1/44.7) | 1 + .2 * 0 * ( 2.1/44.7) |
-     *   y | 1 + .2 * 3 * ( 2.1/44.7) | 1 + .2 * 2 * ( 2.1/44.7) | 1 + .2 * 0 * ( 2.1/44.7) |
-     *   z | 1 + .2 * 3 * ( 1.1/44.7) | 3 + .2 * 2 * ( 1.1/44.7) | 1 + .2 * 0 * ( 1.1/44.7) |
-     * def | 2 + .2 * 3 * (  .1/44.7) | 3 + .2 * 2 * (  .1/44.7) | 1 + .2 * 0 * (  .1/44.7) |
-     *   ==+==========================+==========================+==========================+
-     *     |+3 + .2 * 3 * (  .1/44.7) |+4 + .2 * 2 * (  .1/44.7) |+5 + .2 * 0 * (  .1/44.7) |
-     *     | 22 + .2 * 3 * ( 1 )      | 27 + .2 * 2 * ( 1 )      | 18 + .2 * 0 * ( 1 )      |
+     *     |             A            |            B             |             C            |            tot
+     *   ==+==========================+==========================+==========================+===========================
+     *   a | 5 + .2 * 3 * (19.1/44.7) | 6 + .2 * 2 * (19.1/44.7) | 8 + .2 * 0 * (19.1/44.7) | 19 + .2 * 5 * (19.1/44.7)
+     *   b | 4 + .2 * 3 * ( 4.1/44.7) | 3 + .2 * 2 * ( 4.1/44.7) | 1 + .2 * 0 * ( 4.1/44.7) |  8 + .2 * 5 * ( 4.1/44.7)
+     *   c | 7 + .2 * 3 * (16.1/44.7) | 9 + .2 * 2 * (16.1/44.7) | 1 + .2 * 0 * (16.1/44.7) | 17 + .2 * 5 * (16.1/44.7)
+     *   x | 1 + .2 * 3 * ( 2.1/44.7) | 1 + .2 * 2 * ( 2.1/44.7) | 1 + .2 * 0 * ( 2.1/44.7) |  3 + .2 * 5 * ( 2.1/44.7)
+     *   y | 1 + .2 * 3 * ( 2.1/44.7) | 1 + .2 * 2 * ( 2.1/44.7) | 1 + .2 * 0 * ( 2.1/44.7) |  3 + .2 * 5 * ( 2.1/44.7)
+     *   z | 1 + .2 * 3 * ( 1.1/44.7) | 3 + .2 * 2 * ( 1.1/44.7) | 1 + .2 * 0 * ( 1.1/44.7) |  5 + .2 * 5 * ( 1.1/44.7)
+     * def | 2 + .2 * 3 * (  .1/44.7) | 3 + .2 * 2 * (  .1/44.7) | 1 + .2 * 0 * (  .1/44.7) |  6 + .2 * 5 * (  .1/44.7)
+     *   ==+==========================+==========================+==========================+===========================
+     *     |+3 + .2 * 3 * (  .1/44.7) |+4 + .2 * 2 * (  .1/44.7) |+5 + .2 * 0 * (  .1/44.7) |+... 
+     *     | 22 + .2 * 3 * ( 1 )      | 27 + .2 * 2 * ( 1 )      | 18 + .2 * 0 * ( 1 )      | 67 + .2 * 5 * ( 1 )
      *  
      */
 
@@ -610,72 +648,14 @@ class CondCountsTransformerTests {
     assertEqualsProb(LogNum((1 + .2 * 0 * (2.1 / 44.7)) / (18 + .2 * 0)), d('C')('y))
     assertEqualsProb(LogNum((1 + .2 * 0 * (1.1 / 44.7)) / (18 + .2 * 0)), d('C')('z))
     assertEqualsProb(LogNum((1 + .2 * 0 * (.1 / 44.7)) / (18 + .2 * 0)), d('C')('def))
-  }
 
-  @Test
-  def test_RandomCondCountsTransformer_DefaultCounts_double() {
-    val transformer = new RandomCondCountsTransformer[Char, Symbol](
-      maxCount = 10,
-      delegate = MockCondCountsTransformer(
-        DefaultedCondFreqCounts(Map(
-          'A' -> DefaultedFreqCounts(Map('a -> 27.), 21., 22.),
-          'C' -> DefaultedFreqCounts(Map('b -> 29.), 25., 26.))),
-        DefaultedCondFreqCounts(Map(
-          'A' -> DefaultedFreqCounts(Map('a -> 1., 'b -> 2.), .1, .2),
-          'B' -> DefaultedFreqCounts(Map('a -> 3.), .3, .4)))))
-
-    /* As it happens, the first random values for this test are:
-     * 0 8 9 7 5 3
-     *
-     * without the random weighting, the frequency distribution is:
-     *
-     *     |  A  |  B  |
-     *   ==+=====+=====+
-     *   a |  1  |  2  |
-     *   b |  3  |  -  |
-     * def | 0.2 | 0.4 |
-     *   ==+=====+=====+
-     *     |  4  |  2  |
-     *     |+ .1 |  .3 |
-     *     | 4.1 | 2.7 |
-     *
-     * Given the order the frequencies are (re-)calculated, this is randomly
-     * adjusted to:
-     *
-     *   |    A    |    B    |
-     * ==+=========+=========+
-     * a |  1 + 0  |  2 + 9  |
-     * b |  3 + 5  | 0.4 + 5 |
-     * 
-     * or
-     * 
-     *     |   A   |   B   |
-     *   ==+=======+=======+
-     *   a |   1   |  11   |
-     *   b |   8   |  5.4  |
-     * def |  0.2  |  0.4  |
-     *   ==+=======+=======+
-     *     |   9   | 16.4  |
-     *     |+  .1  |   .3  |
-     *     |  9.1  | 16.7  |
-     * 
-     */
-
-    val counts = DefaultedCondFreqCounts(Map(
-      'A' -> DefaultedFreqCounts(Map('a -> 27.), 21., 22.),
-      'C' -> DefaultedFreqCounts(Map('b -> 29.), 25., 26)))
-
-    val r = transformer(counts)
-    // TODO: assert counts 
-
-    val d = CondFreqDist(r)
-
-    assertEqualsProb(LogNum(1.0 / 9.1), d('A')('a))
-    assertEqualsProb(LogNum(8.0 / 9.1), d('A')('b))
-    assertEqualsProb(LogNum(0.2 / 9.1), d('A')('def))
-    assertEqualsProb(LogNum(11. / 16.7), d('B')('a))
-    assertEqualsProb(LogNum(5.4 / 16.7), d('B')('b))
-    assertEqualsProb(LogNum(0.4 / 16.7), d('B')('def))
+    assertEqualsProb(LogNum((19 + .2 * 5 * (19.1 / 44.7)) / (67 + .2 * 5)), d('Z')('a))
+    assertEqualsProb(LogNum((8 + .2 * 5 * (4.1 / 44.7)) / (67 + .2 * 5)), d('Z')('b))
+    assertEqualsProb(LogNum((17 + .2 * 5 * (16.1 / 44.7)) / (67 + .2 * 5)), d('Z')('c))
+    assertEqualsProb(LogNum((3 + .2 * 5 * (2.1 / 44.7)) / (67 + .2 * 5)), d('Z')('x))
+    assertEqualsProb(LogNum((3 + .2 * 5 * (2.1 / 44.7)) / (67 + .2 * 5)), d('Z')('y))
+    assertEqualsProb(LogNum((5 + .2 * 5 * (1.1 / 44.7)) / (67 + .2 * 5)), d('Z')('z))
+    assertEqualsProb(LogNum((6 + .2 * 5 * (.1 / 44.7)) / (67 + .2 * 5)), d('Z')('def))
   }
 
   case class MockCondCountsTransformer[A, B](expected: DefaultedCondFreqCounts[A, B, Double], returned: DefaultedCondFreqCounts[A, B, Double]) extends CondCountsTransformer[A, B] {
