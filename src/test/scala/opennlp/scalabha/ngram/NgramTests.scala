@@ -85,7 +85,7 @@ class NgramTests {
     assertEqualsProb(LogNum(1 / 15.), ngram.liftedSeqProb(Seq(Some('a'), Some('t'), Some('a'))))
     assertEqualsProb(LogNum(1 / 15.), ngram.liftedSeqProb(Seq(Some('a'), Some('t'), Some('z'))))
     assertEqualsProb(LogNum(18 / 219.), ngram.liftedSeqProb(Seq(Some('z'), Some('z'), Some('a'))))
-    assertEqualsProb(LogNum(1 / 219.), ngram.liftedSeqProb(Seq(Some('z'), Some('z'), Some('z'))))
+    assertEqualsProb(LogNum(15 / 219.), ngram.liftedSeqProb(Seq(Some('z'), Some('z'), Some('z'))))
 
     assertEqualsProb(LogNum((2 / 25.) * (2 / 13.) * (2 / 13.) * (2 / 13.)), ngram.sentenceProb("dog"))
     assertEqualsProb(LogNum((3 / 25.) * (3 / 14.) * (2 / 14.) * (2 / 13.)), ngram.sentenceProb("the"))
