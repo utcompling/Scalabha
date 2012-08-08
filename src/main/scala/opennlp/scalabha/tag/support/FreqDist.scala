@@ -64,6 +64,10 @@ object FreqDist {
   }
 }
 
+class CondFreqDist[A, B](val dists: Map[A, MultinomialFreqDist[B]], val default: MultinomialFreqDist[B]) extends (A => MultinomialFreqDist[B]) {
+  def apply(a: A) = dists.getOrElse(a, default)
+}
+
 /**
  * Utilities for conditional frequency distributions: functions to functions
  * to probabilities: P(B|A).
@@ -95,7 +99,7 @@ object CondFreqDist {
    * @tparam A	the conditioning item being counted; P(B|A).
    * @tparam B	the conditioned item being counted; P(B|A).
    */
-  def apply[A, B, N: Numeric](counts: Map[A, Map[B, N]]): A => MultinomialFreqDist[B] = {
+  def apply[A, B, N: Numeric](counts: Map[A, Map[B, N]]): CondFreqDist[A, B] = {
     apply(DefaultedCondFreqCounts.fromMap(counts))
   }
 
@@ -117,13 +121,14 @@ object CondFreqDist {
    * @tparam A	the conditioning item being counted; P(B|A).
    * @tparam B	the conditioned item being counted; P(B|A).
    */
-  def apply[A, B, N](resultCounts: DefaultedCondFreqCounts[A, B, N])(implicit num: Numeric[N]): A => MultinomialFreqDist[B] = {
+  def apply[A, B, N](resultCounts: DefaultedCondFreqCounts[A, B, N])(implicit num: Numeric[N]): CondFreqDist[A, B] = {
     val DefaultedCondFreqCounts(counts) = resultCounts
     val summedBackoffCounts = counts.values.foldLeft(DefaultedFreqCounts(Map[B, N](), num.zero, num.zero)) {
       case (DefaultedFreqCounts(zc, zt, zd), DefaultedFreqCounts(c, t, d)) =>
-        val x = DefaultedFreqCounts(zc +++ c, num.plus(zt, t), num.plus(zd, d))
-        x
+        DefaultedFreqCounts(zc +++ c, num.plus(zt, t), num.plus(zd, d))
     }
-    counts.mapVals(FreqDist(_)).withDefaultValue(FreqDist(summedBackoffCounts))
+    new CondFreqDist(counts.mapVals(FreqDist(_)), FreqDist(summedBackoffCounts))
   }
+
+  def unapply[A, B](cfd: CondFreqDist[A, B]) = Some(cfd.dists, cfd.default)
 }

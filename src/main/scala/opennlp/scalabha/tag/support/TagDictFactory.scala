@@ -40,9 +40,8 @@ class SimpleTagDictFactory[Sym, Tag]() extends TagDictFactory[Sym, Tag] {
 }
 
 /**
- * Basic TagDictFactory that maps each symbol of the labeled data to
- * the set of all tags with which it is seen in association.
- * Default for unknown symbols is the set of all seen tags.
+ * Construct a tag dictionary from a labeled corpus.  Each weight value is 
+ * given by P(tag | sym).  For unseen symbols, the weight is simply P(tag).
  *
  * @tparam Sym	visible symbols in the sequences
  * @tparam Tag	tags applied to symbols
@@ -50,14 +49,8 @@ class SimpleTagDictFactory[Sym, Tag]() extends TagDictFactory[Sym, Tag] {
 class SimpleWeightedTagDictFactory[Sym, Tag](condCountsTransformer: CondCountsTransformer[Sym, Tag]) extends TagDictFactory[Sym, Tag] {
   def make(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
     val counts = taggedTrainSequences.flatten.groupByKey.mapVals(_.counts.mapVals(_.toLogNum))
-    val allSymbols = counts.keySet
-    val allTags = counts.flatMap(_._2.keySet).toSet
-    // use a constraining transformer to push the defaults into the maps
-    val transformer = ConstrainingCondCountsTransformer(allSymbols.mapToVal(allTags).toMap, true, condCountsTransformer)
-    val transformedCounts = transformer(counts).counts.mapVals(_.counts) // we can ignore the defaults because of the contraining
-    val defaultCounts = transformedCounts.iterator.map(_._2).sumByKey
-    val dists = transformedCounts.mapVals(FreqDist(_))
-    SimpleWeightedTagDict(dists.mapVals(_.dist), defaultCounts.normalizeValues.mapVals(_.toLogNum))
+    val CondFreqDist(dists, default) = CondFreqDist(condCountsTransformer(counts))
+    SimpleWeightedTagDict(dists.mapVals(_.dist), default.dist)
   }
 }
 
