@@ -3,6 +3,7 @@ package opennlp.scalabha.tag.support
 import scala.annotation.tailrec
 import opennlp.scalabha.tag.OptionalTagDict
 import opennlp.scalabha.tag.SimpleTagDict
+import opennlp.scalabha.tag.TagDict._
 import opennlp.scalabha.tag.Tagger
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum

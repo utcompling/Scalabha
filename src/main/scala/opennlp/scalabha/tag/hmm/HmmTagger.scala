@@ -1,6 +1,7 @@
 package opennlp.scalabha.tag.hmm
 
 import opennlp.scalabha.tag.OptionalTagDict
+import opennlp.scalabha.tag.TagDict._
 import opennlp.scalabha.tag.Tagger
 import opennlp.scalabha.tag.support.TagEdgeScorer
 import opennlp.scalabha.tag.support.Viterbi
@@ -54,7 +55,7 @@ class HardConstraintHmmTagger[Sym, Tag](
     transitions: Option[Tag] => Option[Tag] => LogNum,
     emissions: Option[Tag] => Option[Sym] => LogNum,
     tagDict: OptionalTagDict[Sym, Tag]) =
-    this(transitions, emissions, tagDict.unoptioned.allTags, new Viterbi(new HmmEdgeScorer(transitions, emissions), tagDict))
+    this(transitions, emissions, tagDict.allTags.flatten, new Viterbi(new HmmEdgeScorer(transitions, emissions), tagDict))
 
   def this(
     transitions: Option[Tag] => Option[Tag] => LogNum,
@@ -68,7 +69,7 @@ class HardConstraintHmmTagger[Sym, Tag](
     emissions: Option[Tag] => Option[Sym] => LogNum,
     tagDict: OptionalTagDict[Sym, Tag],
     validTransitions: Map[Option[Tag], Set[Option[Tag]]]) =
-    this(transitions, emissions, tagDict.unoptioned.allTags, new Viterbi(new HmmEdgeScorer(transitions, emissions), tagDict, validTransitions))
+    this(transitions, emissions, tagDict.allTags.flatten, new Viterbi(new HmmEdgeScorer(transitions, emissions), tagDict, validTransitions))
 
 }
 
@@ -76,7 +77,7 @@ object HardConstraintHmmTagger {
   def apply[Sym, Tag](
     hmmTagger: HmmTagger[Sym, Tag],
     tagDict: OptionalTagDict[Sym, Tag], allowUnseenWordTypes: Boolean) =
-    new HardConstraintHmmTagger(hmmTagger.transitions, hmmTagger.emissions, tagDict.unoptioned.allTags,
+    new HardConstraintHmmTagger(hmmTagger.transitions, hmmTagger.emissions, tagDict.allTags.flatten,
       new Viterbi(new HmmEdgeScorer(hmmTagger.transitions, hmmTagger.emissions), tagDict))
 
   def apply[Sym, Tag](
@@ -90,7 +91,7 @@ object HardConstraintHmmTagger {
     hmmTagger: HmmTagger[Sym, Tag],
     tagDict: OptionalTagDict[Sym, Tag], allowUnseenWordTypes: Boolean,
     validTransitions: Map[Option[Tag], Set[Option[Tag]]]) =
-    new HardConstraintHmmTagger(hmmTagger.transitions, hmmTagger.emissions, tagDict.unoptioned.allTags,
+    new HardConstraintHmmTagger(hmmTagger.transitions, hmmTagger.emissions, tagDict.allTags.flatten,
       new Viterbi(new HmmEdgeScorer(hmmTagger.transitions, hmmTagger.emissions), tagDict, validTransitions))
 }
 

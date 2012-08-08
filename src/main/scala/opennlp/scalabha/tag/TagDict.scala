@@ -2,127 +2,85 @@ package opennlp.scalabha.tag
 
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
+import opennlp.scalabha.tag.TagDict._
 
-////////////////////////////////
-// TagDict interface
-////////////////////////////////
+/**
+ * TagDict base trait.  Exists only for use as a facade to make a TD appear
+ * unweighted (because all valid TD implementations are actually weighted).
+ *
+ * This trait should NEVER be implemented directly.  ALL tag dictionary
+ * implementations must extend from WeightedTagDict!
+ */
+sealed trait TagDict[Sym, Tag] {
+  //
+  // Base methods -- ALL of which are overridden by WeightedTagDict, meaning 
+  // that these should NEVER be implemented by any extending class.
+  //
 
-trait TagDict[Sym, Tag] {
+  /** The set of tags for unknown symbols (symbols not appearing in the dict) */
   def defaultSet: Set[Tag]
 
-  final def set(s: Sym): Set[Tag] = doGetSet(s).getOrElse(defaultSet)
-
-  /**
-   * Return the tagset for the symbol, or None if it does not exist.  Do not
-   * return the default.
-   */
+  /** The set of tags associated with this symbol, or None if it does not exist.  Do NOT return the default. */
   def doGetSet(s: Sym): Option[Set[Tag]]
 
-  /**
-   * Does the symbol exist as an entry in the tag dict (excluding defaults)?
-   */
+  /** An iterator over the symbols and their associated tag sets */
+  def setIterator: Iterator[(Sym, Set[Tag])]
+
+  //
+  // Derived methods (all final)
+  //
+
+  /** The set of tags associated with this symbol, or the default set if it does not exist. */
+  final def set(s: Sym): Set[Tag] = doGetSet(s).getOrElse(defaultSet)
+
+  /** Does the symbol exist as an entry in the tag dict (excluding defaults)? */
   final def contains(s: Sym): Boolean = doGetSet(s).isDefined
 
-  /**
-   * Does this symbol/tag entry exist in the tag dict (excluding defaults)?
-   */
+  /** Does this symbol/tag entry exist in the tag dict (excluding defaults)? */
   final def contains(s: Sym, t: Tag): Boolean = doGetSet(s).exists(_(t))
 
+  /** The set of all known tags */
   final def allTags = setIterator.flatMap(_._2).toSet ++ defaultSet
+
+  /** The set of all known symbols */
   final def symbols: Set[Sym] = setIterator.map(_._1).toSet
-  def setIterator: Iterator[(Sym, Set[Tag])]
 }
 
-////////////////////////////////
-// OptionalTagDict interface
-////////////////////////////////
+trait WeightedTagDict[Sym, Tag] extends TagDict[Sym, Tag] {
+  //
+  // Base methods
+  //
 
-trait OptionalTagDict[Sym, Tag] extends TagDict[Option[Sym], Option[Tag]] {
-  def unoptioned: TagDict[Sym, Tag]
-}
+  /** The map of tag weights for unknown symbols (symbols not appearing in the dict) */
+  def default: Map[Tag, LogNum]
 
-object OptionalTagDict {
-  def apply[Sym, Tag](tagDict: UnweightedTagDict[Sym, Tag]) = new OptionalUnweightedTagDict(tagDict)
-  def apply[Sym, Tag](tagDict: WeightedTagDict[Sym, Tag]) = new OptionalWeightedTagDict(tagDict)
-  def apply[Sym, Tag](tagDict: TagDict[Sym, Tag]) = tagDict match {
-    case d: UnweightedTagDict[Sym, Tag] => new OptionalUnweightedTagDict(d)
-    case d: WeightedTagDict[Sym, Tag] => new OptionalWeightedTagDict(d)
-  }
-}
-
-////////////////////////////////
-// Strict TagDict
-////////////////////////////////
-
-object StrictTagDict {
-  def apply[Sym, Tag](tagDict: OptionalUnweightedTagDict[Sym, Tag]) = new OptionalUnweightedTagDict(tagDict.unoptioned) { override val default = Set[Option[Tag]]() }
-  def apply[Sym, Tag](tagDict: OptionalWeightedTagDict[Sym, Tag]) = new OptionalWeightedTagDict(tagDict.unoptioned) { override val default = Map[Option[Tag], LogNum]() }
-  def apply[Sym, Tag](tagDict: OptionalTagDict[Sym, Tag]): OptionalTagDict[Sym, Tag] = tagDict match {
-    case d: OptionalUnweightedTagDict[Sym, Tag] => new OptionalUnweightedTagDict(d.unoptioned) { override val default = Set[Option[Tag]]() }
-    case d: OptionalWeightedTagDict[Sym, Tag] => new OptionalWeightedTagDict(d.unoptioned) { override val default = Map[Option[Tag], LogNum]() }
-  }
-}
-
-////////////////////////////////
-// Unweighted TagDict
-////////////////////////////////
-
-abstract class UnweightedTagDict[Sym, Tag](val default: Set[Tag]) extends TagDict[Sym, Tag] {
-  final override def defaultSet = default
-  def iterator: Iterator[(Sym, Set[Tag])]
-  final override def setIterator = iterator
-}
-
-///////////////////////
-// Simple Unweighted TagDict
-
-class SimpleTagDict[Sym, Tag](d: Map[Sym, Set[Tag]], override val default: Set[Tag]) extends UnweightedTagDict[Sym, Tag](default) {
-  override def doGetSet(s: Sym) = d.get(s)
-  override def iterator = d.iterator
-}
-
-object SimpleTagDict {
-  def apply[Sym, Tag](d: Map[Sym, Set[Tag]]) = new SimpleTagDict(d, d.values.flatten.toSet)
-  def apply[Sym, Tag](d: Map[Sym, Set[Tag]], default: Set[Tag]) = new SimpleTagDict(d, default)
-}
-
-///////////////////////
-// Optional Unweighted TagDict
-
-class OptionalUnweightedTagDict[Sym, Tag](tagDict: UnweightedTagDict[Sym, Tag])
-  extends UnweightedTagDict[Option[Sym], Option[Tag]](tagDict.defaultSet.map(Option(_)))
-  with OptionalTagDict[Sym, Tag] {
-
-  val optioned: Map[Option[Sym], Set[Option[Tag]]] = tagDict.setIterator.map { case (s, ts) => Option(s) -> ts.map(Option(_)) }.toMap
-  override def unoptioned: UnweightedTagDict[Sym, Tag] = tagDict
-  override def doGetSet(s: Option[Sym]): Option[Set[Option[Tag]]] = s match {
-    case None => Some(Set(None))
-    case _ => optioned.get(s)
-  }
-  override def iterator = optioned.iterator
-}
-
-//object OptionalUnweightedTagDict {
-//  def apply[Sym, Tag](tagDict: UnweightedTagDict[Sym, Tag]) = new OptionalUnweightedTagDict(tagDict)
-//}
-
-////////////////////////////////
-// Weighted TagDict
-////////////////////////////////
-
-abstract class WeightedTagDict[Sym, Tag](val default: Map[Tag, LogNum]) extends TagDict[Sym, Tag] {
-  final override def defaultSet = default.keySet
-  final def weights(s: Sym): Map[Tag, LogNum] = doGetMap(s).getOrElse(default)
+  /** An iterator over the symbols and their associated tag/weight maps */
   def iterator: Iterator[(Sym, Map[Tag, LogNum])]
-  final override def setIterator = iterator.mapVals(_.keySet)
+
+  /** The tag/weight map associated with this symbol, or None if it does not exist.  Do NOT return the default. */
   def doGetMap(s: Sym): Option[Map[Tag, LogNum]]
+
+  //
+  // Methods finalizing those on TagDict -- meaning they are final on ALL valid 
+  // TagDict implementations.
+  //
+
+  final override def defaultSet = default.keySet
   final override def doGetSet(s: Sym) = doGetMap(s).map(_.keySet)
+  final override def setIterator = iterator.mapVals(_.keySet)
+
+  //
+  // Derived methods
+  //
+
+  final def weights(s: Sym): Map[Tag, LogNum] = doGetMap(s).getOrElse(default)
 }
 
-///////////////////////
-// Simple Weighted TagDict
-
-class SimpleWeightedTagDict[Sym, Tag](d: Map[Sym, Map[Tag, LogNum]], override val default: Map[Tag, LogNum]) extends WeightedTagDict[Sym, Tag](default) {
+/**
+ * The base TagDict implementation from which all TagDict implementations are
+ * derived (as wrappers of this class).
+ */
+final class SimpleWeightedTagDict[Sym, Tag](d: Map[Sym, Map[Tag, LogNum]], override val default: Map[Tag, LogNum]) extends WeightedTagDict[Sym, Tag] {
   override def doGetMap(s: Sym) = d.get(s)
   override def iterator = d.iterator
 }
@@ -131,39 +89,88 @@ object SimpleWeightedTagDict {
   def apply[Sym, Tag](d: Map[Sym, Map[Tag, LogNum]], default: Map[Tag, LogNum]) = new SimpleWeightedTagDict(d, default)
 }
 
-///////////////////////
-// Optional Weighted TagDict
-
-class OptionalWeightedTagDict[Sym, Tag](tagDict: WeightedTagDict[Sym, Tag])
-  extends WeightedTagDict[Option[Sym], Option[Tag]](tagDict.default.mapKeys(Option(_)))
-  with OptionalTagDict[Sym, Tag] {
-
-  val optioned: Map[Option[Sym], Map[Option[Tag], LogNum]] = tagDict.iterator.map { case (s, ts) => Option(s) -> ts.mapKeys(Option(_)) }.toMap
-  override def unoptioned: WeightedTagDict[Sym, Tag] = tagDict
-
-  override def doGetMap(s: Option[Sym]): Option[Map[Option[Tag], LogNum]] = s match {
-    case None => Some(Map(None -> LogNum.one))
-    case _ => optioned.get(s)
-  }
-
-  override def iterator = optioned.iterator
+/**
+ * Convenience constructors for TagDict where every entry has weight 1.0 (unnormalized).
+ */
+object UniformWeightedTagDict {
+  def apply[Sym, Tag](d: Map[Sym, Set[Tag]]): WeightedTagDict[Sym, Tag] = UniformWeightedTagDict(d, d.values.flatten.toSet)
+  def apply[Sym, Tag](d: Map[Sym, Set[Tag]], default: Set[Tag]): WeightedTagDict[Sym, Tag] = new SimpleWeightedTagDict(d.mapVals(_.mapToVal(LogNum.one).toMap), default.mapToVal(LogNum.one).toMap)
 }
 
-//object OptionalWeightedTagDict {
-//  def apply[Sym, Tag](tagDict: WeightedTagDict[Sym, Tag]) = new OptionalWeightedTagDict(tagDict)
-//}
-
-///////////////////////
-// Fake Weighted TagDict
-
-class FakeWeightedTagDict[Sym, Tag](tagDict: TagDict[Sym, Tag]) extends WeightedTagDict[Sym, Tag](tagDict.defaultSet.mapToVal(LogNum.one).toMap) {
-
-  override def doGetMap(s: Sym): Option[Map[Tag, LogNum]] =
-    tagDict.doGetSet(s).map(_.mapToVal(LogNum.one).toMap)
-
-  override def iterator = tagDict.setIterator.mapValues(_.mapToVal(LogNum.one).toMap)
+/**
+ * Convenience constructors for an "unweighted" tagdict. Underlyingly, it's
+ * really returning a weighted tagdict where every weight is 1.0.
+ */
+object SimpleTagDict {
+  def apply[Sym, Tag](d: Map[Sym, Set[Tag]]): TagDict[Sym, Tag] = SimpleTagDict(d, d.values.flatten.toSet)
+  def apply[Sym, Tag](d: Map[Sym, Set[Tag]], default: Set[Tag]): TagDict[Sym, Tag] = new SimpleWeightedTagDict(d.mapVals(_.mapToVal(LogNum.one).toMap), default.mapToVal(LogNum.one).toMap)
 }
 
-object FakeWeightedTagDict {
-  def apply[Sym, Tag](tagDict: TagDict[Sym, Tag]) = new FakeWeightedTagDict(tagDict)
+/**
+ * TagDict wrapper that allows None symbols, but, the only possible tag for
+ * None is None.  They None entry never needs to be specified.
+ */
+object OptionalTagDict {
+  def apply[Sym, Tag](tagDict: WeightedTagDict[Sym, Tag]): OptionalWeightedTagDict[Sym, Tag] =
+    new WeightedTagDict[Option[Sym], Option[Tag]] {
+      override def default = tagDict.default.mapKeys(Option(_))
+
+      override def doGetMap(sym: Option[Sym]): Option[Map[Option[Tag], LogNum]] =
+        sym match {
+          case None => Some(Map(None -> LogNum.one))
+          case Some(s) => tagDict.doGetMap(s).map(_.mapKeys(Option(_)))
+        }
+
+      override def iterator = tagDict.iterator.map { case (s, ts) => Option(s) -> ts.mapKeys(Option(_)) }
+    }
+
+  /**
+   * Convenience constructor that provides an "unweighted" facade on an
+   * OptionalTagDict
+   */
+  def apply[Sym, Tag](tagDict: TagDict[Sym, Tag]): OptionalTagDict[Sym, Tag] =
+    OptionalTagDict(tagDict.asInstanceOf[WeightedTagDict[Sym, Tag]])
+}
+
+/**
+ * A TagDict wrapper that has no default tags for unknown symbols
+ */
+object NoDefaultTagDict {
+  def apply[Sym, Tag](tagDict: WeightedTagDict[Sym, Tag]): WeightedTagDict[Sym, Tag] =
+    new WeightedTagDict[Sym, Tag] {
+      override def default = Map()
+      override def doGetMap(sym: Sym) = tagDict.doGetMap(sym)
+      override def iterator = tagDict.iterator
+    }
+
+  /**
+   * Convenience constructor that provides an "unweighted" facade on an
+   * OptionalTagDict
+   */
+  def apply[Sym, Tag](tagDict: TagDict[Sym, Tag]): WeightedTagDict[Sym, Tag] =
+    NoDefaultTagDict(tagDict.asInstanceOf[WeightedTagDict[Sym, Tag]])
+}
+
+/**
+ * A TagDict wrapper that has no default tags for unknown symbols
+ */
+object SmoothingTagDict {
+  def apply[Sym, Tag](tagDict: WeightedTagDict[Sym, Tag]): WeightedTagDict[Sym, Tag] =
+    new WeightedTagDict[Sym, Tag] {
+      override def default = Map()
+      override def doGetMap(sym: Sym) = tagDict.doGetMap(sym)
+      override def iterator = tagDict.iterator
+    }
+
+  /**
+   * Convenience constructor that provides an "unweighted" facade on an
+   * OptionalTagDict
+   */
+  def apply[Sym, Tag](tagDict: TagDict[Sym, Tag]): WeightedTagDict[Sym, Tag] =
+    NoDefaultTagDict(tagDict.asInstanceOf[WeightedTagDict[Sym, Tag]])
+}
+
+object TagDict {
+  type OptionalTagDict[Sym, Tag] = TagDict[Option[Sym], Option[Tag]]
+  type OptionalWeightedTagDict[Sym, Tag] = WeightedTagDict[Option[Sym], Option[Tag]]
 }

@@ -7,6 +7,7 @@ import org.apache.commons.logging.LogFactory
 import opennlp.scalabha.tag.OptionalTagDict
 import opennlp.scalabha.tag.SemisupervisedTaggerTrainer
 import opennlp.scalabha.tag.TagDict
+import opennlp.scalabha.tag.TagDict._
 import opennlp.scalabha.tag.Tagger
 import opennlp.scalabha.tag.UnsupervisedTaggerTrainer
 import opennlp.scalabha.tag.support.CondFreqCounts

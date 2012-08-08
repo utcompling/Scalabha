@@ -3,6 +3,7 @@ package opennlp.scalabha.tag.support
 import opennlp.scalabha.tag.SimpleTagDict
 import opennlp.scalabha.tag.SimpleWeightedTagDict
 import opennlp.scalabha.tag.TagDict
+import opennlp.scalabha.tag.TagDict._
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum._
 

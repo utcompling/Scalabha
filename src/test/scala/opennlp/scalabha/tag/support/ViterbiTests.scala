@@ -65,7 +65,7 @@ class ViterbiTests {
     assertEquals(Some(List('D, 'N, 'N, 'V)), new Viterbi[Sym, Tag](edgeScorer, fullTagset).tagSequence(s))
     assertEquals(Some(List('D, 'A, 'N, 'V)), new Viterbi[Sym, Tag](edgeScorer, fullTagDict).tagSequence(s))
     assertEquals(Some(List('D, 'D, 'N, 'V)), new Viterbi[Sym, Tag](edgeScorer, incompleteTagDict).tagSequence(s))
-    assertEquals(None, new Viterbi[Sym, Tag](edgeScorer, StrictTagDict(incompleteTagDict)).tagSequence(s))
+    assertEquals(None, new Viterbi[Sym, Tag](edgeScorer, NoDefaultTagDict(incompleteTagDict)).tagSequence(s))
     assertEquals(Some(List('D, 'N, 'N, 'V)), new Viterbi[Sym, Tag](edgeScorer, fullTagset, largeTagTransitions).tagSequence(s))
     assertEquals(Some(List('D, 'A, 'N, 'V)), new Viterbi[Sym, Tag](edgeScorer, fullTagDict, largeTagTransitions).tagSequence(s))
     assertEquals(Some(List('D, 'A, 'N, 'V)), new Viterbi[Sym, Tag](edgeScorer, fullTagset, smallTagTransitions).tagSequence(s))

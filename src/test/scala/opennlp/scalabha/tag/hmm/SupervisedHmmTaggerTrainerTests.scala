@@ -127,7 +127,7 @@ class SupervisedHmmTaggerTrainerTests {
     val gold = TaggedFile("data/postag/english/entest")
     //val gold = List(Vector(("The", "D"), ("<unknown>", "N"), ("runs", "V"), (".", ".")))
 
-    LOG.debug("tagDictTrain.size = " + tagDict.iterator.ungroup.size)
+    LOG.debug("tagDictTrain.size = " + tagDict.setIterator.ungroup.size)
     LOG.debug("labeledTrain.size = " + train.size)
     LOG.debug("rawTrain.size     = " + 0)
 
@@ -170,7 +170,7 @@ class SupervisedHmmTaggerTrainerTests {
     val gold = TaggedFile("data/postag/english/entest")
     //val gold = List(Vector(("The", "D"), ("<unknown>", "N"), ("runs", "V"), (".", ".")))
 
-    LOG.debug("tagDictTrain.size = " + tagDict.iterator.ungroup.size)
+    LOG.debug("tagDictTrain.size = " + tagDict.setIterator.ungroup.size)
     LOG.debug("labeledTrain.size = " + train.size)
     LOG.debug("rawTrain.size     = " + 0)
 
@@ -209,7 +209,7 @@ class SupervisedHmmTaggerTrainerTests {
     val gold = TaggedFile("data/postag/english/entest")
     //val gold = List(Vector(("The", "D"), ("<unknown>", "N"), ("runs", "V"), (".", ".")))
 
-    LOG.debug("tagDictTrain.size = " + tagDict.iterator.ungroup.size)
+    LOG.debug("tagDictTrain.size = " + tagDict.setIterator.ungroup.size)
     LOG.debug("labeledTrain.size = " + train.size)
     LOG.debug("rawTrain.size     = " + 0)
 
@@ -247,7 +247,7 @@ class SupervisedHmmTaggerTrainerTests {
     val gold = TaggedFile("data/postag/english/entest")
     //val gold = List(Vector(("The", "D"), ("<unknown>", "N"), ("runs", "V"), (".", ".")))
 
-    LOG.debug("tagDictTrain.size = " + tagDict.iterator.ungroup.size)
+    LOG.debug("tagDictTrain.size = " + tagDict.setIterator.ungroup.size)
     LOG.debug("labeledTrain.size = " + train.size)
     LOG.debug("rawTrain.size     = " + 0)
 
