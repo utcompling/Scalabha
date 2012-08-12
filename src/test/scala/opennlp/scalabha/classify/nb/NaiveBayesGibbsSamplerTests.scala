@@ -1,6 +1,5 @@
 package opennlp.scalabha.classify.nb
 
-import scala.collection.GenTraversableOnce
 import scala.io.Source
 
 import org.apache.commons.logging.LogFactory
@@ -10,16 +9,23 @@ import org.junit.Assert.assertEquals
 import org.junit.BeforeClass
 import org.junit.Test
 
-import opennlp.scalabha.classify._
+import breeze.stats.distributions.Beta
+import opennlp.scalabha.classify.CompositeClassifierEvaluator
 import opennlp.scalabha.classify.CsvLabeledInstanceSource
 import opennlp.scalabha.classify.DefaultInstance
+import opennlp.scalabha.classify.SimpleClassifierEvaluator
 import opennlp.scalabha.tag.support.BinomialFreqDist
 import opennlp.scalabha.tag.support.FreqDist
-import opennlp.scalabha.util.CollectionUtils._
-import opennlp.scalabha.util.LogNum._
-import opennlp.scalabha.util.Stats.DirichletSampler
+import opennlp.scalabha.util.CollectionUtils.enrich_counts_GenTraversableOnce
+import opennlp.scalabha.util.CollectionUtils.enrich_mapVals_Iterator
+import opennlp.scalabha.util.CollectionUtils.enrich_normalizeValues_GenTraversableLike
+import opennlp.scalabha.util.CollectionUtils.enrich_normalizeValues_Int_GenTraversableLike
+import opennlp.scalabha.util.CollectionUtils.enriched_mapVals_GenTraversableLike
+import opennlp.scalabha.util.CollectionUtils.enriched_sumByKey_GenTraversableOnce_Numeric
 import opennlp.scalabha.util.LogNum
-import scalanlp.stats.distributions.Beta
+import opennlp.scalabha.util.LogNum.LogNumIsFractional
+import opennlp.scalabha.util.LogNum.enrichNumeric
+import opennlp.scalabha.util.Stats.DirichletSampler
 
 class NaiveBayesGibbsSamplerTests {
   val LOG = LogFactory.getLog(NaiveBayesGibbsSamplerTests.getClass)
