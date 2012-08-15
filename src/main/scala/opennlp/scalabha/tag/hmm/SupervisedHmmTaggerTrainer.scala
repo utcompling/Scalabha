@@ -33,9 +33,7 @@ class SupervisedHmmTaggerTrainer[Sym, Tag](
    */
   override def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): HmmTagger[Sym, Tag] = {
     val (transitionCounts, emissionCounts) = getCountsFromTagged(taggedTrainSequences)
-    val transitionDist = CondFreqDist(transitionCountsTransformer(transitionCounts))
-    val emissionDist = CondFreqDist(emissionCountsTransformer(emissionCounts))
-    hmmTaggerFactory(transitionDist, emissionDist)
+    makeTagger(transitionCounts, emissionCounts)
   }
 
   /**
@@ -56,5 +54,11 @@ class SupervisedHmmTaggerTrainer[Sym, Tag](
     val emissionCounts = tagSymbolPairs.groupByKey.mapVals(_.counts)
 
     (transitionCounts, emissionCounts)
+  }
+
+  protected def makeTagger[N: Numeric](transitionCounts: Map[Option[Tag], Map[Option[Tag], N]], emissionCounts: Map[Option[Tag], Map[Option[Sym], N]]) = {
+    val transitionDist = CondFreqDist(transitionCountsTransformer(transitionCounts))
+    val emissionDist = CondFreqDist(emissionCountsTransformer(emissionCounts))
+    hmmTaggerFactory(transitionDist, emissionDist)
   }
 }

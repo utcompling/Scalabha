@@ -126,9 +126,7 @@ class SemisupervisedEmHmmTaggerTrainer[Sym, Tag](
     val (initialTransitionCounts, initialEmissionCounts) = getCountsFromTagged(taggedTrainSequences)
 
     // Create the initial HMM
-    val initialTransitions = CondFreqDist(transitionCountsTransformer(initialTransitionCounts))
-    val initialEmissions = CondFreqDist(emissionCountsTransformer(initialEmissionCounts))
-    val initialHmm = hmmTaggerFactory(initialTransitions, initialEmissions)
+    val initialHmm = makeTagger(initialTransitionCounts, initialEmissionCounts)
 
     // Re-estimate probability distributions using EM
     emTrainer.trainWithEm(
@@ -196,12 +194,10 @@ class EmHmmTaggerTrainer[Sym, Tag](
     val autoTagged = emHmm.tag(rawTrainSequences.toSeq)
     val (transitionCounts, emissionCounts) = getCountsFromTagged(autoTagged)
 
-    val transitionCountsAndPriors = CondFreqCounts(transitionCounts).toDoubles ++ priorTransitionCounts
-    val emissionCountsAndPriors = CondFreqCounts(emissionCounts).toDoubles ++ priorEmissionCounts
+    val transitionCountsAndPriors = (CondFreqCounts(transitionCounts).toDoubles ++ priorTransitionCounts).toMap
+    val emissionCountsAndPriors = (CondFreqCounts(emissionCounts).toDoubles ++ priorEmissionCounts).toMap
 
-    val transitions = CondFreqDist(transitionCountsTransformer(transitionCountsAndPriors.toMap))
-    val emissions = CondFreqDist(emissionCountsTransformer(emissionCountsAndPriors.toMap))
-    hmmTaggerFactory(transitions, emissions)
+    makeTagger(transitionCountsAndPriors, emissionCountsAndPriors)
   }
 
   def estimateHmmWithEm(
