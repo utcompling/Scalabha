@@ -121,8 +121,12 @@ class UnsupervisedEmHmmTaggerTrainerTests {
             new PassthroughCountsTransformer(),
             tagDict,
             trainRaw).make(),
-        transitionCountsTransformer = TransitionCountsTransformer(),
-        emissionCountsTransformer = EmissionCountsTransformer(),
+        transitionCountsTransformer =
+          new TransitionCountsTransformer(
+            EisnerSmoothingCondCountsTransformer(1.)),
+        emissionCountsTransformer =
+          new EmissionCountsTransformer(
+            EisnerSmoothingCondCountsTransformer(1., AddLambdaSmoothingCountsTransformer(1.))),
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         maxIterations = 1,
         minAvgLogProbChangeForEM = 0.00001)
@@ -157,8 +161,12 @@ class UnsupervisedEmHmmTaggerTrainerTests {
             new PassthroughCountsTransformer(),
             tagDict,
             trainLab.map(_.map(_._1))).make(),
-        transitionCountsTransformer = TransitionCountsTransformer(),
-        emissionCountsTransformer = EmissionCountsTransformer(),
+        transitionCountsTransformer =
+          new TransitionCountsTransformer(
+            EisnerSmoothingCondCountsTransformer(1.)),
+        emissionCountsTransformer =
+          new EmissionCountsTransformer(
+            EisnerSmoothingCondCountsTransformer(1., AddLambdaSmoothingCountsTransformer(1.))),
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -191,8 +199,12 @@ class UnsupervisedEmHmmTaggerTrainerTests {
             new PassthroughCountsTransformer(),
             tagDict,
             trainLab.map(_.map(_._1))).make(),
-        transitionCountsTransformer = TransitionCountsTransformer(),
-        emissionCountsTransformer = EmissionCountsTransformer(),
+        transitionCountsTransformer =
+          new TransitionCountsTransformer(
+            EisnerSmoothingCondCountsTransformer(1.)),
+        emissionCountsTransformer =
+          new EmissionCountsTransformer(
+            EisnerSmoothingCondCountsTransformer(1., AddLambdaSmoothingCountsTransformer(1.))),
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -321,17 +333,15 @@ class UnsupervisedEmHmmTaggerTrainerTests {
             new PassthroughCountsTransformer(),
             tagDict,
             trainRaw).make(),
-        transitionCountsTransformer = TransitionCountsTransformer(),
-        emissionCountsTransformer = EmissionCountsTransformer(),
+        transitionCountsTransformer =
+          new TransitionCountsTransformer(
+            EisnerSmoothingCondCountsTransformer(1.)),
+        emissionCountsTransformer =
+          new EmissionCountsTransformer(
+            EisnerSmoothingCondCountsTransformer(1., AddLambdaSmoothingCountsTransformer(1.))),
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         maxIterations = 20,
-        minAvgLogProbChangeForEM = 0.00001) {
-        //        protected override def hmmExaminationHook(hmm: HmmTagger[String, String]) {
-        //          val output = hmm.tag(gold.map(_.map(_._1)))
-        //          val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
-        //          println(results)
-        //        }
-      }
+        minAvgLogProbChangeForEM = 0.00001)
 
     val unsupervisedTagger = unsupervisedTrainer.trainUnsupervised(tagDict, trainRaw)
     val unsupervisedOutput = unsupervisedTagger.tag(gold.map(_.map(_._1)))

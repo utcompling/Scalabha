@@ -15,38 +15,27 @@ import org.apache.log4j.PropertyConfigurator
 import org.apache.log4j.BasicConfigurator
 import org.apache.commons.logging.LogFactory
 
-class SemisupervisedHmmTaggerTrainerTests {
-  val LOG = LogFactory.getLog(classOf[SemisupervisedHmmTaggerTrainerTests])
+class SemisupervisedEmHmmTaggerTrainerTests {
+  val LOG = LogFactory.getLog(classOf[SemisupervisedEmHmmTaggerTrainerTests])
 
   @Test
   def en_smallTagDict() {
     val (tagDictTrain, labeledTrain) = TaggedFile("data/postag/english/entrain").splitAt(3000)
     val tagDict = new SimpleTagDictFactory().make(tagDictTrain)
-    val (semisupervisedResults, autosupervisedResults) = runUnsupervisedTrainingTest(tagDict, tagDictTrain)
+    val semisupervisedResults = runUnsupervisedTrainingTest(tagDict, labeledTrain)
+
     assertResultsEqual("""
-                Total:   15.68 (3755/23949)
-                Known:   17.42 (3739/21469)
-                Unknown: 0.65 (16/2480)
-                Common Mistakes:
-                #Err     Gold      Model
-                6272     N        .
-                2758     V        .
-                2218     I        .
-                1824     D        .
-                1499     J        .
+	            Total:   91.26 (21857/23949)
+				Known:   94.22 (20228/21469)
+				Unknown: 65.69 (1629/2480)
+				Common Mistakes:
+				#Err     Gold      Model
+				416      N        J       
+				311      V        N       
+				210      J        N       
+				171      N        V       
+				133      V        J       
     	""", semisupervisedResults)
-    assertResultsEqual("""
-                Total:   86.41 (20694/23949)
-                Known:   90.63 (19458/21469)
-                Unknown: 49.84 (1236/2480)
-                Common Mistakes:
-                #Err     Gold      Model
-                345      N        J
-                314      V        N
-                223      N        V
-                183      J        N
-                154      N        M
-    	""", autosupervisedResults)
   }
 
   @Test
@@ -83,25 +72,9 @@ class SemisupervisedHmmTaggerTrainerTests {
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
-    val semisupervisedTagger = trainer.trainSemisupervised(tagDict, trainRaw, trainLab)
-    val output = semisupervisedTagger.tag(gold.map(_.map(_._1)))
-    val semisupervisedResults = new TaggerEvaluator().evaluate(output, gold, tagDict)
-
-    val supervisedTrainer: SupervisedTaggerTrainer[String, String] =
-      new SupervisedHmmTaggerTrainer(
-        transitionCountsTransformer =
-          new TransitionCountsTransformer(
-            EisnerSmoothingCondCountsTransformer(1.)),
-        emissionCountsTransformer =
-          new EmissionCountsTransformer(
-            EisnerSmoothingCondCountsTransformer(1., AddLambdaSmoothingCountsTransformer(1.))),
-        hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags))
-    val semisupervisedAutotagged = semisupervisedTagger.tag(trainRaw)
-    val autosupervisedTagger = supervisedTrainer.trainSupervised(semisupervisedAutotagged)
-    val autosupervisedOutput = autosupervisedTagger.tag(gold.map(_.map(_._1)))
-    val autosupervisedResults = new TaggerEvaluator().evaluate(autosupervisedOutput, gold, tagDict)
-
-    (semisupervisedResults, autosupervisedResults)
+    val tagger = trainer.trainSemisupervised(tagDict, trainRaw, trainLab)
+    val output = tagger.tag(gold.map(_.map(_._1)))
+    new TaggerEvaluator().evaluate(output, gold, tagDict)
   }
 
   object TaggedFile {
