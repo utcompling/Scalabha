@@ -16,8 +16,8 @@ import opennlp.scalabha.tag.support._
 import opennlp.scalabha.tag._
 import opennlp.scalabha.util.CollectionUtils._
 
-class UnsupervisedHmmTaggerTrainerTests {
-  val LOG = LogFactory.getLog(classOf[UnsupervisedHmmTaggerTrainerTests])
+class UnsupervisedEmHmmTaggerTrainerTests {
+  val LOG = LogFactory.getLog(classOf[UnsupervisedEmHmmTaggerTrainerTests])
 
   @Test
   def tiny_beforeEM() {
@@ -115,14 +115,14 @@ class UnsupervisedHmmTaggerTrainerTests {
       Vector(("the", "D"), ("dog", "N"), ("walks", "V"), ("briskly", "R")))
 
     val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
-      new UnsupervisedHmmTaggerTrainer(
+      new UnsupervisedEmHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
           new EstimatedRawCountUnsupervisedEmissionDistFactory(
             new PassthroughCountsTransformer(),
             tagDict,
             trainRaw).make(),
-        estimatedTransitionCountsTransformer = TransitionCountsTransformer(),
-        estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
+        transitionCountsTransformer = TransitionCountsTransformer(),
+        emissionCountsTransformer = EmissionCountsTransformer(),
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         maxIterations = 1,
         minAvgLogProbChangeForEM = 0.00001)
@@ -151,14 +151,14 @@ class UnsupervisedHmmTaggerTrainerTests {
 
     val tagDict = new SimpleTagDictFactory().make(trainLab ++ testLab)
     val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
-      new UnsupervisedHmmTaggerTrainer(
+      new UnsupervisedEmHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
           new EstimatedRawCountUnsupervisedEmissionDistFactory(
             new PassthroughCountsTransformer(),
             tagDict,
             trainLab.map(_.map(_._1))).make(),
-        estimatedTransitionCountsTransformer = TransitionCountsTransformer(),
-        estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
+        transitionCountsTransformer = TransitionCountsTransformer(),
+        emissionCountsTransformer = EmissionCountsTransformer(),
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -185,14 +185,14 @@ class UnsupervisedHmmTaggerTrainerTests {
 
     val tagDict = new SimpleTagDictFactory().make(trainLab ++ testLab)
     val unsupervisedTrainer: UnsupervisedTaggerTrainer[String, String] =
-      new UnsupervisedHmmTaggerTrainer(
+      new UnsupervisedEmHmmTaggerTrainer(
         initialUnsupervisedEmissionDist =
           new EstimatedRawCountUnsupervisedEmissionDistFactory(
             new PassthroughCountsTransformer(),
             tagDict,
             trainLab.map(_.map(_._1))).make(),
-        estimatedTransitionCountsTransformer = TransitionCountsTransformer(),
-        estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
+        transitionCountsTransformer = TransitionCountsTransformer(),
+        emissionCountsTransformer = EmissionCountsTransformer(),
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
@@ -315,14 +315,14 @@ class UnsupervisedHmmTaggerTrainerTests {
     LOG.debug("rawTrain.size     = " + trainRaw.size)
 
     val unsupervisedTrainer =
-      new UnsupervisedHmmTaggerTrainer[String, String](
+      new UnsupervisedEmHmmTaggerTrainer[String, String](
         initialUnsupervisedEmissionDist =
           new EstimatedRawCountUnsupervisedEmissionDistFactory(
             new PassthroughCountsTransformer(),
             tagDict,
             trainRaw).make(),
-        estimatedTransitionCountsTransformer = TransitionCountsTransformer(),
-        estimatedEmissionCountsTransformer = EmissionCountsTransformer(),
+        transitionCountsTransformer = TransitionCountsTransformer(),
+        emissionCountsTransformer = EmissionCountsTransformer(),
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001) {
@@ -386,7 +386,7 @@ class UnsupervisedHmmTaggerTrainerTests {
   }
 }
 
-object UnsupervisedHmmTaggerTrainerTests {
+object UnsupervisedEmHmmTaggerTrainerTests {
 
   @BeforeClass def turnOffLogging() {
     Logger.getRootLogger.setLevel(Level.OFF)

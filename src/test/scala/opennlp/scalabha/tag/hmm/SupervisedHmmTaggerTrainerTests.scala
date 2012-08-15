@@ -18,7 +18,7 @@ import opennlp.scalabha.tag.TagDict
 import opennlp.scalabha.util.LogNum
 
 class SupervisedHmmTaggerTrainerTests {
-  val LOG = LogFactory.getLog(classOf[UnsupervisedHmmTaggerTrainerTests])
+  val LOG = LogFactory.getLog(classOf[SupervisedHmmTaggerTrainerTests])
 
   @Test
   def tiny_noSmoothing() {
