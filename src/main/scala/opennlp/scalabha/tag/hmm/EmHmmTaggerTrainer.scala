@@ -134,8 +134,8 @@ class SemisupervisedEmHmmTaggerTrainer[Sym, Tag](
     emTrainer.trainWithEm(
       rawTrainSequences,
       initialHmm,
-      initialTransitionCounts.mapVals(_.mapVals(_.toDouble)), initialEmissionCounts.mapVals(_.mapVals(_.toDouble)),
-      OptionalTagDict(tagDict))
+      OptionalTagDict(tagDict),
+      initialTransitionCounts.mapVals(_.mapVals(_.toDouble)), initialEmissionCounts.mapVals(_.mapVals(_.toDouble)))
   }
 
 }
@@ -174,26 +174,25 @@ class EmHmmTaggerTrainer[Sym, Tag](
     trainWithEm(
       rawTrainSequences,
       initialHmm,
+      tagDict,
       Map[OTag, Map[OTag, Double]](),
-      Map[OTag, Map[OSym, Double]](),
-      tagDict)
+      Map[OTag, Map[OSym, Double]]())
   }
 
   def trainWithEm(
     rawTrainSequences: Iterable[IndexedSeq[Sym]],
     initialHmm: HmmTagger[Sym, Tag],
+    tagDict: OptionalTagDict[Sym, Tag],
     priorTransitionCounts: Map[OTag, Map[OTag, Double]],
-    priorEmissionCounts: Map[OTag, Map[OSym, Double]],
-    tagDict: OptionalTagDict[Sym, Tag]): HmmTagger[Sym, Tag] = {
+    priorEmissionCounts: Map[OTag, Map[OSym, Double]]): HmmTagger[Sym, Tag] = {
 
     val emHmm =
-      reestimateLogNumDistributions(
+      estimateHmmWithEm(
         rawTrainSequences,
-        tagDict,
         initialHmm,
-        1, Double.NegativeInfinity,
-        CondFreqCounts(priorTransitionCounts),
-        CondFreqCounts(priorEmissionCounts))
+        tagDict,
+        priorTransitionCounts,
+        priorEmissionCounts)
     val autoTagged = emHmm.tag(rawTrainSequences.toSeq)
     val (transitionCounts, emissionCounts) = getCountsFromTagged(autoTagged)
 
@@ -205,6 +204,22 @@ class EmHmmTaggerTrainer[Sym, Tag](
     hmmTaggerFactory(transitions, emissions)
   }
 
+  def estimateHmmWithEm(
+    rawTrainSequences: Iterable[IndexedSeq[Sym]],
+    initialHmm: HmmTagger[Sym, Tag],
+    tagDict: OptionalTagDict[Sym, Tag],
+    priorTransitionCounts: Map[OTag, Map[OTag, Double]],
+    priorEmissionCounts: Map[OTag, Map[OSym, Double]]): HmmTagger[Sym, Tag] = {
+
+    estimateHmmWithEm(
+      rawTrainSequences,
+      initialHmm,
+      tagDict,
+      CondFreqCounts(priorTransitionCounts),
+      CondFreqCounts(priorEmissionCounts),
+      maxIterations, Double.NegativeInfinity)
+  }
+
   /**
    * Re-estimate probability distributions using EM.  Estimate counts for
    * each sequence in rawTrainSequences using the forward/backward procedure.
@@ -212,14 +227,54 @@ class EmHmmTaggerTrainer[Sym, Tag](
    * convergence.
    */
   @tailrec
-  final protected def reestimateLogNumDistributions(
+  final protected def estimateHmmWithEm(
     rawTrainSequences: Iterable[IndexedSeq[Sym]],
-    tagDict: OptionalTagDict[Sym, Tag],
     initialHmm: HmmTagger[Sym, Tag],
-    iteration: Int,
-    prevAvgLogProb: Double,
+    tagDict: OptionalTagDict[Sym, Tag],
     priorTransitionCounts: CondFreqCounts[OTag, OTag, Double],
-    priorEmissionCounts: CondFreqCounts[OTag, OSym, Double]): HmmTagger[Sym, Tag] = {
+    priorEmissionCounts: CondFreqCounts[OTag, OSym, Double],
+    remainingIterations: Int,
+    prevAvgLogProb: Double): HmmTagger[Sym, Tag] = {
+
+    val (hmm, avgLogProb) = reestimateHmm(rawTrainSequences, initialHmm, tagDict, priorTransitionCounts, priorEmissionCounts)
+
+    LOG.debug("\t" + (maxIterations - remainingIterations + 1) + ": " + avgLogProb)
+
+    hmmExaminationHook(hmm)
+
+    // Check each ending condition
+    if (remainingIterations <= 1) {
+      LOG.info("DONE: Max number of iterations reached")
+      hmm
+    }
+    else if ((avgLogProb - prevAvgLogProb).abs < minAvgLogProbChangeForEM) { //check if converged
+      LOG.info("DONE: Change in average log probability is less than " + minAvgLogProbChangeForEM)
+      hmm
+    }
+    else if (avgLogProb < prevAvgLogProb) {
+      throw new RuntimeException("DIVERGED: log probability decreased on iteration %d".format(maxIterations - remainingIterations + 1))
+    }
+    else if (avgLogProb == Double.NegativeInfinity) {
+      throw new RuntimeException("averageLogProb == -Infinity on iteration %d".format(maxIterations - remainingIterations + 1))
+    }
+    else {
+      // No ending condition met, re-estimate
+      estimateHmmWithEm(
+        rawTrainSequences,
+        hmm,
+        tagDict,
+        priorTransitionCounts,
+        priorEmissionCounts,
+        remainingIterations - 1, avgLogProb)
+    }
+  }
+
+  protected def reestimateHmm(
+    rawTrainSequences: Iterable[IndexedSeq[Sym]],
+    initialHmm: HmmTagger[Sym, Tag],
+    tagDict: OptionalTagDict[Sym, Tag],
+    priorTransitionCounts: CondFreqCounts[OTag, OTag, Double],
+    priorEmissionCounts: CondFreqCounts[OTag, OSym, Double]) = {
 
     // E Step:  Use the forward/backward procedure to determine the 
     //          probability of various possible state sequences for 
@@ -233,37 +288,7 @@ class EmHmmTaggerTrainer[Sym, Tag](
 
     val transitions = CondFreqDist(expectedTransitionCounts.toMap)
     val emissions = CondFreqDist(expectedEmmissionCounts.toMap)
-    val hmm = hmmTaggerFactory(transitions, emissions)
-
-    LOG.debug("\t" + iteration + ": " + avgLogProb)
-
-    hmmExaminationHook(hmm)
-
-    // Check each ending condition
-    if (iteration >= maxIterations) {
-      LOG.info("DONE: Max number of iterations reached")
-      hmm
-    }
-    else if ((avgLogProb - prevAvgLogProb).abs < minAvgLogProbChangeForEM) { //check if converged
-      LOG.info("DONE: Change in average log probability is less than " + minAvgLogProbChangeForEM)
-      hmm
-    }
-    else if (avgLogProb < prevAvgLogProb) {
-      throw new RuntimeException("DIVERGED: log probability decreased on iteration %d".format(iteration))
-    }
-    else if (avgLogProb == Double.NegativeInfinity) {
-      throw new RuntimeException("averageLogProb == -Infinity on iteration %d".format(iteration))
-    }
-    else {
-      // No ending condition met, re-estimate
-      reestimateLogNumDistributions(
-        rawTrainSequences,
-        tagDict,
-        hmm,
-        iteration + 1, avgLogProb,
-        priorTransitionCounts,
-        priorEmissionCounts)
-    }
+    (hmmTaggerFactory(transitions, emissions), avgLogProb)
   }
 
   /**
