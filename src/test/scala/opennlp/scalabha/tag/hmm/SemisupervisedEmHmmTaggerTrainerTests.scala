@@ -109,7 +109,7 @@ class SemisupervisedEmHmmTaggerTrainerTests {
   }
 }
 
-object SemisupervisedHmmTaggerTrainerTests {
+object SemisupervisedEmHmmTaggerTrainerTests {
 
   @BeforeClass def turnOffLogging() {
     Logger.getRootLogger.setLevel(Level.OFF)
