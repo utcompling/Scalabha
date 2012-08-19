@@ -17,47 +17,47 @@ import math._
  * way to access the actual logarithmic value is by the 'logValue' field.
  */
 final class LogNum(val logValue: Double) extends Ordered[LogNum] {
-  def +[N: Numeric](other: N): LogNum = {
-    val o = LogNum(other)
+  def +[N](other: N)(implicit num: Numeric[N]): LogNum = {
+    val oLogValue = log(num.toDouble(other))
     if (logValue == Double.NegativeInfinity)
-      o
-    else if (o.logValue == Double.NegativeInfinity)
+      new LogNum(oLogValue)
+    else if (oLogValue == Double.NegativeInfinity)
       this
-    else if (logValue > o.logValue)
-      new LogNum(logValue + log1p(exp(o.logValue - logValue)))
+    else if (logValue > oLogValue)
+      new LogNum(logValue + log1p(exp(oLogValue - logValue)))
     else
-      new LogNum(o.logValue + log1p(exp(logValue - o.logValue)))
+      new LogNum(oLogValue + log1p(exp(logValue - oLogValue)))
   }
-  def -[N: Numeric](other: N): LogNum = {
-    val o = LogNum(other)
-    if (this < o)
+  def -[N](other: N)(implicit num: Numeric[N]): LogNum = {
+    val oLogValue = log(num.toDouble(other))
+    if (logValue < oLogValue)
       sys.error("subtraction results in a negative LogNum")
-    else if (o == LogNum.zero)
+    else if (logValue == 0.0)
       this
     else
-      new LogNum(logValue + log1p(-exp(o.logValue - logValue)))
+      new LogNum(logValue + log1p(-exp(oLogValue - logValue)))
   }
-  def *[N: Numeric](o: N): LogNum = new LogNum(logValue + LogNum(o).logValue)
-  def /[N: Numeric](o: N): LogNum = new LogNum(logValue - LogNum(o).logValue)
-  def **[N: Numeric](pow: N): LogNum = new LogNum(implicitly[Numeric[N]].toDouble(pow) * logValue)
+  def *[N](o: N)(implicit num: Numeric[N]): LogNum = new LogNum(logValue + log(num.toDouble(o)))
+  def /[N](o: N)(implicit num: Numeric[N]): LogNum = new LogNum(logValue - log(num.toDouble(o)))
+  def **[N](pow: N)(implicit num: Numeric[N]): LogNum = new LogNum(num.toDouble(pow) * logValue)
 
   override def equals(o: Any): Boolean = o match {
     case o: LogNum => logValue == o.logValue
-    case _ => false
+    case o => o == exp(logValue)
   }
   override def hashCode(): Int = toDouble ##
 
   override def compare(that: LogNum) = logValue.compare(that.logValue)
-  def max(that: LogNum) = if(this.logValue > that.logValue) this else that
-  def min(that: LogNum) = if(this.logValue < that.logValue) this else that
-  
-  def approx(o: LogNum, tolerance: Double): Boolean = {
-    if (this == LogNum.zero && o == LogNum.zero)
+  def max[N](that: N)(implicit num: Numeric[N]): LogNum = { val thatDouble = log(num.toDouble(that)); if (this.logValue > thatDouble) this else new LogNum(thatDouble) }
+  def min[N](that: N)(implicit num: Numeric[N]): LogNum = { val thatDouble = log(num.toDouble(that)); if (this.logValue < thatDouble) this else new LogNum(thatDouble) }
+
+  def approx[N](o: N, tolerance: Double)(implicit num: Numeric[N]): Boolean = {
+    if (this == LogNum.zero && o == num.zero)
       true
     else
-      (logValue - o.logValue).abs < tolerance
+      (logValue - log(num.toDouble(o))).abs < tolerance
   }
-  def approx(o: LogNum): Boolean = this.approx(o, 0.00000001)
+  def approx[N](o: N)(implicit num: Numeric[N]): Boolean = this.approx(o, 0.00000001)
 
   def toInt = toDouble.toInt
   def toLong = toDouble.toLong
@@ -69,10 +69,10 @@ final class LogNum(val logValue: Double) extends Ordered[LogNum] {
 
 object LogNum {
 
-  def apply[N: Numeric](n: N) = {
+  def apply[N](n: N)(implicit num: Numeric[N]) = {
     n match {
       case logNum: LogNum => logNum
-      case _ => new LogNum(log(implicitly[Numeric[N]].toDouble(n)))
+      case _ => new LogNum(log(num.toDouble(n)))
     }
   }
 
@@ -100,8 +100,8 @@ object LogNum {
     override def one = LogNum.one
   }
 
-  class EnrichedNumeric[N: Numeric](self: N) {
-    def toLogNum = LogNum(self)
+  class EnrichedNumeric[N](self: N)(implicit num: Numeric[N]) {
+    def toLogNum = new LogNum(log(num.toDouble(self)))
     def +(n: LogNum) = toLogNum + n
     def -(n: LogNum) = toLogNum - n
     def *(n: LogNum) = toLogNum * n
