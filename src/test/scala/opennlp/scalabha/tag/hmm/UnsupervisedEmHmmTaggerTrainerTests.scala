@@ -283,7 +283,7 @@ class UnsupervisedEmHmmTaggerTrainerTests {
 object UnsupervisedEmHmmTaggerTrainerTests {
 
   @BeforeClass def turnOffLogging() {
-    Logger.getRootLogger.setLevel(Level.INFO)
+    Logger.getRootLogger.setLevel(Level.OFF)
   }
 
 }

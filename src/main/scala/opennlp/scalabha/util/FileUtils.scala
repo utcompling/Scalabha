@@ -64,7 +64,7 @@ object FileUtils {
 
   /**
    * Get an Iterator over the lines in the file.  The file will automatically
-   * close itself when the end of the file is reached.  This gets around the 
+   * close itself when the end of the file is reached.  This gets around the
    * problem of having to all of your processing inside the `using` block.
    */
   def readLines(filename: String): Iterator[String] = {
@@ -73,11 +73,23 @@ object FileUtils {
 
   /**
    * Get an Iterator over the lines in the file.  The file will automatically
-   * close itself when the end of the file is reached.  This gets around the 
+   * close itself when the end of the file is reached.  This gets around the
    * problem of having to all of your processing inside the `using` block.
    */
-  def readLines(file: File): Iterator[String] = {
-    val resource = Source.fromFile(file)
+  def readLines(filename: String, encoding: String): Iterator[String] = {
+    readLines(new File(filename), Some(encoding))
+  }
+
+  /**
+   * Get an Iterator over the lines in the file.  The file will automatically
+   * close itself when the end of the file is reached.  This gets around the
+   * problem of having to all of your processing inside the `using` block.
+   */
+  def readLines(file: File, encoding: Option[String] = None): Iterator[String] = {
+    val resource = encoding match {
+      case Some(enc) => Source.fromFile(file, enc)
+      case None => Source.fromFile(file)
+    }
     val blockItr = resource.getLines
     var finished = false
     new Iterator[String] {
