@@ -16,9 +16,9 @@ class TaggerEvaluator[Sym, Tag] {
     var mistakes = List[(Tag, Tag)]()
 
     assert(taggerOutput.size == goldData.size, "number of sequences in output does not match gold: %d vs %d".format(taggerOutput.size, goldData.size))
-    for ((result, gold) <- taggerOutput zipEqual goldData) {
+    for ((result, gold) <- taggerOutput zipSafe goldData) {
       assert(result.size == gold.size, "sequence length in result does not match gold: %s != %s".format(result, gold))
-      for (((rsltSym, rsltTag), (goldSym, goldTag)) <- result zipEqual gold) {
+      for (((rsltSym, rsltTag), (goldSym, goldTag)) <- result zipSafe gold) {
         assert(rsltSym == goldSym, "result sentence and gold sentence are different: %s != %s".format(result.map(_._1), gold.map(_._1)))
 
         if (rsltTag == goldTag)

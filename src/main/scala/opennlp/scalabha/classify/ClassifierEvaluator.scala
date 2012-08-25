@@ -20,7 +20,7 @@ class SimpleClassifierEvaluator[L, T](gold: Seq[(L, Seq[T])]) extends Classifier
     val mistakes = MMap[L, MMap[L, Int]]() // expected, model
 
     val results = gold.map { case (l, d) => classifier.classify(new DefaultInstance(d)).maxBy(_._2)._1 }
-    for (((l, _), r) <- gold zipEqual results) {
+    for (((l, _), r) <- gold zipSafe results) {
       if (r == l)
         correct += 1
       else {

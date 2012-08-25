@@ -104,7 +104,7 @@ class NaiveBayesGibbsSampler[L, T](
     // including labeled and (noisily-labeled) unlabeled data BUT NOT 
     // pseudocounts.  We leave pseudocounts out to keep the vectors sparse.
     val wordCounts = {
-      val unlCountsByLabel = (initialLabels zipEqual docs).groupByKey.mapVals(_.sumByKey)
+      val unlCountsByLabel = (initialLabels zipSafe docs).groupByKey.mapVals(_.sumByKey)
       labelList.mapTo { l =>
         val labCounts = labDocs(l).sumByKey
         val unlCounts = unlCountsByLabel.getOrElse(l, Map())
@@ -127,7 +127,7 @@ class NaiveBayesGibbsSampler[L, T](
           (burnInIterations + trainingIterations - iterationsLeft + 1) min burnInIterations, burnInIterations,
           (trainingIterations - iterationsLeft + 1) max 0, trainingIterations))
 
-        for (((curLabel, doc), docId) <- labels.head zipEqual docs zipWithIndex) {
+        for (((curLabel, doc), docId) <- labels.head zipSafe docs zipWithIndex) {
           // Remove current document count information
           labelCounts(curLabel) -= 1
           val countsForCurLabel = wordCounts(curLabel)

@@ -285,12 +285,12 @@ object CollectionUtils {
   implicit def enriched_mapToVal_Iterator[A](self: Iterator[A]) = new Enriched_mapToVal_Iterator(self)
 
   //////////////////////////////////////////////////////
-  // zipEqual(that: GenTraversable[B]): Repr[(A,B)]
+  // zipSafe(that: GenTraversable[B]): Repr[(A,B)]
   //   - zip this collection with another, throwing an exception if they are
   //     not of equal length.
   //////////////////////////////////////////////////////
 
-  class Enriched_zipEqual_Iterator[A](self: Iterator[A]) {
+  class Enriched_zipSafe_Iterator[A](self: Iterator[A]) {
     /**
      * zip this collection with another, throwing an exception if they
      * are not of equal length.
@@ -299,16 +299,16 @@ object CollectionUtils {
      * @return an iterator of pairs
      * @throws RuntimeException	thrown if collections differ in length
      */
-    def zipEqual[B](that: GenTraversableOnce[B]) = {
+    def zipSafe[B](that: GenTraversableOnce[B]) = {
       val thatItr = that.toIterator
       new Iterator[(A, B)] {
         def hasNext = {
           if (self.hasNext) {
             if (thatItr.hasNext) true
-            else throw new RuntimeException("Attempting to zipEqual collections of different lengths.")
+            else throw new RuntimeException("Attempting to zipSafe collections of different lengths.")
           }
           else {
-            if (thatItr.hasNext) throw new RuntimeException("Attempting to zipEqual collections of different lengths.")
+            if (thatItr.hasNext) throw new RuntimeException("Attempting to zipSafe collections of different lengths.")
             else false
           }
         }
@@ -319,9 +319,9 @@ object CollectionUtils {
       }
     }
   }
-  implicit def enriched_zipEqual_Iterator[A](self: Iterator[A]) = new Enriched_zipEqual_Iterator(self)
+  implicit def enriched_zipSafe_Iterator[A](self: Iterator[A]) = new Enriched_zipSafe_Iterator(self)
 
-  class Enriched_zipEqual_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
+  class Enriched_zipSafe_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
     /**
      * zip this collection with another, throwing an exception if they
      * are not of equal length.
@@ -330,15 +330,15 @@ object CollectionUtils {
      * @return an iterator of pairs
      * @throws RuntimeException	thrown if collections differ in length
      */
-    def zipEqual[A1 >: A, B, That](that: GenTraversableOnce[B])(implicit bf: CanBuildFrom[Repr, (A1, B), That]): That = {
+    def zipSafe[A1 >: A, B, That](that: GenTraversableOnce[B])(implicit bf: CanBuildFrom[Repr, (A1, B), That]): That = {
       val b = bf(self.asInstanceOf[Repr])
-      b ++= (self.toIterator zipEqual that.toIterator)
+      b ++= (self.toIterator zipSafe that.toIterator)
       b.result
     }
   }
-  implicit def enriched_zipEqual_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) = new Enriched_zipEqual_GenTraversableLike(self)
+  implicit def enriched_zipSafe_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) = new Enriched_zipSafe_GenTraversableLike(self)
 
-  class Enriched_zipEqual_Tuple_of_Iterator[A, B](self: (Iterator[A], GenTraversableOnce[B])) {
+  class Enriched_zipSafe_Tuple_of_Iterator[A, B](self: (Iterator[A], GenTraversableOnce[B])) {
     /**
      * zip this collection with another, throwing an exception if they
      * are not of equal length.
@@ -346,11 +346,11 @@ object CollectionUtils {
      * @return an iterator of pairs
      * @throws RuntimeException	thrown if collections differ in length
      */
-    def zipEqual = self._1 zipEqual self._2
+    def zipSafe = self._1 zipSafe self._2
   }
-  implicit def enriched_zipEqual_Tuple_of_Iterator[A, B](self: (Iterator[A], GenTraversableOnce[B])) = new Enriched_zipEqual_Tuple_of_Iterator(self)
+  implicit def enriched_zipSafe_Tuple_of_Iterator[A, B](self: (Iterator[A], GenTraversableOnce[B])) = new Enriched_zipSafe_Tuple_of_Iterator(self)
 
-  class Enriched_zipEqual_Tuple_of_GenTraversableLike[A, Repr <: GenTraversable[A], B](self: (GenTraversableLike[A, Repr], GenTraversableOnce[B])) {
+  class Enriched_zipSafe_Tuple_of_GenTraversableLike[A, Repr <: GenTraversable[A], B](self: (GenTraversableLike[A, Repr], GenTraversableOnce[B])) {
     /**
      * zip this collection with another, throwing an exception if they
      * are not of equal length.
@@ -359,13 +359,13 @@ object CollectionUtils {
      * @return an iterator of pairs
      * @throws RuntimeException	thrown if collections differ in length
      */
-    def zipEqual[A1 >: A, That](implicit bf: CanBuildFrom[Repr, (A1, B), That]): That = {
+    def zipSafe[A1 >: A, That](implicit bf: CanBuildFrom[Repr, (A1, B), That]): That = {
       val b = bf(self.asInstanceOf[Repr])
-      b ++= (self._1.toIterator zipEqual self._2)
+      b ++= (self._1.toIterator zipSafe self._2)
       b.result
     }
   }
-  implicit def enriched_zipEqual_Tuple_of_GenTraversableLike[A, Repr <: GenTraversable[A], B](self: (GenTraversableLike[A, Repr], GenTraversableOnce[B])) = new Enriched_zipEqual_Tuple_of_GenTraversableLike(self)
+  implicit def enriched_zipSafe_Tuple_of_GenTraversableLike[A, Repr <: GenTraversable[A], B](self: (GenTraversableLike[A, Repr], GenTraversableOnce[B])) = new Enriched_zipSafe_Tuple_of_GenTraversableLike(self)
 
   //////////////////////////////////////////////////////
   // sliding2: Iterator[(A,A)]
@@ -1070,4 +1070,11 @@ object CollectionUtils {
       else Vector.newBuilder[A] ++= self result
   }
   implicit def addToVector[A](self: TraversableOnce[A]) = new EnrichedWithToVector(self)
+
+  class EnrichedArrayWithToVector[A](self: Array[A]) {
+    def toVector: Vector[A] =
+      if (self.isEmpty) Vector.empty[A]
+      else Vector.newBuilder[A] ++= self result
+  }
+  implicit def addToVectorToArray[A](self: Array[A]): EnrichedWithToVector[A] = new EnrichedWithToVector(self)
 }

@@ -446,7 +446,7 @@ class EmHmmTaggerTrainer[Sym, Tag](
     val nextBackwrds = backwrds.drop(1)
 
     val expectedTransitionCounts =
-      (nextTokens zipEqual currTagSets zipEqual nextTagSets zipEqual currForwards zipEqual nextBackwrds).map {
+      (nextTokens zipSafe currTagSets zipSafe nextTagSets zipSafe currForwards zipSafe nextBackwrds).map {
         case ((((nextTok, currTags), nextTags), currForward), nextBackwrd) =>
           currTags.mapTo { currTag =>
             nextTags.mapTo { nextTag =>
@@ -475,7 +475,7 @@ class EmHmmTaggerTrainer[Sym, Tag](
     val liftedSeq = None +: sequence.map(Some(_)) :+ None
 
     val expectedEmissionCounts =
-      (liftedSeq zipEqual forwards zipEqual backwrds).map {
+      (liftedSeq zipSafe forwards zipSafe backwrds).map {
         case ((tok, forward), backwrd) =>
           tagDict.set(tok).mapTo(tag =>
             Map(tok -> (forward(tag) * backwrd(tag) / seqProb).toDouble)).toMap

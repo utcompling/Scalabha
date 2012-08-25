@@ -660,7 +660,7 @@ class CondCountsTransformerTests {
 
   case class MockCondCountsTransformer[A, B](expected: DefaultedCondFreqCounts[A, B, Double], returned: DefaultedCondFreqCounts[A, B, Double]) extends CondCountsTransformer[A, B] {
     override def apply(counts: DefaultedCondFreqCounts[A, B, Double]) = {
-      for ((eA -> e, cA -> c) <- (expected.counts zipEqual counts.counts)) {
+      for ((eA -> e, cA -> c) <- (expected.counts zipSafe counts.counts)) {
         assertEquals(eA, cA)
         val DefaultedFreqCounts(eC, eT, eD) = e
         val DefaultedFreqCounts(cC, cT, cD) = c

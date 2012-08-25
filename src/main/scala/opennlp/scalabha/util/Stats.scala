@@ -10,7 +10,7 @@ object Stats {
     private[this] val labelList = labels.toIndexedSeq
     private[this] val dirichlet = Dirichlet(labelList.map(l => implicitly[Numeric[N]].toDouble(pseudocounts(l))).toArray)
 
-    def sample: Map[L, LogNum] = (labelList zipEqual dirichlet.sample.valuesIterator.map(_.toLogNum)).toMap
+    def sample: Map[L, LogNum] = (labelList zipSafe dirichlet.sample.valuesIterator.map(_.toLogNum)).toMap
   }
   object DirichletSampler {
     def apply[L, N: Numeric](pseudocounts: Map[L, N]) = new DirichletSampler(pseudocounts.keys, pseudocounts)
