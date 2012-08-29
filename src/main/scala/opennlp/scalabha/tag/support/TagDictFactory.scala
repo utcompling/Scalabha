@@ -5,6 +5,7 @@ import opennlp.scalabha.tag.SimpleWeightedTagDict
 import opennlp.scalabha.tag.TagDict
 import opennlp.scalabha.tag.TagDict._
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.FileUtils._
 import opennlp.scalabha.util.LogNum._
 
 /**
@@ -119,7 +120,7 @@ class DefaultLimitingTagDictFactory[Sym, Tag](maxNumberOfDefaultTags: Int, deleg
 
 class ExternalFileTagDictFactory(filename: String, fullTagset: Set[String]) extends TagDictFactory[String, String] {
   override def make(taggedTrainSequences: Iterable[IndexedSeq[(String, String)]]) = {
-    SimpleTagDict(io.Source.fromFile(filename).getLines
+    SimpleTagDict(readLines(filename)
       .map(_.split("\\s+"))
       .flatMap { case Array(word, tags @ _*) => tags.map(word -> _) }
       .groupByKey

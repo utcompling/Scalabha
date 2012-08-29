@@ -16,6 +16,7 @@ import org.apache.commons.logging.LogFactory
 import opennlp.scalabha.tag.OptionalTagDict
 import opennlp.scalabha.tag.TagDict
 import opennlp.scalabha.util.LogNum
+import opennlp.scalabha.util.FileUtils
 
 class SupervisedHmmTaggerTrainerTests {
   val LOG = LogFactory.getLog(classOf[SupervisedHmmTaggerTrainerTests])
@@ -281,7 +282,7 @@ class SupervisedHmmTaggerTrainerTests {
 
   object TaggedFile {
     def apply(filename: String) =
-      Source.fromFile(filename).getLines
+      FileUtils.readLines(filename)
         .map(_.trim)
         .split("###/###")
         .filter(_.nonEmpty)

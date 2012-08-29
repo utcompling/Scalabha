@@ -9,6 +9,7 @@ import opennlp.scalabha.tag.support.PassthroughCondCountsTransformer
 import opennlp.scalabha.tag.support.AddLambdaSmoothingCondCountsTransformer
 import opennlp.scalabha.tag.support.PassthroughCountsTransformer
 import opennlp.scalabha.test.TestUtils._
+import opennlp.scalabha.util.FileUtils
 
 class NgramTests {
 
@@ -106,7 +107,7 @@ class NgramTests {
     val trainer = NgramTrainer(N, countsTransformer)
 
     val filename = "data/postag/english/enraw20k"
-    val lines = io.Source.fromFile(filename).getLines
+    val lines = FileUtils.readLines(filename)
     val sentences = lines.take(20000).split("###")
     val model = trainer(sentences)
 
@@ -125,7 +126,7 @@ class NgramTests {
     val trainer = NgramTrainer(N, countsTransformer)
 
     val filename = "data/postag/english/enraw20k"
-    val lines = io.Source.fromFile(filename).getLines
+    val lines = FileUtils.readLines(filename)
     val sentences = lines.take(20000).split("###")
     val LettersRe = """([a-z]+)""".r
     val words = sentences.flatten.collect { case LettersRe(w) => w }

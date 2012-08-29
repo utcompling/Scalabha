@@ -14,6 +14,7 @@ import org.apache.log4j.Level
 import org.apache.log4j.PropertyConfigurator
 import org.apache.log4j.BasicConfigurator
 import org.apache.commons.logging.LogFactory
+import opennlp.scalabha.util.FileUtils
 
 class SemisupervisedEmHmmTaggerTrainerTests {
   val LOG = LogFactory.getLog(classOf[SemisupervisedEmHmmTaggerTrainerTests])
@@ -79,7 +80,7 @@ class SemisupervisedEmHmmTaggerTrainerTests {
 
   object TaggedFile {
     def apply(filename: String): List[IndexedSeq[(String, String)]] =
-      Source.fromFile(filename).getLines
+      FileUtils.readLines(filename)
         .map(_.trim)
         .split("###/###")
         .filter(_.nonEmpty)
@@ -94,7 +95,7 @@ class SemisupervisedEmHmmTaggerTrainerTests {
 
   object RawFile {
     def apply(filename: String): List[IndexedSeq[String]] =
-      Source.fromFile(filename).getLines
+      FileUtils.readLines(filename)
         .map(_.trim)
         .split("###")
         .filter(_.nonEmpty)

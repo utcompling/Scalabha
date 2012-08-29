@@ -2,19 +2,18 @@ package opennlp.scalabha.tag.hmm
 
 import scala.Array.canBuildFrom
 import scala.io.Source
-
 import org.apache.commons.logging.LogFactory
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
 import org.junit.Assert.assertEquals
 import org.junit.BeforeClass
 import org.junit.Test
-
 import opennlp.scalabha.tag.hmm._
 import opennlp.scalabha.tag.hmm.support._
 import opennlp.scalabha.tag.support._
 import opennlp.scalabha.tag._
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.FileUtils
 
 class UnsupervisedEmHmmTaggerTrainerTests {
   val LOG = LogFactory.getLog(classOf[UnsupervisedEmHmmTaggerTrainerTests])
@@ -250,7 +249,7 @@ class UnsupervisedEmHmmTaggerTrainerTests {
 
   object TaggedFile {
     def apply(filename: String) =
-      Source.fromFile(filename).getLines
+      FileUtils.readLines(filename)
         .map(_.trim)
         .split("###/###")
         .filter(_.nonEmpty)
@@ -265,7 +264,7 @@ class UnsupervisedEmHmmTaggerTrainerTests {
 
   object RawFile {
     def apply(filename: String) =
-      Source.fromFile(filename).getLines
+      FileUtils.readLines(filename)
         .map(_.trim)
         .split("###")
         .filter(_.nonEmpty)
