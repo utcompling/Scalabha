@@ -5,6 +5,7 @@ import scala.collection.GenIterableLike
 import scala.collection.GenTraversable
 import scala.collection.GenTraversableLike
 import scala.collection.GenTraversableOnce
+import scala.collection.IterableLike
 import scala.collection.TraversableLike
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable
@@ -879,6 +880,42 @@ object CollectionUtils {
     }
   }
   implicit def enriched_takeSub_Iterator[A, R <: GenIterable[A]](self: Iterator[GenIterableLike[A, R]]) = new Enriched_takeSub_Iterator(self)
+
+  //////////////////////////////////////////////////////
+  // dropRightWhile(p: A => Boolean): Repr
+  //////////////////////////////////////////////////////
+
+  class Enriched_dropRightWhile_IterableLike[A, Repr <: Iterable[A]](self: IterableLike[A, Repr]) {
+    def dropRightWhile[That](p: A => Boolean)(implicit bf: CanBuildFrom[Repr, A, That]): That = {
+      val b = bf(self.asInstanceOf[Repr])
+      val buffer = collection.mutable.Buffer[A]()
+      for (x <- self) {
+        buffer += x
+        if (!p(x)) {
+          b ++= buffer
+          buffer.clear()
+        }
+      }
+      b.result
+    }
+  }
+  implicit def enriched_dropRightWhile_IterableLike[A, Repr <: Iterable[A]](self: IterableLike[A, Repr]) = new Enriched_dropRightWhile_IterableLike(self)
+
+  class Enriched_dropRightWhile_String(self: String) {
+    def dropRightWhile[That](p: Char => Boolean): String = {
+      val b = stringCanBuildFrom()
+      val buffer = collection.mutable.Buffer[Char]()
+      for (x <- self) {
+        buffer += x
+        if (!p(x)) {
+          b ++= buffer
+          buffer.clear()
+        }
+      }
+      b.result
+    }
+  }
+  implicit def enriched_dropRightWhile_String(self: String) = new Enriched_dropRightWhile_String(self)
 
   //////////////////////////////////////////////////////
   // +:(elem: B): Iterator[B]
