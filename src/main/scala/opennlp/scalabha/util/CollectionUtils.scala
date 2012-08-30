@@ -610,7 +610,7 @@ object CollectionUtils {
       val b = bf1(grouped.asInstanceOf[Repr1])
       b.sizeHint(grouped.size)
       for ((k, vs) <- grouped) {
-        val b2 = bf2(vs.asInstanceOf[Repr2])
+        val b2 = bf2()
         for (v <- vs) b2 ++= v
         b += k -> b2.result
       }
