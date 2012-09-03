@@ -132,12 +132,7 @@ object CollectionUtil {
   }
   implicit def enrich_toVector_GenTraversableOnce[A](self: GenTraversableOnce[A]): Enriched_toVector_GenTraversableOnce[A] =
     new Enriched_toVector_GenTraversableOnce(self)
-
-  class Enriched_toVector_Array[A](self: Array[A]) {
-    def toVector: Vector[A] =
-      if (self.isEmpty) Vector.empty[A]
-      else Vector.newBuilder[A] ++= self result
-  }
-  implicit def addToVectorToArray[A](self: Array[A]): Enriched_toVector_Array[A] = new Enriched_toVector_Array(self)
+  implicit def addToVectorToArray[A](self: Array[A]): Enriched_toVector_GenTraversableOnce[A] =
+    new Enriched_toVector_GenTraversableOnce(self)
 
 }
