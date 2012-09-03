@@ -9,6 +9,9 @@ import org.junit.Assert._
 import opennlp.scalabha.util.CollectionUtil._
 import scala.collection.mutable.SetBuilder
 
+/**
+ * @author Dan Garrette (dhg@cs.utexas.edu)
+ */
 class CollectionUtilTests {
 
   @Test

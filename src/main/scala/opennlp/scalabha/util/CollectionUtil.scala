@@ -13,6 +13,9 @@ import scala.collection.immutable
 import scala.collection.mutable.Builder
 import scala.util.Random
 
+/**
+ * @author Dan Garrette (dhg@cs.utexas.edu)
+ */
 object CollectionUtil {
 
   //////////////////////////////////////////////////////
