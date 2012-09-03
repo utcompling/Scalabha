@@ -39,13 +39,12 @@ class Kmeans(
    * @return A pair, the first element of which is the dispersion for the best set of centroids found, and the second element of which is that set of centroids.
    */
   def run(k: Int, restarts: Int = 25): (Double, IndexedSeq[Point]) = {
-    val (dispersions, centroidGroups) = (1 to restarts).map { _ =>
+    val runResults = (1 to restarts).map { _ =>
       moveCentroids(chooseRandomCentroids(k))
-    }.unzip
+    }
 
-    val bestDispersion = dispersions.min
-    val bestIndex = dispersions.indexWhere(bestDispersion==)
-    val bestCentroids = centroidGroups(bestIndex)
+    val (bestDispersion, bestCentroids) = runResults.minBy(_._1)
+
     LOG.debug("Dispersion: " + bestDispersion)
     LOG.debug("Centroids: ")
     if (LOG.isDebugEnabled)
@@ -65,7 +64,7 @@ class Kmeans(
     def inner(centroids: IndexedSeq[Point],
       lastDispersion: Double,
       iteration: Int): (Double, IndexedSeq[Point]) = {
-      
+
       LOG.debug("Iteration " + iteration)
 
       val (dispersion, memberships) = computeClusterMemberships(centroids)
@@ -89,7 +88,7 @@ class Kmeans(
 
   /**
    *  Given a sequence of centroids, compute the cluster memberships for each point.
-   *  
+   *
    *  @param centroids A set of points representing centroids.
    *  @return A pair, the first element of which is the dispersion given these centroids, and the second of which is the list of centroid indices for each of the points being clustered (based on the nearest centroid to each).
    */
@@ -110,21 +109,16 @@ class Kmeans(
     memberships.zip(points)
       .groupByKey
       .mapValues(group => group.reduce(_ ++ _) / group.length.toDouble)
-      .toList
+      .toVector
       .sortBy(_._1)
       .map(_._2)
-      .toIndexedSeq
   }
 
   /**
    * Randomly choose k of the points as initial centroids.
    */
   private[this] def chooseRandomCentroids(k: Int) = {
-    val randomIndices = random.shuffle(points.indices.toList).take(k)
-    randomIndices.map(points(_)).toIndexedSeq
+    random.shuffle(points).take(k)
   }
 
 }
-
-
-
