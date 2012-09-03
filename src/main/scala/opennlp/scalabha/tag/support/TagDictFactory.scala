@@ -7,6 +7,7 @@ import opennlp.scalabha.tag.TagDict._
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.FileUtils._
 import opennlp.scalabha.util.LogNum._
+import opennlp.scalabha.util.CollectionUtil._
 
 /**
  * Factory for creating a tag dictionary (mapping from symbols to valid tags)

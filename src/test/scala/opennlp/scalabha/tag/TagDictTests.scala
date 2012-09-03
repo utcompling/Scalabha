@@ -6,6 +6,7 @@ import opennlp.scalabha.test.TestUtils._
 import opennlp.scalabha.tag.TagDict._
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
+import opennlp.scalabha.util.CollectionUtil._
 
 class TagDictTests {
 

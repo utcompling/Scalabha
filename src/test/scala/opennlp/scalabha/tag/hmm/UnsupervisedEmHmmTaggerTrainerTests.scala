@@ -12,6 +12,7 @@ import opennlp.scalabha.tag.hmm._
 import opennlp.scalabha.tag.hmm.support._
 import opennlp.scalabha.tag.support._
 import opennlp.scalabha.tag._
+import opennlp.scalabha.util.CollectionUtil._
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.FileUtils
 
@@ -253,7 +254,7 @@ class UnsupervisedEmHmmTaggerTrainerTests {
         .map(_.trim)
         .split("###/###")
         .filter(_.nonEmpty)
-        .map(_.map(_.split("/").toSeq.toTuple2).toIndexedSeq)
+        .map(_.map(_.split("/").toTuple2).toIndexedSeq)
         .toList
   }
 

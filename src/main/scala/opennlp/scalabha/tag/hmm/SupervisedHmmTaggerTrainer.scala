@@ -5,6 +5,7 @@ import org.apache.commons.logging.LogFactory
 import opennlp.scalabha.tag.SupervisedTaggerTrainer
 import opennlp.scalabha.tag.support.CondFreqDist
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.CollectionUtil._
 
 /**
  * Factory for training a Hidden Markov Model tagger directly from labeled data.

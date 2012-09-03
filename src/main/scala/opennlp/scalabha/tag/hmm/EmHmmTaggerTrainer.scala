@@ -18,6 +18,7 @@ import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
 import opennlp.scalabha.util.Pattern
 import opennlp.scalabha.util.Pattern.{ -> }
+import opennlp.scalabha.util.CollectionUtil._
 
 /**
  * Factory for training a Hidden Markov Model tagger from a combination of

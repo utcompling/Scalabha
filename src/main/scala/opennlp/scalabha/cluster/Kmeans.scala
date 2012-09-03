@@ -4,7 +4,7 @@ import org.apache.commons.logging.LogFactory
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
 
-import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.CollectionUtil._
 
 /**
  * A class for computing clusters for a set of points using k-means (specifically, Lloyd's algorithm).

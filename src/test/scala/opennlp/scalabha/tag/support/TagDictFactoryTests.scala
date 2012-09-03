@@ -7,6 +7,7 @@ import opennlp.scalabha.tag._
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.test.TestUtils._
+import opennlp.scalabha.util.CollectionUtil._
 
 class TagDictFactoryTests {
 

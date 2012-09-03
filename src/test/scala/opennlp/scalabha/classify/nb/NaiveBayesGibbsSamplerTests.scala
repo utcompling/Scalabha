@@ -5,7 +5,7 @@ import scala.io.Source
 import org.apache.commons.logging.LogFactory
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
-import org.junit.Assert.assertEquals
+import org.junit.Assert._
 import org.junit.BeforeClass
 import org.junit.Test
 
@@ -16,15 +16,9 @@ import opennlp.scalabha.classify.DefaultInstance
 import opennlp.scalabha.classify.SimpleClassifierEvaluator
 import opennlp.scalabha.tag.support.BinomialFreqDist
 import opennlp.scalabha.tag.support.FreqDist
-import opennlp.scalabha.util.CollectionUtils.enrich_counts_GenTraversableOnce
-import opennlp.scalabha.util.CollectionUtils.enrich_mapVals_Iterator
-import opennlp.scalabha.util.CollectionUtils.enrich_normalizeValues_GenTraversableLike
-import opennlp.scalabha.util.CollectionUtils.enrich_normalizeValues_Int_GenTraversableLike
-import opennlp.scalabha.util.CollectionUtils.enriched_mapVals_GenTraversableLike
-import opennlp.scalabha.util.CollectionUtils.enriched_sumByKey_GenTraversableOnce_Numeric
+import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
-import opennlp.scalabha.util.LogNum.LogNumIsFractional
-import opennlp.scalabha.util.LogNum.enrichNumeric
+import opennlp.scalabha.util.LogNum._
 import opennlp.scalabha.util.Stats.DirichletSampler
 
 class NaiveBayesGibbsSamplerTests {

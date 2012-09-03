@@ -12,24 +12,9 @@ import scala.collection.mutable
 import scala.collection.mutable.Builder
 import scala.util.Random
 
+import opennlp.scalabha.util.CollectionUtil._
+
 object CollectionUtils {
-
-  //////////////////////////////////////////////////////
-  // toTuple2: (T,T)
-  // toTuple3: (T,T,T)
-  // toTuple4: (T,T,T,T)
-  // toTuple5: (T,T,T,T,T)
-  //   - Convert this sequence to a tuple
-  //////////////////////////////////////////////////////
-
-  class Enriched_toTuple_Seq[A](elements: Seq[A]) {
-    def toTuple2 = elements match { case Seq(a, b) => (a, b) }
-    def toTuple3 = elements match { case Seq(a, b, c) => (a, b, c) }
-    def toTuple4 = elements match { case Seq(a, b, c, d) => (a, b, c, d) }
-    def toTuple5 = elements match { case Seq(a, b, c, d, e) => (a, b, c, d, e) }
-  }
-  implicit def enrich_toTuple_Seq[A](elements: Seq[A]): Enriched_toTuple_Seq[A] =
-    new Enriched_toTuple_Seq(elements)
 
   //////////////////////////////////////////////////////
   // countCompare(p: A => Boolean, count: Int): Int
@@ -579,18 +564,6 @@ object CollectionUtils {
   //   - For a collection of pairs, group by the first item in the pair.
   //////////////////////////////////////////////////////
 
-  class Enriched_groupByKey_TraversableLike[A, Repr <: Traversable[A]](self: TraversableLike[A, Repr]) {
-    /**
-     * For a collection of pairs, group by the first item in the pair.
-     *
-     * @return Map from first items of the pairs to collections of items that have been grouped
-     */
-    def groupByKey[T, U, That](implicit ev: A <:< (T, U), bf: CanBuildFrom[Repr, U, That]): Map[T, That] =
-      self.groupBy(_._1).map { case (k, vs) => k -> (bf(self.asInstanceOf[Repr]) ++= vs.map(_._2)).result }
-  }
-  implicit def enrich_groupByKey_TraversableLike[A, Repr <: Traversable[A]](self: TraversableLike[A, Repr]): Enriched_groupByKey_TraversableLike[A, Repr] =
-    new Enriched_groupByKey_TraversableLike(self)
-
   class Enriched_groupByKey_Iterator[A](self: Iterator[A]) {
     /**
      * For a collection of pairs, group by the first item in the pair.
@@ -810,23 +783,6 @@ object CollectionUtils {
   implicit def enrich_unzip_Iterator[T, U](self: Iterator[(T, U)]) = new Enriched_unzip_Iterator(self)
 
   //////////////////////////////////////////////////////
-  // ungroup(): Iterator[(A, B)]
-  //   - For a map with collections for values, return an iterator of pairs
-  //     where each key is paired with each item in its value collection
-  //////////////////////////////////////////////////////
-
-  class Enriched_ungroup_GenTraversableOnce[A, B](self: GenTraversableOnce[(A, GenTraversableOnce[B])]) {
-    /**
-     * For a map with collections for values, return an iterator of pairs
-     * where each key is paired with each item in its value collection.
-     *
-     * @return an iterator of pairs
-     */
-    def ungroup() = self.toIterator.flatMap { case (a, bs) => bs.toIterator.map(a -> _) }
-  }
-  implicit def enrich_ungroup_GenTraversableOnce[A, B](self: GenTraversableOnce[(A, GenTraversableOnce[B])]) = new Enriched_ungroup_GenTraversableOnce(self)
-
-  //////////////////////////////////////////////////////
   // takeSub[GenIterable[B]](n: Int): Repr[GenIterable[B]]
   //   - Take iterables from this collection until the total number of 
   //     elements in the taken items is about to exceed `n`.  The total number
@@ -927,35 +883,6 @@ object CollectionUtils {
   }
   implicit def enrich_dropRightWhile_String(self: String): Enriched_dropRightWhile_String =
     new Enriched_dropRightWhile_String(self)
-
-  //////////////////////////////////////////////////////
-  // +:(elem: B): Iterator[B]
-  //   - Prepend an element to the iterator
-  // :+(elem: B): Iterator[B]
-  //   - Append an element to the end of the iterator
-  //////////////////////////////////////////////////////
-
-  class Enriched_prependAppend_Iterator[A](self: Iterator[A]) {
-    /**
-     * Prepend an item to the front of the iterator
-     *
-     * @param elem	the item to be prepended
-     * @return a new iterator
-     */
-    def +:[B >: A](elem: B): Iterator[B] =
-      Iterator(elem) ++ self
-
-    /**
-     * Append an item to the end of the iterator
-     *
-     * @param elem	the item to be appended
-     * @return a new iterator
-     */
-    def :+[B >: A](elem: B): Iterator[B] =
-      self ++ Iterator(elem)
-  }
-  implicit def enrich_prependAppend_Iterator[A](self: Iterator[A]): Enriched_prependAppend_Iterator[A] =
-    new Enriched_prependAppend_Iterator(self)
 
   //////////////////////////////////////////////////////
   // avg(): A
@@ -1118,18 +1045,4 @@ object CollectionUtils {
       else mutable.Map.newBuilder[K, V] ++= self result
   }
   implicit def addToMMap[K, V](self: TraversableOnce[(K, V)]) = new EnrichedWithToMMap(self)
-
-  class EnrichedWithToVector[A](self: TraversableOnce[A]) {
-    def toVector =
-      if (self.isEmpty) Vector.empty[A]
-      else Vector.newBuilder[A] ++= self result
-  }
-  implicit def addToVector[A](self: TraversableOnce[A]) = new EnrichedWithToVector(self)
-
-  class EnrichedArrayWithToVector[A](self: Array[A]) {
-    def toVector: Vector[A] =
-      if (self.isEmpty) Vector.empty[A]
-      else Vector.newBuilder[A] ++= self result
-  }
-  implicit def addToVectorToArray[A](self: Array[A]): EnrichedWithToVector[A] = new EnrichedWithToVector(self)
 }

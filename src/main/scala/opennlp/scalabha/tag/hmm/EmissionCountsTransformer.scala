@@ -8,6 +8,7 @@ import opennlp.scalabha.tag.support.DefaultedCondFreqCounts
 import opennlp.scalabha.tag.support.DefaultedFreqCounts
 import opennlp.scalabha.tag.support.PassthroughCondCountsTransformer
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.CollectionUtil._
 
 /**
  *

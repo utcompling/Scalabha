@@ -3,6 +3,7 @@ package opennlp.scalabha.tag
 import collection.mutable.{ Map => MMap, Set => MSet, Buffer }
 
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.CollectionUtil._
 
 class TaggerEvaluator[Sym, Tag] {
 

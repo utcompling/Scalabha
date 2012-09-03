@@ -7,6 +7,7 @@ import org.apache.commons.logging.LogFactory
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
+import opennlp.scalabha.util.CollectionUtil._
 
 class MultinomialFreqDist[T](val distValues: Iterable[(T, LogNum)], default: LogNum = LogNum.zero) extends DiscreteDistribution[T] {
   private val LOG = LogFactory.getLog(MultinomialFreqDist.getClass)

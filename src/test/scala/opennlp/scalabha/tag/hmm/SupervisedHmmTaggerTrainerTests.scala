@@ -17,6 +17,7 @@ import opennlp.scalabha.tag.OptionalTagDict
 import opennlp.scalabha.tag.TagDict
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.FileUtils
+import opennlp.scalabha.util.CollectionUtil._
 
 class SupervisedHmmTaggerTrainerTests {
   val LOG = LogFactory.getLog(classOf[SupervisedHmmTaggerTrainerTests])
@@ -27,7 +28,7 @@ class SupervisedHmmTaggerTrainerTests {
       "the/D dog/N walks/V ./.",
       "the/D cat/N walks/V ./.",
       "a/D dog/N barks/V ./.")
-      .map(_.split(" ").map(_.split("/").toSeq.toTuple2).toIndexedSeq)
+      .map(_.split(" ").map(_.split("/").toTuple2).toIndexedSeq)
 
     val tagDict = new SimpleTagDictFactory().make(train)
     val trainer: SupervisedTaggerTrainer[String, String] =
@@ -46,7 +47,7 @@ class SupervisedHmmTaggerTrainerTests {
       "the/D dog/N walks/V ./.",
       "the/D cat/N walks/V ./.",
       "a/D dog/N barks/V ./.")
-      .map(_.split(" ").map(_.split("/").toSeq.toTuple2).toIndexedSeq)
+      .map(_.split(" ").map(_.split("/").toTuple2).toIndexedSeq)
 
     val tagDict = new SimpleTagDictFactory().make(train)
     val trainer: SupervisedTaggerTrainer[String, String] =

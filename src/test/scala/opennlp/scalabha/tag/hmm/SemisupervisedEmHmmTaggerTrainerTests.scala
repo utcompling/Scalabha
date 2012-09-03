@@ -15,6 +15,7 @@ import org.apache.log4j.PropertyConfigurator
 import org.apache.log4j.BasicConfigurator
 import org.apache.commons.logging.LogFactory
 import opennlp.scalabha.util.FileUtils
+import opennlp.scalabha.util.CollectionUtil._
 
 class SemisupervisedEmHmmTaggerTrainerTests {
   val LOG = LogFactory.getLog(classOf[SemisupervisedEmHmmTaggerTrainerTests])
@@ -84,7 +85,7 @@ class SemisupervisedEmHmmTaggerTrainerTests {
         .map(_.trim)
         .split("###/###")
         .filter(_.nonEmpty)
-        .map(_.map(_.split("/").toSeq.toTuple2).toIndexedSeq)
+        .map(_.map(_.split("/").toTuple2).toIndexedSeq)
         .toList
   }
 

@@ -6,6 +6,7 @@ import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.tag.support._
 import org.apache.commons.logging.LogFactory
 import opennlp.scalabha.tag.TagDict
+import opennlp.scalabha.util.CollectionUtil._
 
 /**
  * Produce a conditional frequency distribution without labeled training data.

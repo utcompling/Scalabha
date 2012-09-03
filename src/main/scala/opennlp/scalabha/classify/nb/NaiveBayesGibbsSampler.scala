@@ -13,6 +13,8 @@ import opennlp.scalabha.util.Collections.History
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
 import opennlp.scalabha.util.Stats.DirichletSampler
+import opennlp.scalabha.util.CollectionUtil._
+import opennlp.scalabha.util.CollectionUtil._
 
 /**
  * Gibbs Sampler for Naive Bayes.
