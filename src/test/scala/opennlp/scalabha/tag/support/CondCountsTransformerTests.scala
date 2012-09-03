@@ -6,6 +6,7 @@ import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
 import opennlp.scalabha.util.Pattern.{ -> }
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.CollectionUtil._
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
 

@@ -161,6 +161,156 @@ object CollectionUtil {
     new Enriched_dropRightWhile_String(self)
 
   //////////////////////////////////////////////////////
+  // splitAt(n: Int) 
+  //   - Split this collection at the specified index
+  //   - Useful since Iterator.take doesn't guarantee the state of the original Iterator
+  //   - Extend Traversable.splitAt to Iterator
+  //////////////////////////////////////////////////////
+
+  class Enriched_splitAt_Iterator[A](self: Iterator[A]) {
+    /**
+     * Safely split this iterator at the specified index.  The 'first'
+     * iterator must be exhausted completely before the items in the 'second'
+     * iterator can be accessed.
+     *
+     * Inspired by Traversable.splitAt
+     *
+     * @param n	The index at which to split the collection
+     * @return	a pair: the items before the split point and the items
+     *          starting with the split point
+     */
+    def splitAt(n: Int): (Iterator[A], Iterator[A]) = {
+      var i = 0
+
+      val first: Iterator[A] =
+        new Iterator[A] {
+          def next(): A = {
+            assert(hasNext, "first has already been read completely")
+            i += 1; self.next
+          }
+          def hasNext() = i < n && self.hasNext
+        }
+
+      val second: Iterator[A] =
+        new Iterator[A] {
+          def next(): A = {
+            assert(i >= n, "first has NOT YET been read completely")
+            assert(hasNext, "second has already been read completely")
+            i += 1; self.next
+          }
+          def hasNext() = self.hasNext
+        }
+
+      (first, second)
+    }
+  }
+  implicit def enrich_splitAt_Iterator[A](self: Iterator[A]): Enriched_splitAt_Iterator[A] =
+    new Enriched_splitAt_Iterator(self)
+
+  //////////////////////////////////////////////////////
+  // zipSafe(that: GenTraversable[B]): Repr[(A,B)]
+  //   - zip this collection with another, throwing an exception if they are
+  //     not of equal length.
+  //////////////////////////////////////////////////////
+
+  class Enriched_zipSafe_Iterator[A](self: Iterator[A]) {
+    /**
+     * zip this collection with another, throwing an exception if they
+     * are not of equal length.
+     *
+     * @param that	the collection with which to zip
+     * @return an iterator of pairs
+     * @throws RuntimeException	thrown if collections differ in length
+     */
+    def zipSafe[B](that: GenTraversableOnce[B]) = {
+      val thatItr = that.toIterator
+      new Iterator[(A, B)] {
+        def hasNext = {
+          val hn = self.hasNext
+          assert(hn == thatItr.hasNext, "Attempting to zipSafe collections of different lengths.")
+          hn
+        }
+        def next() = {
+          assert(self.hasNext == thatItr.hasNext, "Attempting to zipSafe collections of different lengths.")
+          (self.next, thatItr.next)
+        }
+      }
+    }
+  }
+  implicit def enrich_zipSafe_Iterator[A](self: Iterator[A]): Enriched_zipSafe_Iterator[A] =
+    new Enriched_zipSafe_Iterator(self)
+
+  class Enriched_zipSafe_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
+    /**
+     * zip this collection with another, throwing an exception if they
+     * are not of equal length.
+     *
+     * @param that	the collection with which to zip
+     * @return an iterator of pairs
+     * @throws RuntimeException	thrown if collections differ in length
+     */
+    def zipSafe[A1 >: A, B, That](that: GenTraversableOnce[B])(implicit bf: CanBuildFrom[Repr, (A1, B), That]): That = {
+      val b = bf(self.asInstanceOf[Repr])
+      b ++= (self.toIterator zipSafe that)
+      b.result
+    }
+  }
+  implicit def enrich_zipSafe_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]): Enriched_zipSafe_GenTraversableLike[A, Repr] =
+    new Enriched_zipSafe_GenTraversableLike(self)
+
+  class Enriched_zipSafe_Tuple_of_Iterator[A, B](self: (Iterator[A], GenTraversableOnce[B])) {
+    /**
+     * zip this collection with another, throwing an exception if they
+     * are not of equal length.
+     *
+     * @return an iterator of pairs
+     * @throws RuntimeException	thrown if collections differ in length
+     */
+    def zipSafe = self._1 zipSafe self._2
+  }
+  implicit def enrich_zipSafe_Tuple_of_Iterator[A, B](self: (Iterator[A], GenTraversableOnce[B])): Enriched_zipSafe_Tuple_of_Iterator[A, B] =
+    new Enriched_zipSafe_Tuple_of_Iterator(self)
+
+  class Enriched_zipSafe_Tuple_of_GenTraversableLike[A, Repr <: GenTraversable[A], B](self: (GenTraversableLike[A, Repr], GenTraversableOnce[B])) {
+    /**
+     * zip this collection with another, throwing an exception if they
+     * are not of equal length.
+     *
+     * @param that	the collection with which to zip
+     * @return an iterator of pairs
+     * @throws RuntimeException	thrown if collections differ in length
+     */
+    def zipSafe[A1 >: A, That](implicit bf: CanBuildFrom[Repr, (A1, B), That]): That = {
+      val b = bf(self._1.asInstanceOf[Repr])
+      b ++= (self._1.toIterator zipSafe self._2)
+      b.result
+    }
+  }
+  implicit def enrich_zipSafe_Tuple_of_GenTraversableLike[A, Repr <: GenTraversable[A], B](self: (GenTraversableLike[A, Repr], GenTraversableOnce[B])): Enriched_zipSafe_Tuple_of_GenTraversableLike[A, Repr, B] =
+    new Enriched_zipSafe_Tuple_of_GenTraversableLike(self)
+
+  //////////////////////////////////////////////////////
+  // unzip(): (Iterator[A], Iterator[B])
+  //   - Extend unzip functionality to Iterator
+  //////////////////////////////////////////////////////
+
+  class Enriched_unzip_Iterator[T, U](self: Iterator[(T, U)]) {
+    def unzip(): (Vector[T], Vector[U]) =
+      this.unzip(Vector.newBuilder[T], Vector.newBuilder[U])
+
+    def unzip[ThatT <: Iterable[T], ThatU <: Iterable[U]](tBuilder: => Builder[T, ThatT], uBuilder: => Builder[U, ThatU]): (ThatT, ThatU) = {
+      val tBldr = tBuilder
+      val uBldr = uBuilder
+      for ((t, u) <- self) {
+        tBldr += t
+        uBldr += u
+      }
+      (tBldr.result, uBldr.result)
+    }
+  }
+  implicit def enrich_unzip_Iterator[T, U](self: Iterator[(T, U)]) = new Enriched_unzip_Iterator(self)
+
+  //////////////////////////////////////////////////////
   // mapKeys(f: T => R): Repr[(R,U)]
   //   - In a collection of pairs, map a function over the first item of each pair.
   //   - Functionally equivalent to:

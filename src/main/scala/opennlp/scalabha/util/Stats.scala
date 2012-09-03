@@ -1,6 +1,7 @@
 package opennlp.scalabha.util
 
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.CollectionUtil._
 import opennlp.scalabha.util.LogNum._
 import breeze.stats.distributions.Dirichlet
 

@@ -7,6 +7,7 @@ import org.scalatest.prop.Checkers
 import org.junit.Test
 import org.junit.Assert._
 import opennlp.scalabha.util.CollectionUtil._
+import scala.collection.mutable.SetBuilder
 
 class CollectionUtilTests {
 
@@ -76,6 +77,127 @@ class CollectionUtilTests {
     val coll3 = " this  and that "
     val res3: String = coll3.dropRightWhile(_ == ' ')
     assertEquals(" this  and that", res3)
+  }
+
+  @Test
+  def test_splitAt() {
+    val (first1: Iterator[Int], second1: Iterator[Int]) = Iterator(1, 2, 3, 4, 5).splitAt(3)
+    assertEqualsIterator(Iterator(1, 2, 3), first1)
+    assertEqualsIterator(Iterator(4, 5), second1)
+
+    val (first2: Iterator[Int], second2: Iterator[Int]) = Iterator(1, 2, 3, 4, 5).splitAt(3)
+    assertException(second2.next) {
+      case e: AssertionError => assertEquals("assertion failed: first has NOT YET been read completely", e.getMessage)
+    }
+    assertEquals(1, first2.next)
+    assertEquals(2, first2.next)
+    assertEquals(3, first2.next)
+    assertException(first2.next) {
+      case e: AssertionError => assertEquals("assertion failed: first has already been read completely", e.getMessage)
+    }
+    assertEquals(4, second2.next)
+    assertEquals(5, second2.next)
+    assertException(second2.next) {
+      case e: AssertionError => assertEquals("assertion failed: second has already been read completely", e.getMessage)
+    }
+
+    val (first3: Iterator[Int], second3: Iterator[Int]) = Iterator(1, 2, 3, 4, 5).splitAt(-1)
+    assertEqualsIterator(Iterator(), first3)
+    assertEqualsIterator(Iterator(1, 2, 3, 4, 5), second3)
+
+    val (first4: Iterator[Int], second4: Iterator[Int]) = Iterator(1, 2, 3, 4, 5).splitAt(0)
+    assertEqualsIterator(Iterator(), first4)
+    assertEqualsIterator(Iterator(1, 2, 3, 4, 5), second4)
+
+    val (first5: Iterator[Int], second5: Iterator[Int]) = Iterator(1, 2, 3, 4, 5).splitAt(5)
+    assertEqualsIterator(Iterator(1, 2, 3, 4, 5), first5)
+    assertEqualsIterator(Iterator(), second5)
+
+    val (first6: Iterator[Int], second6: Iterator[Int]) = Iterator(1, 2, 3, 4, 5).splitAt(6)
+    assertEqualsIterator(Iterator(1, 2, 3, 4, 5), first6)
+    assertEqualsIterator(Iterator(), second6)
+  }
+
+  @Test
+  def test_zipSafe() {
+    val a = Vector(1, 2, 3)
+    val b = List('a, 'b, 'c)
+
+    val res1: Iterator[(Int, Symbol)] = a.iterator zipSafe b
+    assertEqualsIterator(Iterator(1 -> 'a, 2 -> 'b, 3 -> 'c), res1)
+
+    val res2: Vector[(Int, Symbol)] = a zipSafe b
+    assertEquals(Vector(1 -> 'a, 2 -> 'b, 3 -> 'c), res2)
+
+    val res3: Iterator[(Int, Symbol)] = (a.iterator, b).zipSafe
+    assertEqualsIterator(Iterator(1 -> 'a, 2 -> 'b, 3 -> 'c), res3)
+
+    val res4: List[(Int, Symbol)] = (a.toList, b).zipSafe
+    assertEquals(List(1 -> 'a, 2 -> 'b, 3 -> 'c), res4)
+
+    val c = Vector(1, 2, 3, 4)
+
+    val res5: Iterator[(Symbol, Int)] = b.iterator zipSafe c
+    assertEquals(('a, 1), res5.next)
+    assertEquals(('b, 2), res5.next)
+    assertEquals(('c, 3), res5.next)
+    assertException(res5.next) {
+      case e: AssertionError => assertEquals("assertion failed: Attempting to zipSafe collections of different lengths.", e.getMessage)
+    }
+
+    val res6: Iterator[(Int, Symbol)] = c.iterator zipSafe b
+    assertEquals((1, 'a), res6.next)
+    assertEquals((2, 'b), res6.next)
+    assertEquals((3, 'c), res6.next)
+    assertException(res6.next) {
+      case e: AssertionError => assertEquals("assertion failed: Attempting to zipSafe collections of different lengths.", e.getMessage)
+    }
+
+    assertException(b zipSafe c) {
+      case e: AssertionError => assertEquals("assertion failed: Attempting to zipSafe collections of different lengths.", e.getMessage)
+    }
+
+    assertException(c zipSafe b) {
+      case e: AssertionError => assertEquals("assertion failed: Attempting to zipSafe collections of different lengths.", e.getMessage)
+    }
+
+    val res7: Iterator[(Symbol, Int)] = (b.iterator, c).zipSafe
+    assertEquals(('a, 1), res7.next)
+    assertEquals(('b, 2), res7.next)
+    assertEquals(('c, 3), res7.next)
+    assertException(res7.next) {
+      case e: AssertionError => assertEquals("assertion failed: Attempting to zipSafe collections of different lengths.", e.getMessage)
+    }
+
+    val res8: Iterator[(Int, Symbol)] = (c.iterator, b).zipSafe
+    assertEquals((1, 'a), res8.next)
+    assertEquals((2, 'b), res8.next)
+    assertEquals((3, 'c), res8.next)
+    assertException(res8.next) {
+      case e: AssertionError => assertEquals("assertion failed: Attempting to zipSafe collections of different lengths.", e.getMessage)
+    }
+
+    assertException((b, c).zipSafe) {
+      case e: AssertionError => assertEquals("assertion failed: Attempting to zipSafe collections of different lengths.", e.getMessage)
+    }
+
+    assertException((c, b).zipSafe) {
+      case e: AssertionError => assertEquals("assertion failed: Attempting to zipSafe collections of different lengths.", e.getMessage)
+    }
+  }
+
+  @Test
+  def test_unzip() {
+    val itr1 = Iterator(1 -> 'a, 2 -> 'b, 3 -> 'c)
+    val (a1: Vector[Int], b1: Vector[Symbol]) = itr1.unzip
+    assertEquals(Vector(1, 2, 3), a1)
+    assertEquals(Vector('a, 'b, 'c), b1)
+
+    import collection.mutable.{ ListBuffer, SetBuilder }
+    val itr2 = Iterator(1 -> 'a, 2 -> 'b, 3 -> 'c)
+    val (a2: List[Int], b2: Set[Symbol]) = itr2.unzip(ListBuffer(), new SetBuilder(Set[Symbol]()))
+    assertEquals(List(1, 2, 3), a2)
+    assertEquals(Set('a, 'b, 'c), b2)
   }
 
   @Test
@@ -169,7 +291,7 @@ class CollectionUtilTests {
   def assertEqualsIterator[A](expected: Iterator[A], actual: Iterator[A]) {
     while (expected.hasNext && actual.hasNext)
       assertEquals(expected.next, actual.next)
-    assertEquals(expected.hasNext, actual.hasNext)
+    assertEquals("Iterators have different lengths", expected.hasNext, actual.hasNext)
   }
 
 }
