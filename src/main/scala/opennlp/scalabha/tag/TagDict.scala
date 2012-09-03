@@ -1,6 +1,7 @@
 package opennlp.scalabha.tag
 
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.CollectionUtil._
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.tag.TagDict._
 

@@ -6,6 +6,7 @@ import opennlp.scalabha.tag.SimpleTagDict
 import opennlp.scalabha.tag.TagDict._
 import opennlp.scalabha.tag.Tagger
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.CollectionUtil._
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.Pattern
 import opennlp.scalabha.util.Pattern.{ -> }

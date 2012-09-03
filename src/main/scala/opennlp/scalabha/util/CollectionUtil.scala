@@ -161,6 +161,96 @@ object CollectionUtil {
     new Enriched_dropRightWhile_String(self)
 
   //////////////////////////////////////////////////////
+  // mapKeys(f: T => R): Repr[(R,U)]
+  //   - In a collection of pairs, map a function over the first item of each pair.
+  //   - Functionally equivalent to:
+  //         this.map{case (k,v) => f(k) -> v}
+  //////////////////////////////////////////////////////
+
+  class Enriched_mapKeys_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) {
+    /**
+     * In a collection of pairs, map a function over the first item of each
+     * pair.  Ensures that the map is computed at call-time, and not returned
+     * as a view as 'Map.mapValues' would do.
+     *
+     * @param f	function to map over the first item of each pair
+     * @return a collection of pairs
+     */
+    def mapKeys[R, That](f: T => R)(implicit bf: CanBuildFrom[Repr, (R, U), That]) = {
+      val b = bf(self.asInstanceOf[Repr])
+      b.sizeHint(self.size)
+      for ((k, v) <- self) b += f(k) -> v
+      b.result
+    }
+  }
+  implicit def enrich_mapKeys_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]): Enriched_mapKeys_GenTraversableLike[T, U, Repr] =
+    new Enriched_mapKeys_GenTraversableLike(self)
+
+  class Enriched_mapKeys_Iterator[T, U](self: Iterator[(T, U)]) {
+    /**
+     * In a collection of pairs, map a function over the first item of each
+     * pair.
+     *
+     * @param f	function to map over the first item of each pair
+     * @return a collection of pairs
+     */
+    def mapKeys[R](f: T => R) = new Iterator[(R, U)] {
+      def hasNext = self.hasNext
+      def next() = {
+        val (k, v) = self.next()
+        f(k) -> v
+      }
+    }
+  }
+  implicit def enrich_mapKeys_Iterator[T, U](self: Iterator[(T, U)]): Enriched_mapKeys_Iterator[T, U] =
+    new Enriched_mapKeys_Iterator(self)
+
+  //////////////////////////////////////////////////////
+  // mapVals(f: U => R): Repr[(T,R)]
+  //   - In a collection of pairs, map a function over the second item of each pair.
+  //   - Ensures that the map is computed at call-time, and not returned as a view as `Map.mapValues` would do.
+  //   - Equivalent to: this.map { case (k,v) => k -> f(v) }
+  //////////////////////////////////////////////////////
+
+  class Enriched_mapVals_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) {
+    /**
+     * In a collection of pairs, map a function over the second item of each
+     * pair.  Ensures that the map is computed at call-time, and not returned
+     * as a view as 'Map.mapValues' would do.
+     *
+     * @param f	function to map over the second item of each pair
+     * @return a collection of pairs
+     */
+    def mapVals[R, That](f: U => R)(implicit bf: CanBuildFrom[Repr, (T, R), That]) = {
+      val b = bf(self.asInstanceOf[Repr])
+      b.sizeHint(self.size)
+      for ((k, v) <- self) b += k -> f(v)
+      b.result
+    }
+  }
+  implicit def enrich_mapVals_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]): Enriched_mapVals_GenTraversableLike[T, U, Repr] =
+    new Enriched_mapVals_GenTraversableLike(self)
+
+  class Enriched_mapVals_Iterator[T, U](self: Iterator[(T, U)]) {
+    /**
+     * In a collection of pairs, map a function over the second item of each
+     * pair.
+     *
+     * @param f	function to map over the second item of each pair
+     * @return a collection of pairs
+     */
+    def mapVals[R](f: U => R) = new Iterator[(T, R)] {
+      def hasNext = self.hasNext
+      def next() = {
+        val (k, v) = self.next()
+        k -> f(v)
+      }
+    }
+  }
+  implicit def enrich_mapVals_Iterator[T, U](self: Iterator[(T, U)]): Enriched_mapVals_Iterator[T, U] =
+    new Enriched_mapVals_Iterator(self)
+
+  //////////////////////////////////////////////////////
   // avg(): A
   //   - Find the average (mean) of this collection of numbers
   //////////////////////////////////////////////////////

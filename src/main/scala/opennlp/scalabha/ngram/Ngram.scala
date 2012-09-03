@@ -6,6 +6,7 @@ import opennlp.scalabha.tag.support.CondCountsTransformer
 import opennlp.scalabha.tag.support.CondFreqDist
 import opennlp.scalabha.tag.support.MultinomialFreqDist
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.CollectionUtil._
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.Pattern.{ :+ }
 import opennlp.scalabha.tag.support.PassthroughCondCountsTransformer

@@ -6,6 +6,7 @@ import scala.util.Random
 import org.apache.commons.logging.LogFactory
 
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.CollectionUtil._
 import opennlp.scalabha.util.LogNum
 
 /**

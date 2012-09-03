@@ -79,6 +79,42 @@ class CollectionUtilTests {
   }
 
   @Test
+  def test_mapKeys() {
+    val coll1 = Map(1 -> 'a, 2 -> 'b, 3 -> 'c)
+    val res1: Map[Int, Symbol] = coll1.mapKeys(_ + 2)
+    assertEquals(Map(3 -> 'a, 4 -> 'b, 5 -> 'c), res1)
+
+    val coll2 = List(1 -> 'a, 2 -> 'b, 3 -> 'c)
+    val res2: List[(Int, Symbol)] = coll2.mapKeys(_ + 2)
+    assertEquals(List(3 -> 'a, 4 -> 'b, 5 -> 'c), res2)
+
+    var callCount = 0
+    val coll3 = Map(1 -> 'a, 2 -> 'b, 3 -> 'c)
+    val res3: Map[Int, Symbol] = coll3.mapKeys(i => { callCount += 1; i + 2 })
+    assertEquals(Map(3 -> 'a, 4 -> 'b, 5 -> 'c), res3)
+    assertEquals(Map(3 -> 'a, 4 -> 'b, 5 -> 'c), res3)
+    assertEquals(3, callCount)
+  }
+
+  @Test
+  def test_mapVals() {
+    val coll1 = Map('a -> 1, 'b -> 2, 'c -> 3)
+    val res1: Map[Symbol, Int] = coll1.mapVals(_ + 2)
+    assertEquals(Map('a -> 3, 'b -> 4, 'c -> 5), res1)
+
+    val coll2 = List('a -> 1, 'b -> 2, 'c -> 3)
+    val res2: List[(Symbol, Int)] = coll2.mapVals(_ + 2)
+    assertEquals(List('a -> 3, 'b -> 4, 'c -> 5), res2)
+
+    var callCount = 0
+    val coll3 = Map('a -> 1, 'b -> 2, 'c -> 3)
+    val res3: Map[Symbol, Int] = coll3.mapVals(i => { callCount += 1; i + 2 })
+    assertEquals(Map('a -> 3, 'b -> 4, 'c -> 5), res3)
+    assertEquals(Map('a -> 3, 'b -> 4, 'c -> 5), res3)
+    assertEquals(3, callCount)
+  }
+
+  @Test
   def test_avg() {
     val coll1 = List(1, 2, 2, 5)
     val avg1: Double = coll1.avg

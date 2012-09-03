@@ -3,6 +3,7 @@ package opennlp.scalabha.tag.support
 import scala.collection.{Map => CMap}
 
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.CollectionUtil._
 
 /**
  * A builder for frequency distributions.  Stores counts (in a mutable

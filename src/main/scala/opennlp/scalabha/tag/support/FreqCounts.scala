@@ -1,6 +1,7 @@
 package opennlp.scalabha.tag.support
 
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.CollectionUtil._
 
 /**
  * Convenience wrapper of a map from item pairs to their counts.  Its primary
