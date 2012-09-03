@@ -64,6 +64,58 @@ class CollectionUtilTests {
   }
 
   @Test
+  def test_dropRightWhile() {
+    val coll1 = List(1, 2, 3, 4, 5)
+    val res1: List[Int] = coll1.dropRightWhile(_ == 0)
+    assertEquals(List(1, 2, 3, 4, 5), res1)
+
+    val coll2 = Vector(1, 2, 3, 4, 5)
+    val res2: Vector[Int] = coll2.dropRightWhile(_ > 3)
+    assertEquals(Vector(1, 2, 3), res2)
+
+    val coll3 = " this  and that "
+    val res3: String = coll3.dropRightWhile(_ == ' ')
+    assertEquals(" this  and that", res3)
+  }
+
+  @Test
+  def test_avg() {
+    val coll1 = List(1, 2, 2, 5)
+    val avg1: Double = coll1.avg
+    assertEquals(2.5, avg1, 0.0000001)
+
+    val coll2 = Set(1.0f, 1.5f, 2.5f, 5.0f)
+    val avg2: Float = coll2.avg
+    assertEquals(2.5f, avg2, 0.0000001)
+  }
+
+  @Test
+  def test_normalize() {
+    val coll1 = List(1, 2, 2, 5)
+    val avg1: List[Double] = coll1.normalize
+    assertEquals(List(0.1, 0.2, 0.2, 0.5), avg1)
+
+    val coll2 = Set(1.0f, 1.5f, 2.5f, 5.0f)
+    val avg2: Set[Float] = coll2.normalize
+    assertEquals(Set(0.1f, 0.15f, 0.25f, 0.5f), avg2)
+  }
+
+  @Test
+  def test_normalizeValues() {
+    val coll1 = List('a -> 1, 'b -> 2, 'c -> 2, 'd -> 5)
+    val avg1: List[(Symbol, Double)] = coll1.normalizeValues
+    assertEquals(List('a -> 0.1, 'b -> 0.2, 'c -> 0.2, 'd -> 0.5), avg1)
+
+    val coll2 = Set('a -> 1.0f, 'b -> 1.5f, 'c -> 2.5f, 'd -> 5.0f)
+    val avg2: Set[(Symbol, Float)] = coll2.normalizeValues
+    assertEquals(Set('a -> 0.1f, 'b -> 0.15f, 'c -> 0.25f, 'd -> 0.5f), avg2)
+
+    val coll3 = Map('a -> 1.0, 'b -> 1.5, 'c -> 2.5, 'd -> 5.0)
+    val avg3: Map[Symbol, Double] = coll3.normalizeValues
+    assertEquals(Map('a -> 0.1, 'b -> 0.15, 'c -> 0.25, 'd -> 0.5), avg3)
+  }
+
+  @Test
   def test_toVector() {
     val coll1 = List(1, 2, 3)
     val vec1: Vector[Int] = coll1.toVector

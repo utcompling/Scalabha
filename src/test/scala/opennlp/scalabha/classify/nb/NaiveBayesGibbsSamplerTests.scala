@@ -20,6 +20,7 @@ import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
 import opennlp.scalabha.util.Stats.DirichletSampler
+import opennlp.scalabha.util.CollectionUtil._
 
 class NaiveBayesGibbsSamplerTests {
   val LOG = LogFactory.getLog(NaiveBayesGibbsSamplerTests.getClass)

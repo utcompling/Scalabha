@@ -12,6 +12,7 @@ import opennlp.scalabha.tag.support.FreqDist
 import opennlp.scalabha.tag.support.PassthroughCondCountsTransformer
 import opennlp.scalabha.tag.support.PassthroughCountsTransformer
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.CollectionUtil._
 import opennlp.scalabha.util.LogNum
 
 /**
