@@ -12,6 +12,7 @@ import scala.collection.mutable
 import scala.collection.immutable
 import scala.collection.mutable.Builder
 import scala.util.Random
+import scala.annotation.tailrec
 
 /**
  * @author Dan Garrette (dhg@cs.utexas.edu)
@@ -132,7 +133,7 @@ object CollectionUtil {
   class Enriched_dropRightWhile_IterableLike[A, Repr <: Iterable[A]](self: IterableLike[A, Repr]) {
     def dropRightWhile[That](p: A => Boolean)(implicit bf: CanBuildFrom[Repr, A, That]): That = {
       val b = bf(self.asInstanceOf[Repr])
-      val buffer = collection.mutable.Buffer[A]()
+      val buffer = mutable.Buffer[A]()
       for (x <- self) {
         buffer += x
         if (!p(x)) {
@@ -149,7 +150,7 @@ object CollectionUtil {
   class Enriched_dropRightWhile_String(self: String) {
     def dropRightWhile(p: Char => Boolean): String = {
       val b = stringCanBuildFrom()
-      val buffer = collection.mutable.Buffer[Char]()
+      val buffer = mutable.Buffer[Char]()
       for (x <- self) {
         buffer += x
         if (!p(x)) {
@@ -238,21 +239,42 @@ object CollectionUtil {
      */
     def split[That](delim: A, builder: => Builder[A, That]): Iterator[That] =
       new Iterator[That] {
+        var buffer = mutable.Queue[That]()
         def next(): That = {
-          if (!self.hasNext) throw new RuntimeException("next on empty iterator")
-
-          val b = builder
-          while (self.hasNext) {
-            val x = self.next
-            if (x == delim)
-              return b.result
-            else
-              b += x
-          }
-          return b.result
+          assert(this.hasNext, "next on empty iterator")
+          buffer.dequeue
         }
 
-        def hasNext() = self.hasNext
+        def hasNext() = {
+          if (buffer.isEmpty && self.hasNext) {
+            takeUntilNext(builder)
+          }
+          buffer.nonEmpty
+        }
+
+        @tailrec
+        private def takeUntilNext(builder: => Builder[A, That]): Unit = {
+          val (empty, item) = takeUntilDelim(builder)
+          buffer.enqueue(item)
+          if (empty)
+            if (self.hasNext)
+              takeUntilNext(builder)
+            else
+              buffer.clear()
+        }
+
+        @tailrec
+        private def takeUntilDelim(b: Builder[A, That], empty: Boolean = true): (Boolean, That) = {
+          if (self.hasNext) {
+            val x = self.next
+            if (x == delim)
+              (empty, b.result)
+            else
+              takeUntilDelim(b += x, false)
+          }
+          else
+            (empty, b.result)
+        }
       }
   }
   implicit def enrich_split_Iterator[A](self: Iterator[A]): Enriched_split_Iterator[A] =

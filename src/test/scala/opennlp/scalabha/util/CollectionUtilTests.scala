@@ -134,6 +134,26 @@ class CollectionUtilTests {
     // "1234225".split('2')  -->  Array(1, 34, "", 5)
     assertEqualsIterator(Iterator(Vector(1), Vector(3, 4), Vector(), Vector(5)), Vector(1, 2, 3, 4, 2, 2, 5).split(2))
     assertEqualsIterator(Iterator(Vector(1), Vector(3, 4), Vector(), Vector(5)), Iterator(1, 2, 3, 4, 2, 2, 5).split(2))
+
+    // "212342225".split('2')  -->  Array("", 1, 34, "", "", 5)
+    assertEqualsIterator(Iterator(Vector(), Vector(1), Vector(3, 4), Vector(), Vector(), Vector(5)), Vector(2, 1, 2, 3, 4, 2, 2, 2, 5).split(2))
+    assertEqualsIterator(Iterator(Vector(), Vector(1), Vector(3, 4), Vector(), Vector(), Vector(5)), Iterator(2, 1, 2, 3, 4, 2, 2, 2, 5).split(2))
+
+    // "221234225".split('2')  -->  Array("", "", 1, 34, "", 5)
+    assertEqualsIterator(Iterator(Vector(), Vector(), Vector(1), Vector(3, 4), Vector(), Vector(5)), Vector(2, 2, 1, 2, 3, 4, 2, 2, 5).split(2))
+    assertEqualsIterator(Iterator(Vector(), Vector(), Vector(1), Vector(3, 4), Vector(), Vector(5)), Iterator(2, 2, 1, 2, 3, 4, 2, 2, 5).split(2))
+
+    // "12342252".split('2')  -->  Array(1, 34, "", 5)
+    assertEqualsIterator(Iterator(Vector(1), Vector(3, 4), Vector(), Vector(5)), Vector(1, 2, 3, 4, 2, 2, 5, 2).split(2))
+    assertEqualsIterator(Iterator(Vector(1), Vector(3, 4), Vector(), Vector(5)), Iterator(1, 2, 3, 4, 2, 2, 5, 2).split(2))
+
+    // "123422522".split('2')  -->  Array(1, 34, "", 5)
+    assertEqualsIterator(Iterator(Vector(1), Vector(3, 4), Vector(), Vector(5)), Vector(1, 2, 3, 4, 2, 2, 5, 2, 2).split(2))
+    assertEqualsIterator(Iterator(Vector(1), Vector(3, 4), Vector(), Vector(5)), Iterator(1, 2, 3, 4, 2, 2, 5, 2, 2).split(2))
+
+    // "1234225222".split('2')  -->  Array(1, 34, "", 5)
+    assertEqualsIterator(Iterator(Vector(1), Vector(3, 4), Vector(), Vector(5)), Vector(1, 2, 3, 4, 2, 2, 5, 2, 2, 2).split(2))
+    assertEqualsIterator(Iterator(Vector(1), Vector(3, 4), Vector(), Vector(5)), Iterator(1, 2, 3, 4, 2, 2, 5, 2, 2, 2).split(2))
   }
 
   @Test
