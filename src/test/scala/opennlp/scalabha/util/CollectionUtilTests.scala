@@ -119,6 +119,21 @@ class CollectionUtilTests {
   }
 
   @Test
+  def test_split() {
+    // "12345".split('9')  -->  Array(12345)
+    assertEqualsIterator(Iterator(Vector(1, 2, 3, 4, 5)), Vector(1, 2, 3, 4, 5).split(9))
+    assertEqualsIterator(Iterator(Vector(1, 2, 3, 4, 5)), Iterator(1, 2, 3, 4, 5).split(9))
+
+    // "12345".split('3')  -->  Array(12, 45)
+    assertEqualsIterator(Iterator(List(1, 2), List(4, 5)), List(1, 2, 3, 4, 5).split(3))
+    assertEqualsIterator(Iterator(Set(1, 2), Set(4, 5)), Iterator(1, 2, 3, 4, 5).split(3, new SetBuilder(Set[Int]())))
+
+    // "1234225".split('2')  -->  Array(1, 34, "", 5)
+    assertEqualsIterator(Iterator(Vector(1), Vector(3, 4), Vector(), Vector(5)), Vector(1, 2, 3, 4, 2, 2, 5).split(2))
+    assertEqualsIterator(Iterator(Vector(1), Vector(3, 4), Vector(), Vector(5)), Iterator(1, 2, 3, 4, 2, 2, 5).split(2))
+  }
+
+  @Test
   def test_zipSafe() {
     val a = Vector(1, 2, 3)
     val b = List('a, 'b, 'c)

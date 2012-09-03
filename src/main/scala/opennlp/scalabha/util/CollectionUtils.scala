@@ -52,69 +52,6 @@ object CollectionUtils {
     new Enriched_countCompare_GenTraversableOnce(self)
 
   //////////////////////////////////////////////////////
-  // split(delim: A): Iterator[Repr[A]]
-  //   - Split this collection on each occurrence of the delimiter 
-  //   - Inspired by String.split
-  //////////////////////////////////////////////////////
-
-  class Enriched_split_Iterator[A](self: Iterator[A]) {
-    /**
-     * Split this collection on each occurrence of the delimiter.  Delimiters
-     * do not appear in the output.
-     *
-     * Inspired by String.split
-     *
-     * @param delim	The delimiter upon which to split.
-     */
-    def split(delim: A): Iterator[Vector[A]] =
-      split(delim, Vector.newBuilder[A])
-
-    /**
-     * Split this collection on each occurrence of the delimiter.  Delimiters
-     * do not appear in the output.
-     *
-     * Inspired by String.split
-     *
-     * @param delim	The delimiter upon which to split.
-     */
-    def split[That](delim: A, builder: => Builder[A, That]): Iterator[That] =
-      new Iterator[That] {
-        def next(): That = {
-          if (!self.hasNext) throw new RuntimeException("next on empty iterator")
-
-          val b = builder
-          while (self.hasNext) {
-            val x = self.next
-            if (x == delim)
-              return b.result
-            else
-              b += x
-          }
-          return b.result
-        }
-
-        def hasNext() = self.hasNext
-      }
-  }
-  implicit def enrich_split_Iterator[A](self: Iterator[A]): Enriched_split_Iterator[A] =
-    new Enriched_split_Iterator(self)
-
-  class Enriched_split_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
-    /**
-     * Split this collection on each occurrence of the delimiter.  Delimiters
-     * do not appear in the output.
-     *
-     * Inspired by String.split
-     *
-     * @param delim	The delimiter upon which to split.
-     */
-    def split[That](delim: A)(implicit bf: CanBuildFrom[Repr, A, That]): Iterator[That] =
-      self.toIterator.split(delim, bf(self.asInstanceOf[Repr]))
-  }
-  implicit def enrich_split_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]): Enriched_split_GenTraversableLike[A, Repr] =
-    new Enriched_split_GenTraversableLike(self)
-
-  //////////////////////////////////////////////////////
   // sumBy[B: Numeric](f: A => B): B
   //   - Map a numeric-producing function over each item and sum the results 
   //   - Functionally equivalent to:
