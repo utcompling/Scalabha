@@ -81,7 +81,7 @@ object CollectionUtil {
   //   - Equivalent to self.groupBy(_._1).map { case (k, elems) => (k, elems.map(_._2)) }
   //////////////////////////////////////////////////////
 
-  class Enriched_groupByKey_TraversableLike[A, Repr <: Traversable[A]](self: TraversableLike[A, Repr]) {
+  class Enriched_groupByKey_Traversable[A, Repr <: Traversable[A]](self: TraversableLike[A, Repr]) {
     /**
      * For a collection of pairs (k,v), create a map from each `k` to the
      * collection of `v`s with which it is associated.
@@ -102,8 +102,8 @@ object CollectionUtil {
       b.result
     }
   }
-  implicit def enrich_groupByKey_TraversableLike[A, Repr <: Traversable[A]](self: TraversableLike[A, Repr]): Enriched_groupByKey_TraversableLike[A, Repr] =
-    new Enriched_groupByKey_TraversableLike(self)
+  implicit def enrich_groupByKey_Traversable[A, Repr <: Traversable[A]](self: TraversableLike[A, Repr]): Enriched_groupByKey_Traversable[A, Repr] =
+    new Enriched_groupByKey_Traversable(self)
 
   //////////////////////////////////////////////////////
   // ungroup(): Iterator[(A, B)]
@@ -130,7 +130,7 @@ object CollectionUtil {
   // dropRightWhile(p: A => Boolean): Repr
   //////////////////////////////////////////////////////
 
-  class Enriched_dropRightWhile_IterableLike[A, Repr <: Iterable[A]](self: IterableLike[A, Repr]) {
+  class Enriched_dropRightWhile_Iterable[A, Repr <: Iterable[A]](self: IterableLike[A, Repr]) {
     def dropRightWhile[That](p: A => Boolean)(implicit bf: CanBuildFrom[Repr, A, That]): That = {
       val b = bf(self.asInstanceOf[Repr])
       val buffer = mutable.Buffer[A]()
@@ -144,8 +144,8 @@ object CollectionUtil {
       b.result
     }
   }
-  implicit def enrich_dropRightWhile_IterableLike[A, Repr <: Iterable[A]](self: IterableLike[A, Repr]): Enriched_dropRightWhile_IterableLike[A, Repr] =
-    new Enriched_dropRightWhile_IterableLike(self)
+  implicit def enrich_dropRightWhile_Iterable[A, Repr <: Iterable[A]](self: IterableLike[A, Repr]): Enriched_dropRightWhile_Iterable[A, Repr] =
+    new Enriched_dropRightWhile_Iterable(self)
 
   class Enriched_dropRightWhile_String(self: String) {
     def dropRightWhile(p: Char => Boolean): String = {
@@ -280,7 +280,7 @@ object CollectionUtil {
   implicit def enrich_split_Iterator[A](self: Iterator[A]): Enriched_split_Iterator[A] =
     new Enriched_split_Iterator(self)
 
-  class Enriched_split_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
+  class Enriched_split_GenTraversable[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
     /**
      * Split this collection on each occurrence of the delimiter.  Delimiters
      * do not appear in the output.
@@ -292,8 +292,8 @@ object CollectionUtil {
     def split[That](delim: A)(implicit bf: CanBuildFrom[Repr, A, That]): Iterator[That] =
       self.toIterator.split(delim, bf(self.asInstanceOf[Repr]))
   }
-  implicit def enrich_split_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]): Enriched_split_GenTraversableLike[A, Repr] =
-    new Enriched_split_GenTraversableLike(self)
+  implicit def enrich_split_GenTraversable[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]): Enriched_split_GenTraversable[A, Repr] =
+    new Enriched_split_GenTraversable(self)
 
   //////////////////////////////////////////////////////
   // zipSafe(that: GenTraversable[B]): Repr[(A,B)]
@@ -328,7 +328,7 @@ object CollectionUtil {
   implicit def enrich_zipSafe_Iterator[A](self: Iterator[A]): Enriched_zipSafe_Iterator[A] =
     new Enriched_zipSafe_Iterator(self)
 
-  class Enriched_zipSafe_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
+  class Enriched_zipSafe_GenTraversable[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
     /**
      * zip this collection with another, throwing an exception if they
      * are not of equal length.
@@ -343,8 +343,8 @@ object CollectionUtil {
       b.result
     }
   }
-  implicit def enrich_zipSafe_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]): Enriched_zipSafe_GenTraversableLike[A, Repr] =
-    new Enriched_zipSafe_GenTraversableLike(self)
+  implicit def enrich_zipSafe_GenTraversable[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]): Enriched_zipSafe_GenTraversable[A, Repr] =
+    new Enriched_zipSafe_GenTraversable(self)
 
   class Enriched_zipSafe_Tuple_of_Iterator[A, B](self: (Iterator[A], GenTraversableOnce[B])) {
     /**
@@ -359,7 +359,7 @@ object CollectionUtil {
   implicit def enrich_zipSafe_Tuple_of_Iterator[A, B](self: (Iterator[A], GenTraversableOnce[B])): Enriched_zipSafe_Tuple_of_Iterator[A, B] =
     new Enriched_zipSafe_Tuple_of_Iterator(self)
 
-  class Enriched_zipSafe_Tuple_of_GenTraversableLike[A, Repr <: GenTraversable[A], B](self: (GenTraversableLike[A, Repr], GenTraversableOnce[B])) {
+  class Enriched_zipSafe_Tuple_of_GenTraversable[A, Repr <: GenTraversable[A], B](self: (GenTraversableLike[A, Repr], GenTraversableOnce[B])) {
     /**
      * zip this collection with another, throwing an exception if they
      * are not of equal length.
@@ -374,8 +374,8 @@ object CollectionUtil {
       b.result
     }
   }
-  implicit def enrich_zipSafe_Tuple_of_GenTraversableLike[A, Repr <: GenTraversable[A], B](self: (GenTraversableLike[A, Repr], GenTraversableOnce[B])): Enriched_zipSafe_Tuple_of_GenTraversableLike[A, Repr, B] =
-    new Enriched_zipSafe_Tuple_of_GenTraversableLike(self)
+  implicit def enrich_zipSafe_Tuple_of_GenTraversable[A, Repr <: GenTraversable[A], B](self: (GenTraversableLike[A, Repr], GenTraversableOnce[B])): Enriched_zipSafe_Tuple_of_GenTraversable[A, Repr, B] =
+    new Enriched_zipSafe_Tuple_of_GenTraversable(self)
 
   //////////////////////////////////////////////////////
   // unzip(): (Iterator[A], Iterator[B])
@@ -405,7 +405,7 @@ object CollectionUtil {
   //         this.map{case (k,v) => f(k) -> v}
   //////////////////////////////////////////////////////
 
-  class Enriched_mapKeys_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) {
+  class Enriched_mapKeys_GenTraversable[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) {
     /**
      * In a collection of pairs, map a function over the first item of each
      * pair.  Ensures that the map is computed at call-time, and not returned
@@ -421,8 +421,8 @@ object CollectionUtil {
       b.result
     }
   }
-  implicit def enrich_mapKeys_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]): Enriched_mapKeys_GenTraversableLike[T, U, Repr] =
-    new Enriched_mapKeys_GenTraversableLike(self)
+  implicit def enrich_mapKeys_GenTraversable[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]): Enriched_mapKeys_GenTraversable[T, U, Repr] =
+    new Enriched_mapKeys_GenTraversable(self)
 
   class Enriched_mapKeys_Iterator[T, U](self: Iterator[(T, U)]) {
     /**
@@ -450,7 +450,7 @@ object CollectionUtil {
   //   - Equivalent to: this.map { case (k,v) => k -> f(v) }
   //////////////////////////////////////////////////////
 
-  class Enriched_mapVals_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) {
+  class Enriched_mapVals_GenTraversable[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) {
     /**
      * In a collection of pairs, map a function over the second item of each
      * pair.  Ensures that the map is computed at call-time, and not returned
@@ -466,8 +466,8 @@ object CollectionUtil {
       b.result
     }
   }
-  implicit def enrich_mapVals_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]): Enriched_mapVals_GenTraversableLike[T, U, Repr] =
-    new Enriched_mapVals_GenTraversableLike(self)
+  implicit def enrich_mapVals_GenTraversable[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]): Enriched_mapVals_GenTraversable[T, U, Repr] =
+    new Enriched_mapVals_GenTraversable(self)
 
   class Enriched_mapVals_Iterator[T, U](self: Iterator[(T, U)]) {
     /**
@@ -530,7 +530,7 @@ object CollectionUtil {
   //   - Normalize this collection of numbers by dividing each by the sum
   //////////////////////////////////////////////////////
 
-  class Enriched_normalize_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
+  class Enriched_normalize_GenTraversable[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
     /**
      * Normalize this collection of numbers by dividing each by the sum
      *
@@ -544,10 +544,10 @@ object CollectionUtil {
       b.result
     }
   }
-  implicit def enrich_normalize_GenTraversableLike[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]): Enriched_normalize_GenTraversableLike[A, Repr] =
-    new Enriched_normalize_GenTraversableLike(self)
+  implicit def enrich_normalize_GenTraversable[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]): Enriched_normalize_GenTraversable[A, Repr] =
+    new Enriched_normalize_GenTraversable(self)
 
-  class Enriched_normalize_Int_GenTraversableLike[Repr <: GenTraversable[Int]](self: GenTraversableLike[Int, Repr]) {
+  class Enriched_normalize_Int_GenTraversable[Repr <: GenTraversable[Int]](self: GenTraversableLike[Int, Repr]) {
     /**
      * Normalize this collection of numbers by dividing each by the sum
      *
@@ -561,15 +561,15 @@ object CollectionUtil {
       b.result
     }
   }
-  implicit def enrich_normalize_Int_GenTraversableLike[Repr <: GenTraversable[Int]](self: GenTraversableLike[Int, Repr]): Enriched_normalize_Int_GenTraversableLike[Repr] =
-    new Enriched_normalize_Int_GenTraversableLike(self)
+  implicit def enrich_normalize_Int_GenTraversable[Repr <: GenTraversable[Int]](self: GenTraversableLike[Int, Repr]): Enriched_normalize_Int_GenTraversable[Repr] =
+    new Enriched_normalize_Int_GenTraversable(self)
 
   //////////////////////////////////////////////////////
   // normalizeValues(): Repr[(T,U)]
   //   - Normalize this values in this collection of pairs
   //////////////////////////////////////////////////////
 
-  class Enriched_normalizeValues_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) {
+  class Enriched_normalizeValues_GenTraversable[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]) {
     /**
      * Normalize this values in this collection of pairs
      *
@@ -583,10 +583,10 @@ object CollectionUtil {
       b.result
     }
   }
-  implicit def enrich_normalizeValues_GenTraversableLike[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]): Enriched_normalizeValues_GenTraversableLike[T, U, Repr] =
-    new Enriched_normalizeValues_GenTraversableLike(self)
+  implicit def enrich_normalizeValues_GenTraversable[T, U, Repr <: GenTraversable[(T, U)]](self: GenTraversableLike[(T, U), Repr]): Enriched_normalizeValues_GenTraversable[T, U, Repr] =
+    new Enriched_normalizeValues_GenTraversable(self)
 
-  class Enriched_normalizeValues_Int_GenTraversableLike[T, Repr <: GenTraversable[(T, Int)]](self: GenTraversableLike[(T, Int), Repr]) {
+  class Enriched_normalizeValues_Int_GenTraversable[T, Repr <: GenTraversable[(T, Int)]](self: GenTraversableLike[(T, Int), Repr]) {
     /**
      * Normalize this values in this collection of pairs
      *
@@ -600,8 +600,8 @@ object CollectionUtil {
       b.result
     }
   }
-  implicit def enrich_normalizeValues_Int_GenTraversableLike[T, Repr <: GenTraversable[(T, Int)]](self: GenTraversableLike[(T, Int), Repr]): Enriched_normalizeValues_Int_GenTraversableLike[T, Repr] =
-    new Enriched_normalizeValues_Int_GenTraversableLike(self)
+  implicit def enrich_normalizeValues_Int_GenTraversable[T, Repr <: GenTraversable[(T, Int)]](self: GenTraversableLike[(T, Int), Repr]): Enriched_normalizeValues_Int_GenTraversable[T, Repr] =
+    new Enriched_normalizeValues_Int_GenTraversable(self)
 
   //////////////////////////////////////////////////////
   // Conversion (.toX) methods
