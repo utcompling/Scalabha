@@ -63,8 +63,8 @@ class SemisupervisedEmHmmTaggerTrainerTests {
     LOG.info("labeledTrain.size = " + trainLab.size)
     LOG.info("rawTrain.size     = " + trainRaw.size)
 
-    val trainer: SemisupervisedTaggerTrainer[String, String] =
-      new SemisupervisedEmHmmTaggerTrainer(
+    val trainer: TypesupervisedTaggerTrainer[String, String] =
+      new EmHmmTaggerTrainer(
         transitionCountsTransformer =
           new TransitionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0)),
@@ -74,7 +74,7 @@ class SemisupervisedEmHmmTaggerTrainerTests {
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
-    val tagger = trainer.trainSemisupervised(tagDict, trainRaw, trainLab)
+    val tagger = trainer.trainWithSomeGoldLabeled(trainRaw, trainLab, tagDict)
     val output = tagger.tag(gold.map(_.map(_._1)))
     new TaggerEvaluator().evaluate(output, gold, tagDict)
   }

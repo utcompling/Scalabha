@@ -1,6 +1,7 @@
 package opennlp.scalabha.tag
 
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.tag.hmm.HmmUtils
 
 /**
  * Tag sequences of symbols.
@@ -59,52 +60,74 @@ trait SupervisedTaggerTrainer[Sym, Tag] {
   /**
    * Train a Tagger directly from labeled data.
    *
-   * @param taggedTrainSequences	labeled sequences to use for training the model
-   * @param tagDict					a tag dictionary
-   * @return						a trained Tagger
+   * @param taggedSequences		labeled sequences to use for training the model
+   * @param tagDict				a tag dictionary
+   * @return					a trained Tagger
    */
-  def trainSupervised(taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag]
+  final def train(taggedSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag] = {
+    val (transitionCounts, emissionCounts) = HmmUtils.getCountsFromTagged(taggedSequences)
+    makeTagger(transitionCounts, emissionCounts)
+  }
+
+  /**
+   * Train a Tagger directly from counts.
+   *
+   * @param taggedSequences		labeled sequences to use for training the model
+   * @param tagDict				a tag dictionary
+   * @return					a trained Tagger
+   */
+  def makeTagger[N: Numeric](transitionCounts: Map[Option[Tag], Map[Option[Tag], N]], emissionCounts: Map[Option[Tag], Map[Option[Sym], N]]): Tagger[Sym, Tag]
 
 }
 
 /**
- * Factory for training a Tagger from a combination from unlabeled data.
+ * Factory for training a Tagger from unlabeled data.
  *
  * @tparam Sym	visible symbols in the sequences
  * @tparam Tag	tags applied to symbols
  */
-trait UnsupervisedTaggerTrainer[Sym, Tag] {
+trait TypesupervisedTaggerTrainer[Sym, Tag] {
 
   /**
-   * Train a Tagger only on unlabeled data using the Expectation-Maximization (EM)
-   * algorithm.
+   * Train a Tagger only on unlabeled data.  Initialize a starting point
+   * (initial tagging) from random uniformed draws from the tag dictionary.
    *
+   * @param rawSequences			unlabeled sequences to be used as unsupervised training data
    * @param tagDict					a mapping from symbols to their possible tags
-   * @param rawTrainSequences		unlabeled sequences to be used as unsupervised training data
    * @return						a trained Tagger
    */
-  def trainUnsupervised(tagDict: TagDict[Sym, Tag], rawTrainSequences: Iterable[IndexedSeq[Sym]]): Tagger[Sym, Tag]
-
-}
-
-/**
- * Factory for training a Tagger from a combination from unlabeled data.
- *
- * @tparam Sym	visible symbols in the sequences
- * @tparam Tag	tags applied to symbols
- */
-trait SemisupervisedTaggerTrainer[Sym, Tag] {
+  def train(
+    rawSequences: Iterable[IndexedSeq[Sym]],
+    tagDict: TagDict[Sym, Tag]): Tagger[Sym, Tag]
 
   /**
-   * Train a Tagger from a combination of labeled data and unlabeled data
-   * using the Expectation-Maximization (EM) algorithm.  Use the provided tag
-   * dictionary instead of creating one from the labeled data.
+   * Train a Tagger from a combination of unlabeled data and GOLD labeled data.
+   * The labeled data is ONLY used for prior counts; it is NOT iterated over
+   * like the raw data.  The tagged data could even be EMPTY.
    *
+   * @param rawSequences			unlabeled sequences to be used as unsupervised training data
+   * @param goldTaggedSequences		labeled sequences to be used as supervised training data
    * @param tagDict					a mapping from symbols to their possible tags
-   * @param rawTrainSequences		unlabeled sequences to be used as unsupervised training data
-   * @param taggedTrainSequences	labeled sequences to be used as supervised training data
-   * @return						a trained tagger
+   * @return						a trained Tagger
    */
-  def trainSemisupervised(tagDict: TagDict[Sym, Tag], rawTrainSequences: Iterable[IndexedSeq[Sym]], taggedTrainSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag]
+  def trainWithSomeGoldLabeled(
+    rawSequences: Iterable[IndexedSeq[Sym]],
+    goldTaggedSequences: Iterable[IndexedSeq[(Sym, Tag)]],
+    tagDict: TagDict[Sym, Tag]): Tagger[Sym, Tag]
+
+  /**
+   * Train a Tagger from a combination of unlabeled data and NOISY labeled data.
+   * The labeled data is NOT used for prior counts, NOR is it iterated over
+   * like the raw data.  The tagged data could even be EMPTY.
+   *
+   * @param rawSequences			unlabeled sequences to be used as unsupervised training data
+   * @param noisyTaggedSequences	labeled sequences to be used as supervised training data
+   * @param tagDict					a mapping from symbols to their possible tags
+   * @return						a trained Tagger
+   */
+  def trainWithSomeNoisyLabeled(
+    rawSequences: Iterable[IndexedSeq[Sym]],
+    noisyTaggedSequences: Iterable[IndexedSeq[(Sym, Tag)]],
+    tagDict: TagDict[Sym, Tag]): Tagger[Sym, Tag]
 
 }

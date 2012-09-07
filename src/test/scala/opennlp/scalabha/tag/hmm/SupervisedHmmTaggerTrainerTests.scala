@@ -36,7 +36,7 @@ class SupervisedHmmTaggerTrainerTests {
         transitionCountsTransformer = TransitionCountsTransformer(),
         emissionCountsTransformer = EmissionCountsTransformer(),
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags))
-    val tagger: Tagger[String, String] = trainer.trainSupervised(train)
+    val tagger: Tagger[String, String] = trainer.train(train)
     assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("the dog walks . ".split(" "))).map(_.map(_._2)))
     assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("a cat walks . ".split(" "))).map(_.map(_._2)))
   }
@@ -59,7 +59,7 @@ class SupervisedHmmTaggerTrainerTests {
           new EmissionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))),
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags))
-    val tagger: Tagger[String, String] = trainer.trainSupervised(train)
+    val tagger: Tagger[String, String] = trainer.train(train)
     assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("the dog walks . ".split(" "))).map(_.map(_._2)))
     assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("a cat meows . ".split(" "))).map(_.map(_._2)))
     assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("this bird chirps . ".split(" "))).map(_.map(_._2)))
@@ -75,7 +75,7 @@ class SupervisedHmmTaggerTrainerTests {
         transitionCountsTransformer = TransitionCountsTransformer(),
         emissionCountsTransformer = EmissionCountsTransformer(),
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags))
-    val tagger: Tagger[String, String] = trainer.trainSupervised(train)
+    val tagger: Tagger[String, String] = trainer.train(train)
 
     val output = tagger.tag(AsRawFile("data/postag/ic/ictest.txt"))
 
@@ -102,7 +102,7 @@ class SupervisedHmmTaggerTrainerTests {
         transitionCountsTransformer = TransitionCountsTransformer(),
         emissionCountsTransformer = EmissionCountsTransformer(),
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags))
-    val tagger: Tagger[String, String] = trainer.trainSupervised(train)
+    val tagger: Tagger[String, String] = trainer.train(train)
 
     val output = tagger.tag(AsRawFile("data/postag/english/entest"))
 
@@ -142,7 +142,7 @@ class SupervisedHmmTaggerTrainerTests {
           new EmissionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))),
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags))
-    val tagger = trainer.trainSupervised(train)
+    val tagger = trainer.train(train)
 
     //    train.flatMap(_.map(_._2).toSet).toSet
     //      .mapTo { t => tagger.emissions(Some(t))(Some("<unknown")) }
@@ -185,8 +185,8 @@ class SupervisedHmmTaggerTrainerTests {
           new EmissionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))),
         hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags))
-    val tagger = trainer.trainSupervised(train)
-    val constrainedTagger = new HardConstraintHmmTagger(tagger.transitions, tagger.emissions, OptionalTagDict(tagDict))
+    val HmmTagger(transitions, emissions, _) = trainer.train(train)
+    val constrainedTagger = new HardConstraintHmmTagger(transitions, emissions, tagDict.opt)
 
     val output = constrainedTagger.tag(gold.map(_.map(_._1)))
     val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
@@ -223,8 +223,8 @@ class SupervisedHmmTaggerTrainerTests {
         emissionCountsTransformer =
           TagDictConstrainedEmissionCountsTransformer(tagDict,
             EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))),
-        hmmTaggerFactory = new HardTagDictConstraintHmmTaggerFactory(OptionalTagDict(tagDict)))
-    val tagger = trainer.trainSupervised(train)
+        hmmTaggerFactory = new HardTagDictConstraintHmmTaggerFactory(tagDict.opt))
+    val tagger = trainer.train(train)
 
     val output = tagger.tag(gold.map(_.map(_._1)))
     val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
@@ -261,9 +261,9 @@ class SupervisedHmmTaggerTrainerTests {
         emissionCountsTransformer =
           TagDictConstrainedEmissionCountsTransformer(tagDict,
             EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))),
-        hmmTaggerFactory = new HardTagDictConstraintHmmTaggerFactory(OptionalTagDict(tagDict)))
-    val tagger = trainer.trainSupervised(train)
-    val constrainedTagger = new HardConstraintHmmTagger(tagger.transitions, tagger.emissions, OptionalTagDict(tagDict))
+        hmmTaggerFactory = new HardTagDictConstraintHmmTaggerFactory(tagDict.opt))
+    val HmmTagger(transitions, emissions, _) = trainer.train(train)
+    val constrainedTagger = new HardConstraintHmmTagger(transitions, emissions, tagDict.opt)
 
     val output = constrainedTagger.tag(gold.map(_.map(_._1)))
     val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
