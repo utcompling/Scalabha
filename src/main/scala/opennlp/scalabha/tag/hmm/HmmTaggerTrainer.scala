@@ -38,8 +38,8 @@ abstract class TypesupervisedHmmTaggerTrainer[Sym, Tag](
     rawSequences: Iterable[IndexedSeq[Sym]],
     initialHmm: HmmTagger[Sym, Tag],
     tagDict: TagDict[Sym, Tag],
-    priorTransitionCounts: Option[Tag] => Option[Tag] => Double,
-    priorEmissionCounts: Option[Tag] => Option[Sym] => Double): HmmTagger[Sym, Tag]
+    priorTransitionCounts: Map[Option[Tag], Map[Option[Tag], Double]],
+    priorEmissionCounts: Map[Option[Tag], Map[Option[Sym], Double]]): HmmTagger[Sym, Tag]
 
   /////////////////////////////////
   // Convenience training methods
@@ -57,8 +57,8 @@ abstract class TypesupervisedHmmTaggerTrainer[Sym, Tag](
 
     trainWithPriors(
       rawSequences,
-      Function.const(Function.const(0)), Function.const(Function.const(0)),
-      Function.const(Function.const(0)), Function.const(Function.const(0)),
+      Map(), Map(),
+      Map(), Map(),
       tagDict)
   }
 
@@ -77,7 +77,7 @@ abstract class TypesupervisedHmmTaggerTrainer[Sym, Tag](
     trainWithPriors(
       rawSequences,
       transitionPriorCounts, emissionPriorCounts,
-      CondFreqCounts(transitionPriorCounts).toDoubles.toMap, CondFreqCounts(emissionPriorCounts).toDoubles.toMap,
+      transitionPriorCounts.mapVals(_.mapVals(_.toDouble)), emissionPriorCounts.mapVals(_.mapVals(_.toDouble)),
       tagDict)
   }
 
@@ -96,7 +96,7 @@ abstract class TypesupervisedHmmTaggerTrainer[Sym, Tag](
     trainWithPriors(
       rawSequences,
       transitionNoisyCounts, emissionNoisyCounts,
-      Function.const(Function.const(0)), Function.const(Function.const(0)),
+      Map(), Map(),
       tagDict)
   }
 
@@ -121,16 +121,15 @@ abstract class TypesupervisedHmmTaggerTrainer[Sym, Tag](
    */
   final def trainWithPriors(
     rawSequences: Iterable[IndexedSeq[Sym]],
-    initialTransitionCounts: Option[Tag] => Option[Tag] => Int, initialEmissionCounts: Option[Tag] => Option[Sym] => Int,
-    priorTransitionCounts: Option[Tag] => Option[Tag] => Double, priorEmissionCounts: Option[Tag] => Option[Sym] => Double,
+    initialTransitionCounts: Map[Option[Tag], Map[Option[Tag], Int]], initialEmissionCounts: Map[Option[Tag], Map[Option[Sym], Int]],
+    priorTransitionCounts: Map[Option[Tag], Map[Option[Tag], Double]], priorEmissionCounts: Map[Option[Tag], Map[Option[Sym], Double]],
     tagDict: TagDict[Sym, Tag]): Tagger[Sym, Tag] = {
 
-    val transitionCounts = HmmUtils.makeTransitionCounts(tagDict.opt, initialTransitionCounts.andThen(_.andThen(_.toDouble)))
-    val emissionCounts = HmmUtils.makeEmissionCounts(tagDict.opt, initialEmissionCounts.andThen(_.andThen(_.toDouble)))
-
-    val initialHmm = supervisedHmmTaggerTrainer.makeTagger(transitionCounts, emissionCounts)
-
-    trainFromInitialHmm(rawSequences, initialHmm, tagDict, priorTransitionCounts, priorEmissionCounts)
+    trainFromInitialHmm(
+      rawSequences,
+      supervisedHmmTaggerTrainer.makeTagger(initialTransitionCounts, initialEmissionCounts),
+      tagDict,
+      priorTransitionCounts, priorEmissionCounts)
   }
 
   /**
@@ -150,7 +149,7 @@ abstract class TypesupervisedHmmTaggerTrainer[Sym, Tag](
       rawSequences,
       initialHmm,
       tagDict,
-      Function.const(Function.const(0)), Function.const(Function.const(0)))
+      Map(), Map())
   }
 
 }

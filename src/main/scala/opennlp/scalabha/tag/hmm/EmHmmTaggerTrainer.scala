@@ -54,8 +54,8 @@ class EmHmmTaggerTrainer[Sym, Tag](
     rawSequences: Iterable[IndexedSeq[Sym]],
     initialHmm: HmmTagger[Sym, Tag],
     tagDict: TagDict[Sym, Tag],
-    priorTransitionCounts: Option[Tag] => Option[Tag] => Double,
-    priorEmissionCounts: Option[Tag] => Option[Sym] => Double): HmmTagger[Sym, Tag] = {
+    priorTransitionCounts: Map[Option[Tag], Map[Option[Tag], Double]],
+    priorEmissionCounts: Map[Option[Tag], Map[Option[Sym], Double]]): HmmTagger[Sym, Tag] = {
 
     // Train an HMM using EM
     val emHmm =
@@ -70,20 +70,20 @@ class EmHmmTaggerTrainer[Sym, Tag](
     val autoTagged = emHmm.tag(rawSequences.toSeq)
     val (transitionCounts, emissionCounts) = HmmUtils.getCountsFromTagged(autoTagged)
 
-    val transitionCountsAndPriors = HmmUtils.makeTransitionCounts(tagDict.opt, transitionCounts.andThen(_.andThen(_.toDouble)), priorTransitionCounts)
-    val emissionCountsAndPriors = HmmUtils.makeEmissionCounts(tagDict.opt, emissionCounts.andThen(_.andThen(_.toDouble)), priorEmissionCounts)
+    val transitionCountsWithPriors = CondFreqCounts(transitionCounts).toDoubles ++ priorTransitionCounts toMap
+    val emissionCountsWithPriors = CondFreqCounts(emissionCounts).toDoubles ++ priorEmissionCounts toMap
 
     // Perform supervised training (presumably with smoothing counts transformers) 
     // on the auto-tagged corpus to smooth out the EM output 
-    supervisedHmmTaggerTrainer.makeTagger(transitionCountsAndPriors, emissionCountsAndPriors)
+    supervisedHmmTaggerTrainer.makeTagger(transitionCountsWithPriors, emissionCountsWithPriors)
   }
 
   protected def estimateHmmWithEm(
     rawSequences: Iterable[IndexedSeq[Sym]],
     initialHmm: HmmTagger[Sym, Tag],
     tagDict: OptionalTagDict[Sym, Tag],
-    priorTransitionCounts: Option[Tag] => Option[Tag] => Double,
-    priorEmissionCounts: Option[Tag] => Option[Sym] => Double): HmmTagger[Sym, Tag] = {
+    priorTransitionCounts: Map[Option[Tag], Map[Option[Tag], Double]],
+    priorEmissionCounts: Map[Option[Tag], Map[Option[Sym], Double]]): HmmTagger[Sym, Tag] = {
 
     estimateHmmWithEm(
       rawSequences,
@@ -105,8 +105,8 @@ class EmHmmTaggerTrainer[Sym, Tag](
     rawSequences: Iterable[IndexedSeq[Sym]],
     initialHmm: HmmTagger[Sym, Tag],
     tagDict: OptionalTagDict[Sym, Tag],
-    priorTransitionCounts: Option[Tag] => Option[Tag] => Double,
-    priorEmissionCounts: Option[Tag] => Option[Sym] => Double,
+    priorTransitionCounts: Map[Option[Tag], Map[Option[Tag], Double]],
+    priorEmissionCounts: Map[Option[Tag], Map[Option[Sym], Double]],
     remainingIterations: Int,
     prevAvgLogProb: Double): HmmTagger[Sym, Tag] = {
 
@@ -147,8 +147,8 @@ class EmHmmTaggerTrainer[Sym, Tag](
     rawSequences: Iterable[IndexedSeq[Sym]],
     initialHmm: HmmTagger[Sym, Tag],
     tagDict: OptionalTagDict[Sym, Tag],
-    priorTransitionCounts: Option[Tag] => Option[Tag] => Double,
-    priorEmissionCounts: Option[Tag] => Option[Sym] => Double) = {
+    priorTransitionCounts: Map[Option[Tag], Map[Option[Tag], Double]],
+    priorEmissionCounts: Map[Option[Tag], Map[Option[Sym], Double]]) = {
 
     // E Step:  Use the forward/backward procedure to determine the 
     //          probability of various possible state sequences for 
@@ -157,14 +157,14 @@ class EmHmmTaggerTrainer[Sym, Tag](
     val (expectedTransitionCounts, expectedEmmissionCounts, avgLogProb) =
       estimateCounts(rawSequences, initialHmm, tagDict)
 
-    val transitionCountsWithPriors = HmmUtils.makeTransitionCounts(tagDict, expectedTransitionCounts, priorTransitionCounts)
-    val emissionCountsWithPriors = HmmUtils.makeEmissionCounts(tagDict, expectedEmmissionCounts, priorEmissionCounts)
+    val transitionCountsWithPriors = CondFreqCounts(expectedTransitionCounts) ++ priorTransitionCounts toMap
+    val emissionCountsWithPriors = CondFreqCounts(expectedEmmissionCounts) ++ priorEmissionCounts toMap
 
     // M Step: Use these probability estimates to re-estimate the 
     //         probability distributions
 
-    val transitions = CondFreqDist(transitionCountsWithPriors.toMap)
-    val emissions = CondFreqDist(emissionCountsWithPriors.toMap)
+    val transitions = CondFreqDist(transitionCountsWithPriors)
+    val emissions = CondFreqDist(emissionCountsWithPriors)
     (hmmTaggerFactory(transitions, emissions), avgLogProb)
   }
 
