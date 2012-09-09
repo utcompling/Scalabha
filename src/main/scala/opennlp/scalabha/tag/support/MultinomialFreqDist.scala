@@ -1,15 +1,15 @@
 package opennlp.scalabha.tag.support
 
 import scala.util.Random
-
 import org.apache.commons.logging.LogFactory
-
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
 import opennlp.scalabha.util.CollectionUtil._
+import breeze.stats.distributions.Rand
+import breeze.stats.distributions.RandBasis
 
-class MultinomialFreqDist[T](val distValues: Iterable[(T, LogNum)], default: LogNum = LogNum.zero) extends DiscreteDistribution[T] {
+class MultinomialFreqDist[T](val distValues: Iterable[(T, LogNum)], default: LogNum = LogNum.zero)(implicit val rand: RandBasis = Rand) extends DiscreteDistribution[T] {
   private val LOG = LogFactory.getLog(MultinomialFreqDist.getClass)
 
   val dist = distValues.toMap
@@ -25,15 +25,13 @@ class MultinomialFreqDist[T](val distValues: Iterable[(T, LogNum)], default: Log
     (xs, running)
   }
 
-  protected lazy val random = new Random
-
   override def apply(key: T) = dist.getOrElse(key, default)
   def iterator = distValues.iterator
 
   /*protected*/ def findSample(key: LogNum) = sampler.find(_._2 >= key)
 
   override def sample(): T = {
-    findSample(lastSampleKey * random.nextDouble) match {
+    findSample(lastSampleKey * rand.uniform.draw) match {
       case Some((t, _)) => t
       case None => throw new RuntimeException("Could not sample from: " + { val s = distValues.toString; if (s.length <= 50) s else s.take(47) + "..." })
     }

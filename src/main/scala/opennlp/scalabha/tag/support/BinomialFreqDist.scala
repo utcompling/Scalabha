@@ -9,7 +9,7 @@ class BinomialFreqDist[T](label0: T, label1: T, firstProb: LogNum)
   extends MultinomialFreqDist(Map(label0 -> firstProb, label1 -> (1 - firstProb)), LogNum.zero) {
 
   override def sample(): T = {
-    if (random.nextDouble.toLogNum < firstProb)
+    if (rand.uniform.draw.toLogNum < firstProb)
       label0
     else
       label1
