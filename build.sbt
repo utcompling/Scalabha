@@ -10,7 +10,7 @@ scalaVersion := "2.9.2"
 
 crossPaths := false
 
-//retrieveManaged := true
+retrieveManaged := true
 
 resolvers ++= Seq(
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
