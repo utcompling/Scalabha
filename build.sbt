@@ -1,5 +1,3 @@
-import AssemblyKeys._
-
 import com.typesafe.startscript.StartScriptPlugin
 
 name := "Scalabha"
@@ -12,7 +10,7 @@ scalaVersion := "2.9.2"
 
 crossPaths := false
 
-retrieveManaged := true
+//retrieveManaged := true
 
 resolvers ++= Seq(
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
@@ -33,12 +31,6 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "1.6.1" % "test",
   "junit" % "junit" % "4.10" % "test",
   "com.novocode" % "junit-interface" % "0.6" % "test->default") //switch to ScalaTest at some point...
-
-seq(assemblySettings: _*)
-
-jarName in assembly := "scalabha-assembly.jar"
-
-test in assembly := {}
 
 seq(StartScriptPlugin.startScriptForClassesSettings: _*)
 
