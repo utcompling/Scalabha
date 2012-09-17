@@ -32,7 +32,7 @@ final class LogNum(val logValue: Double) extends Ordered[LogNum] {
     val oLogValue = log(num.toDouble(other))
     if (logValue < oLogValue)
       sys.error("subtraction results in a negative LogNum")
-    else if (logValue == 0.0)
+    else if (oLogValue == 0.0)
       this
     else
       new LogNum(logValue + log1p(-exp(oLogValue - logValue)))
