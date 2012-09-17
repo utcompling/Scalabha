@@ -1,8 +1,22 @@
 package opennlp.scalabha.util
 
 import scala.collection.GenTraversableOnce
+import scala.collection.mutable
+import scala.collection.generic.CanBuildFrom
+import scala.collection.generic.MutableMapFactory
+import scala.collection.mutable.HashMap
 
 object Collections {
+
+  class MemoMap[A, B](startEntries: Map[A, B], default: A => B) extends (A => B) with Iterable[(A, B)] { //mutable.Map[A, B] {
+    private[this] val cache = mutable.Map[A, B]() ++ startEntries
+    override def apply(key: A): B = cache.getOrElseUpdate(key, default(key))
+    override def iterator: Iterator[(A, B)] = cache.iterator
+  }
+
+  //
+  //
+  //
 
   class History[T] private (length: Int, lag: Int) {
     private[this] val q = scala.collection.mutable.Queue[T]()
