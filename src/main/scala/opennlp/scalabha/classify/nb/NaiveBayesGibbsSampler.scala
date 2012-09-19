@@ -74,7 +74,7 @@ class NaiveBayesGibbsSampler[L, T](
     // labeled data and the label pseudocounts 
     val initialLabels = { //  L^(t)
       def priorLabelCounts(l: L) = labDocs(l).size + labelPseudocounts(l)
-      val sampler = DirichletSampler(labelList, priorLabelCounts)
+      val sampler = DirichletSampler(labelList, priorLabelCounts _)
       MSeq.fill(docs.size) {
         val prior = sampler.sample //  pi
         FreqDist(prior).sample
@@ -174,7 +174,7 @@ class NaiveBayesGibbsSampler[L, T](
       val pseudo = wordDistributionPseudocounts(l)
       val wordCountsForLabel = wordCounts(l)
       def counts(t: T) = wordCountsForLabel(t) + pseudo(t)
-      DirichletSampler(vocabulary, counts).sample //  theta_l
+      DirichletSampler(vocabulary, counts _).sample //  theta_l
     }.toMap
   }
 
