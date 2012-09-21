@@ -51,11 +51,9 @@ final class LogNum(val logValue: Double) extends Ordered[LogNum] {
   def max[N](that: N)(implicit num: Numeric[N]): LogNum = { val thatDouble = log(num.toDouble(that)); if (this.logValue > thatDouble) this else new LogNum(thatDouble) }
   def min[N](that: N)(implicit num: Numeric[N]): LogNum = { val thatDouble = log(num.toDouble(that)); if (this.logValue < thatDouble) this else new LogNum(thatDouble) }
 
-  def approx[N](o: N, tolerance: Double)(implicit num: Numeric[N]): Boolean = {
-    if (this == LogNum.zero && o == num.zero)
-      true
-    else
-      (logValue - log(num.toDouble(o))).abs < tolerance
+  def approx[N](o: N, tolerance: Double)(implicit num: Numeric[N]): Boolean = o match {
+    case oLogNum: LogNum => (logValue - oLogNum.logValue).abs < tolerance
+    case _ => (logValue - log(num.toDouble(o))).abs < tolerance
   }
   def approx[N](o: N)(implicit num: Numeric[N]): Boolean = this.approx(o, 0.00000001)
 
