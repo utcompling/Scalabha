@@ -7,6 +7,7 @@ import java.io.FileReader
 import java.io.File
 import scala.io.BufferedSource
 import scala.io.Source
+import java.io.Writer
 
 object FileUtils {
   var FILE_SEPARATOR = System.getProperty("file.separator")
@@ -36,6 +37,17 @@ object FileUtils {
 
   def exists(filename: String) =
     new File(filename).exists()
+
+  def mkdir(filename: String) {
+    val f = new File(filename)
+    if (!f.exists) f.mkdir()
+  }
+
+  def mkdirpath(dirpath: String) {
+    val parts = dirpath.split(FILE_SEPARATOR)
+    for (i <- 1 to parts.size)
+      mkdir(parts.take(i).mkString("", "/", "/"))
+  }
 
   def remove(filename: String) =
     new File(filename).delete()
@@ -181,14 +193,31 @@ object FileUtils {
    * Open a file for writing, execute a block of code, and ensure that the
    * file is closed when finished.
    */
+  def writeUsing[R](dirname: String, filename: String)(block: BufferedWriter => R): R = {
+    mkdirpath(dirname)
+    using(new BufferedWriter(new FileWriter(dirname + FILE_SEPARATOR + filename)))(block)
+  }
+
+  /**
+   * Open a file for writing, execute a block of code, and ensure that the
+   * file is closed when finished.
+   */
   def writeUsing[R](file: File)(block: BufferedWriter => R): R = {
     using(new BufferedWriter(new FileWriter(file)))(block)
   }
-  
+
   def dumpToFile(data: String): String = {
     val filename = mktemp()
     writeUsing(filename)(_.write(data))
     filename
   }
+
+  /**
+   * Add a method `writeLine` to Writer classes
+   */
+  class WriterWithWriteLine(self: Writer) {
+    def writeLine(line: String) { self.write(line + "\n") }
+  }
+  implicit def writerWithWriteLine(self: Writer): WriterWithWriteLine = new WriterWithWriteLine(self)
 
 }
