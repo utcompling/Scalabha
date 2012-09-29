@@ -238,6 +238,48 @@ object CollectionUtil {
      * @param delim	The delimiter upon which to split.
      */
     def split[That](delim: A, builder: => Builder[A, That]): Iterator[That] =
+      self.splitWhere(_ == delim, builder)
+  }
+  implicit def enrich_split_Iterator[A](self: Iterator[A]): Enriched_split_Iterator[A] =
+    new Enriched_split_Iterator(self)
+
+  class Enriched_split_GenTraversable[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
+    /**
+     * Split this collection on each occurrence of the delimiter.  Delimiters
+     * do not appear in the output.
+     *
+     * Inspired by String.split
+     *
+     * @param delim	The delimiter upon which to split.
+     */
+    def split[That](delim: A)(implicit bf: CanBuildFrom[Repr, A, That]): Iterator[That] =
+      self.toIterator.split(delim, bf(self.asInstanceOf[Repr]))
+  }
+  implicit def enrich_split_GenTraversable[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]): Enriched_split_GenTraversable[A, Repr] =
+    new Enriched_split_GenTraversable(self)
+
+  //////////////////////////////////////////////////////
+  // splitWhere(p: A => Boolean): Iterator[Repr[A]]
+  //   - Split this on items for which the predicate is true 
+  //////////////////////////////////////////////////////
+
+  class Enriched_splitWhere_Iterator[A](self: Iterator[A]) {
+    /**
+     * Split this on items for which the predicate is true.  Delimiters
+     * do not appear in the output.
+     *
+     * @param delim	The delimiter upon which to split.
+     */
+    def splitWhere(p: A => Boolean): Iterator[Vector[A]] =
+      splitWhere(p, Vector.newBuilder[A])
+
+    /**
+     * Split this on items for which the predicate is true.  Delimiters
+     * do not appear in the output.
+     *
+     * @param delim	The delimiter upon which to split.
+     */
+    def splitWhere[That](p: A => Boolean, builder: => Builder[A, That]): Iterator[That] =
       new Iterator[That] {
         var buffer = mutable.Queue[That]()
         def next(): That = {
@@ -267,7 +309,7 @@ object CollectionUtil {
         private def takeUntilDelim(b: Builder[A, That], empty: Boolean = true): (Boolean, That) = {
           if (self.hasNext) {
             val x = self.next
-            if (x == delim)
+            if (p(x))
               (empty, b.result)
             else
               takeUntilDelim(b += x, false)
@@ -277,23 +319,21 @@ object CollectionUtil {
         }
       }
   }
-  implicit def enrich_split_Iterator[A](self: Iterator[A]): Enriched_split_Iterator[A] =
-    new Enriched_split_Iterator(self)
+  implicit def enrich_splitWhere_Iterator[A](self: Iterator[A]): Enriched_splitWhere_Iterator[A] =
+    new Enriched_splitWhere_Iterator(self)
 
-  class Enriched_split_GenTraversable[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
+  class Enriched_splitWhere_GenTraversable[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]) {
     /**
-     * Split this collection on each occurrence of the delimiter.  Delimiters
+     * Split this on items for which the predicate is true.  Delimiters
      * do not appear in the output.
-     *
-     * Inspired by String.split
      *
      * @param delim	The delimiter upon which to split.
      */
-    def split[That](delim: A)(implicit bf: CanBuildFrom[Repr, A, That]): Iterator[That] =
-      self.toIterator.split(delim, bf(self.asInstanceOf[Repr]))
+    def splitWhere[That](p: A => Boolean)(implicit bf: CanBuildFrom[Repr, A, That]): Iterator[That] =
+      self.toIterator.splitWhere(p, bf(self.asInstanceOf[Repr]))
   }
-  implicit def enrich_split_GenTraversable[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]): Enriched_split_GenTraversable[A, Repr] =
-    new Enriched_split_GenTraversable(self)
+  implicit def enrich_splitWhere_GenTraversable[A, Repr <: GenTraversable[A]](self: GenTraversableLike[A, Repr]): Enriched_splitWhere_GenTraversable[A, Repr] =
+    new Enriched_splitWhere_GenTraversable(self)
 
   //////////////////////////////////////////////////////
   // zipSafe(that: GenTraversable[B]): Repr[(A,B)]
