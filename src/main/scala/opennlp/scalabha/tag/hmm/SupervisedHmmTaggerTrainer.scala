@@ -17,9 +17,9 @@ import opennlp.scalabha.util.CollectionUtil._
  * @param hmmTaggerFactory				factory for actually creating the HmmTagger
  */
 class SupervisedHmmTaggerTrainer[Sym, Tag](
-  transitionCountsTransformer: TransitionCountsTransformer[Tag],
-  emissionCountsTransformer: EmissionCountsTransformer[Tag, Sym],
-  hmmTaggerFactory: HmmTaggerFactory[Sym, Tag])
+  val transitionCountsTransformer: TransitionCountsTransformer[Tag],
+  val emissionCountsTransformer: EmissionCountsTransformer[Tag, Sym],
+  val hmmTaggerFactory: HmmTaggerFactory[Sym, Tag])
   extends SupervisedTaggerTrainer[Sym, Tag] {
 
   private val LOG = LogFactory.getLog(classOf[SupervisedHmmTaggerTrainer[Sym, Tag]])

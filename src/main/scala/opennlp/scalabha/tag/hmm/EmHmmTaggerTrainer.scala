@@ -31,9 +31,9 @@ import opennlp.scalabha.util.Pattern.{ -> }
  * @param minAvgLogProbChangeForEM			stop iterating EM if change in average log probability is less than this threshold
  */
 class EmHmmTaggerTrainer[Sym, Tag](
-  transitionCountsTransformer: TransitionCountsTransformer[Tag],
-  emissionCountsTransformer: EmissionCountsTransformer[Tag, Sym],
-  hmmTaggerFactory: HmmTaggerFactory[Sym, Tag],
+  val transitionCountsTransformer: TransitionCountsTransformer[Tag],
+  val emissionCountsTransformer: EmissionCountsTransformer[Tag, Sym],
+  val hmmTaggerFactory: HmmTaggerFactory[Sym, Tag],
   maxIterations: Int = 50,
   minAvgLogProbChangeForEM: Double = 0.00001)
   extends TypesupervisedHmmTaggerTrainer[Sym, Tag](
