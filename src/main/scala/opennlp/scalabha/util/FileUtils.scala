@@ -35,6 +35,9 @@ object FileUtils {
   // Basic file utilities
   //
 
+  def getName(filepath: String) =
+    filepath.split(FILE_SEPARATOR).last
+
   def exists(filename: String) =
     new File(filename).exists()
 
