@@ -67,6 +67,10 @@ case class ScoreResults[Sym, Tag](
     sb.mkString("\n")
   }
 
+  def totalAcc = acc(correct, total)
+  def knownAcc = acc(knownCorrect, knownTotal)
+  def unknownAcc = acc(unkCorrect, unkTotal)
+
   def +(other: ScoreResults[Sym, Tag]) = {
     ScoreResults[Sym, Tag](
       correct + other.correct, total + other.total,
@@ -75,4 +79,8 @@ case class ScoreResults[Sym, Tag](
       mistakes +++ other.mistakes)
   }
 
+}
+
+object ScoreResults {
+  def empty[Sym, Tag] = ScoreResults(0, 0, 0, 0, 0, 0, Map[(Tag, Tag), Int]())
 }
