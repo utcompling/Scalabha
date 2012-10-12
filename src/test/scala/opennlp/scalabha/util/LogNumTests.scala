@@ -8,6 +8,14 @@ import scala.math._
 class LogNumTests {
 
   @Test
+  def test_sum() {
+	  val a = new LogNum(-772.740105887932)
+	  val l = List(a)
+	  val s = LogNum.zero + a
+	  assertTrue(s != LogNum.zero)
+  }
+
+  @Test
   def test_operators() {
     val a: LogNum = 3.toLogNum
     val b: LogNum = 5.toLogNum

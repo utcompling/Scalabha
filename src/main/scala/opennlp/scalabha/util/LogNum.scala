@@ -18,7 +18,10 @@ import math._
  */
 final class LogNum(val logValue: Double) extends Ordered[LogNum] {
   def +[N](other: N)(implicit num: Numeric[N]): LogNum = {
-    val oLogValue = log(num.toDouble(other))
+    val oLogValue = other match {
+      case o: LogNum => o.logValue
+      case _ => log(num.toDouble(other))
+    }
     if (logValue == Double.NegativeInfinity)
       new LogNum(oLogValue)
     else if (oLogValue == Double.NegativeInfinity)
@@ -28,8 +31,12 @@ final class LogNum(val logValue: Double) extends Ordered[LogNum] {
     else
       new LogNum(oLogValue + log1p(exp(logValue - oLogValue)))
   }
+
   def -[N](other: N)(implicit num: Numeric[N]): LogNum = {
-    val oLogValue = log(num.toDouble(other))
+    val oLogValue = other match {
+      case o: LogNum => o.logValue
+      case _ => log(num.toDouble(other))
+    }
     if (logValue < oLogValue)
       sys.error("subtraction results in a negative LogNum")
     else if (oLogValue == 0.0)
@@ -37,9 +44,26 @@ final class LogNum(val logValue: Double) extends Ordered[LogNum] {
     else
       new LogNum(logValue + log1p(-exp(oLogValue - logValue)))
   }
-  def *[N](o: N)(implicit num: Numeric[N]): LogNum = new LogNum(logValue + log(num.toDouble(o)))
-  def /[N](o: N)(implicit num: Numeric[N]): LogNum = new LogNum(logValue - log(num.toDouble(o)))
-  def **[N](pow: N)(implicit num: Numeric[N]): LogNum = new LogNum(num.toDouble(pow) * logValue)
+
+  def *[N](other: N)(implicit num: Numeric[N]): LogNum = {
+    val oLogValue = other match {
+      case o: LogNum => o.logValue
+      case _ => log(num.toDouble(other))
+    }
+    new LogNum(logValue + oLogValue)
+  }
+
+  def /[N](other: N)(implicit num: Numeric[N]): LogNum = {
+    val oLogValue = other match {
+      case o: LogNum => o.logValue
+      case _ => log(num.toDouble(other))
+    }
+    new LogNum(logValue - oLogValue)
+  }
+
+  def **[N](pow: N)(implicit num: Numeric[N]): LogNum = {
+    new LogNum(num.toDouble(pow) * logValue)
+  }
 
   override def equals(o: Any): Boolean = o match {
     case o: LogNum => logValue == o.logValue
