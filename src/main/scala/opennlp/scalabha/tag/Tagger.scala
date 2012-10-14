@@ -1,5 +1,6 @@
 package opennlp.scalabha.tag
 
+import opennlp.scalabha.util.CollectionUtil._
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.tag.hmm.HmmUtils
 
@@ -18,7 +19,7 @@ trait Tagger[Sym, Tag] {
    * @return				sequences tagged by the model
    */
   final def tag(rawSequences: Seq[IndexedSeq[Sym]]): Seq[IndexedSeq[(Sym, Tag)]] =
-    (rawSequences zip tagAll(rawSequences)).mapt((ws, tagged) =>
+    (rawSequences zipSafe tagAll(rawSequences)).mapt((ws, tagged) =>
       tagged.getOrElse(throw new RuntimeException("could not tag sentence: '%s'".format(ws.mkString(" ")))))
 
   /**
@@ -28,7 +29,7 @@ trait Tagger[Sym, Tag] {
    * @return				sequences tagged by the model
    */
   final def tagAll(rawSequences: Seq[IndexedSeq[Sym]]): Seq[Option[IndexedSeq[(Sym, Tag)]]] =
-    (rawSequences zip tags(rawSequences)).map { case (ws, ts) => ts.map(ws zip _) }
+    (rawSequences zipSafe tags(rawSequences)).map { case (ws, ts) => ts.map(ws zipSafe _) }
 
   /**
    * Tag each sequence using this model.
