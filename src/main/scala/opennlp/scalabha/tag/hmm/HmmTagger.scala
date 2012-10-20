@@ -4,8 +4,16 @@ import opennlp.scalabha.tag.OptionalTagDict
 import opennlp.scalabha.tag.TagDict._
 import opennlp.scalabha.tag.Tagger
 import opennlp.scalabha.tag.support.TagEdgeScorer
-import opennlp.scalabha.tag.support.Viterbi
+import opennlp.scalabha.util.CollectionUtil._
+import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
+import opennlp.scalabha.util.Pattern
+import opennlp.scalabha.util.Pattern.{ -> }
+import opennlp.scalabha.tag.TagDict
+import opennlp.scalabha.tag.hmm.HmmUtils._
+import scala.annotation.tailrec
+import scala.collection.breakOut
+import opennlp.scalabha.tag.SimpleTagDict
 
 /**
  * Hidden Markov Model for tagging.
@@ -20,79 +28,90 @@ import opennlp.scalabha.util.LogNum
  * NOTE: Start and end symbols and tags are represented by None.
  */
 case class HmmTagger[Sym, Tag](
-  val transitions: Option[Tag] => Option[Tag] => LogNum,
-  val emissions: Option[Tag] => Option[Sym] => LogNum,
-  val tagSet: Set[Tag])
-  extends Tagger[Sym, Tag] {
-
-  protected[this] val viterbi = new Viterbi(new HmmEdgeScorer(transitions, emissions), tagSet)
-
-  /**
-   * Tag the sequence using this model.  Uses the Viterbi algorithm.
-   *
-   * @param sequence 	a single sequence to be tagged
-   * @return			the tagging of the input sequence assigned by the model
-   */
-  override protected def tagSequence(sequence: IndexedSeq[Sym]) =
-    viterbi.tagSequence(sequence)
-
-}
-
-/**
- * Hidden Markov Model for tagging that has hard constraints on transitions
- * and/or emissions.  While this is functionally equivalent to using
- * constrained counts transformers, this class will be faster since Viterbi
- * won't bother exploring those zero-probability values.
- */
-class HardConstraintHmmTagger[Sym, Tag](
   transitions: Option[Tag] => Option[Tag] => LogNum,
   emissions: Option[Tag] => Option[Sym] => LogNum,
-  tagSet: Set[Tag],
-  override protected[this] val viterbi: Viterbi[Sym, Tag])
-  extends HmmTagger[Sym, Tag](transitions, emissions, tagSet) {
+  tagDict: OptionalTagDict[Sym, Tag],
+  validTransitions: Map[Option[Tag], Set[Option[Tag]]])
+  extends Tagger[Sym, Tag] {
 
-  def this(
-    transitions: Option[Tag] => Option[Tag] => LogNum,
-    emissions: Option[Tag] => Option[Sym] => LogNum,
-    tagDict: OptionalTagDict[Sym, Tag]) =
-    this(transitions, emissions, tagDict.allTags.flatten, new Viterbi(new HmmEdgeScorer(transitions, emissions), tagDict))
+  private[this] val fastHmmTagger = new FastHmmTagger[Sym, Tag]
 
-  def this(
-    transitions: Option[Tag] => Option[Tag] => LogNum,
-    emissions: Option[Tag] => Option[Sym] => LogNum,
-    tagSet: Set[Tag],
-    validTransitions: Map[Option[Tag], Set[Option[Tag]]]) =
-    this(transitions, emissions, tagSet, new Viterbi(new HmmEdgeScorer(transitions, emissions), tagSet, validTransitions))
+  override protected def tags(rawSequences: Seq[IndexedSeq[Sym]]): Seq[Option[IndexedSeq[Tag]]] = {
+    val newSequences = addDistributionsToRawSequences[Sym, Tag](rawSequences, tagDict, transitions, emissions, validTransitions)
+    fastHmmTagger.tagAllFast(newSequences).map(Some(_))
+  }
 
-  def this(
-    transitions: Option[Tag] => Option[Tag] => LogNum,
-    emissions: Option[Tag] => Option[Sym] => LogNum,
-    tagDict: OptionalTagDict[Sym, Tag],
-    validTransitions: Map[Option[Tag], Set[Option[Tag]]]) =
-    this(transitions, emissions, tagDict.allTags.flatten, new Viterbi(new HmmEdgeScorer(transitions, emissions), tagDict, validTransitions))
-
+  override protected def tagSequence(sequence: IndexedSeq[Sym]): Option[IndexedSeq[Tag]] = {
+    tags(Seq(sequence)) match { case Seq(x) => x }
+  }
 }
 
-object HardConstraintHmmTagger {
+object HmmTagger {
   def apply[Sym, Tag](
-    hmmTagger: HmmTagger[Sym, Tag],
-    tagDict: OptionalTagDict[Sym, Tag], allowUnseenWordTypes: Boolean) =
-    new HardConstraintHmmTagger(hmmTagger.transitions, hmmTagger.emissions, tagDict.allTags.flatten,
-      new Viterbi(new HmmEdgeScorer(hmmTagger.transitions, hmmTagger.emissions), tagDict))
+    transitions: Option[Tag] => Option[Tag] => LogNum,
+    emissions: Option[Tag] => Option[Sym] => LogNum,
+    tagDict: OptionalTagDict[Sym, Tag]) = {
+    val allTags = tagDict.allTags + None
+    new HmmTagger[Sym, Tag](transitions, emissions, tagDict, allTags.mapToVal(allTags).toMap)
+  }
+}
 
-  def apply[Sym, Tag](
-    hmmTagger: HmmTagger[Sym, Tag],
-    tagSet: Set[Tag],
-    validTransitions: Map[Option[Tag], Set[Option[Tag]]]) =
-    new HardConstraintHmmTagger(hmmTagger.transitions, hmmTagger.emissions, tagSet,
-      new Viterbi(new HmmEdgeScorer(hmmTagger.transitions, hmmTagger.emissions), tagSet, validTransitions))
+class FastHmmTagger[Sym, Tag] {
 
-  def apply[Sym, Tag](
-    hmmTagger: HmmTagger[Sym, Tag],
-    tagDict: OptionalTagDict[Sym, Tag], allowUnseenWordTypes: Boolean,
-    validTransitions: Map[Option[Tag], Set[Option[Tag]]]) =
-    new HardConstraintHmmTagger(hmmTagger.transitions, hmmTagger.emissions, tagDict.allTags.flatten,
-      new Viterbi(new HmmEdgeScorer(hmmTagger.transitions, hmmTagger.emissions), tagDict, validTransitions))
+  type OSym = Option[Sym]
+  type OTag = Option[Tag]
+
+  type TokTag = (OTag, (Map[OTag, LogNum], LogNum))
+  type Tok = (OSym, Vector[TokTag])
+
+  def tagAllFast(sequences: Seq[IndexedSeq[Tok]]): Seq[IndexedSeq[Tag]] = {
+    sequences.map(tagSequenceFast)
+  }
+
+  def tagSequenceFast(sequence: IndexedSeq[Tok]): IndexedSeq[Tag] = {
+    // viterbi(t)(j) = the probability of the most likely subsequence of states 
+    // that accounts for the first t observations and ends in state j.
+
+    // Set the initial values for the fold based on the initial observation
+    val startViterbi = Vector[(Option[Tag], LogNum)](None -> LogNum.one)
+    val startBackpointers = List[Map[Option[Tag], Option[Tag]]]()
+
+    // Build up backpointers list by calculating viterbi scores for each subsequent observation
+    val backpointers =
+      (sequence.drop(1)).foldLeft((startViterbi, startBackpointers)) {
+        case ((viterbi, backpointers), (currSym, currTags)) =>
+          // for each possible tag, get the highest probability previous tag and its score
+          val (nextViterbi, currBackpointers) =
+            currTags.iterator // each legal tag for the current symbol
+              .map {
+                case (currTag, (currTagTransitions, currTagEmission)) =>
+                  currTag -> viterbi.map {
+                    case (prevTag, viterbiScore) =>
+                      (prevTag, viterbiScore * currTagTransitions(prevTag) * currTagEmission)
+                  }.maxBy(_._2)
+              }
+              .map { case (prev, (curr, viterbiScore)) => ((prev, viterbiScore), (prev, curr)) }
+              .unzip
+          (nextViterbi, currBackpointers.toMap :: backpointers)
+      }._2
+
+    // Get the optimal tag sequence and map the tag indices back to their string values
+    backtrack(backpointers).flatten
+  }
+
+  /**
+   * Backtrack through the backpointer maps to recover the optimal tag sequence.
+   */
+  private def backtrack(backpointers: List[Map[OTag, OTag]]): IndexedSeq[OTag] = {
+    @tailrec def inner(backpointers: List[Map[OTag, OTag]], curTag: OTag, tags: List[OTag]): List[OTag] =
+      backpointers match {
+        case Nil => assert(curTag == None); tags
+        case currPointers :: previousPointers => inner(previousPointers, currPointers(curTag), curTag :: tags)
+      }
+    val Pattern.Map(None -> lastTag) :: previousPointers = backpointers
+    inner(previousPointers, lastTag, Nil).toIndexedSeq
+  }
+
 }
 
 //////////////////////////////
@@ -105,11 +124,11 @@ trait HmmTaggerFactory[Sym, Tag] {
     emissions: Option[Tag] => Option[Sym] => LogNum): HmmTagger[Sym, Tag]
 }
 
-class SimpleHmmTaggerFactory[Sym, Tag](tagSet: Set[Tag]) extends HmmTaggerFactory[Sym, Tag] {
+class UnconstrainedHmmTaggerFactory[Sym, Tag](tagSet: Set[Tag]) extends HmmTaggerFactory[Sym, Tag] {
   override def apply(
     transitions: Option[Tag] => Option[Tag] => LogNum,
     emissions: Option[Tag] => Option[Sym] => LogNum): HmmTagger[Sym, Tag] = {
-    HmmTagger(transitions, emissions, tagSet)
+    HmmTagger(transitions, emissions, SimpleTagDict(Map(), tagSet).opt)
   }
 }
 
@@ -117,25 +136,6 @@ class HardTagDictConstraintHmmTaggerFactory[Sym, Tag](tagDict: OptionalTagDict[S
   override def apply(
     transitions: Option[Tag] => Option[Tag] => LogNum,
     emissions: Option[Tag] => Option[Sym] => LogNum): HmmTagger[Sym, Tag] = {
-    new HardConstraintHmmTagger(transitions, emissions, tagDict)
-  }
-}
-
-//////////////////////////////
-// Edge Scorer
-//////////////////////////////
-
-/**
- * Edge Scorer used for Viterbi HMM tagging
- */
-class HmmEdgeScorer[Sym, Tag](
-  transitions: Option[Tag] => Option[Tag] => LogNum,
-  emissions: Option[Tag] => Option[Sym] => LogNum)
-  extends TagEdgeScorer[Sym, Tag] {
-
-  override def apply(prevSym: Option[Sym], prevTag: Option[Tag], currSym: Option[Sym], currTag: Option[Tag]): LogNum = {
-    val t = transitions(prevTag)(currTag) // probability of transition to current
-    val e = emissions(currTag)(currSym) // probability of observing current symbol
-    t * e
+    HmmTagger(transitions, emissions, tagDict)
   }
 }

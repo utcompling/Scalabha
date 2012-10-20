@@ -63,7 +63,7 @@ class UnsupervisedEmHmmTaggerTrainerTests {
         new PassthroughCountsTransformer(),
         tagDict,
         trainRaw).make()
-    val unsupervisedTagger = new HmmTagger(initialTransitions, initialEmissions, tagDict.allTags)
+    val unsupervisedTagger = HmmTagger(initialTransitions, initialEmissions, tagDict.opt)
 
     val output = unsupervisedTagger.tag(gold.map(_.map(_._1)))
     val results = new TaggerEvaluator().evaluate(output, gold, tagDict)
@@ -120,7 +120,7 @@ class UnsupervisedEmHmmTaggerTrainerTests {
         new PassthroughCountsTransformer(),
         tagDict,
         trainRaw).make(),
-      tagDict.allTags)
+      tagDict.opt)
 
     val unsupervisedTrainer: TypesupervisedTaggerTrainer[String, String] =
       new EmHmmTaggerTrainer(
@@ -161,7 +161,7 @@ class UnsupervisedEmHmmTaggerTrainerTests {
         new PassthroughCountsTransformer(),
         tagDict,
         trainLab.map(_.map(_._1))).make(),
-      tagDict.allTags)
+      tagDict.opt)
 
     val unsupervisedTrainer: TypesupervisedTaggerTrainer[String, String] =
       new EmHmmTaggerTrainer(
@@ -239,7 +239,7 @@ class UnsupervisedEmHmmTaggerTrainerTests {
         new PassthroughCountsTransformer(),
         tagDict,
         trainRaw).make(),
-      tagDict.allTags)
+      tagDict.opt)
 
     val unsupervisedTrainer: TypesupervisedHmmTaggerTrainer[String,String] =
       new EmHmmTaggerTrainer[String, String](

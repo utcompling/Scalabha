@@ -71,7 +71,7 @@ class SemisupervisedEmHmmTaggerTrainerTests {
         emissionCountsTransformer =
           new EmissionCountsTransformer(
             EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))),
-        hmmTaggerFactory = new SimpleHmmTaggerFactory(tagDict.allTags),
+        hmmTaggerFactory = new UnconstrainedHmmTaggerFactory(tagDict.allTags),
         maxIterations = 20,
         minAvgLogProbChangeForEM = 0.00001)
     val tagger = trainer.trainWithSomeGoldLabeled(trainRaw, trainLab, tagDict)
@@ -114,7 +114,7 @@ class SemisupervisedEmHmmTaggerTrainerTests {
 object SemisupervisedEmHmmTaggerTrainerTests {
 
   @BeforeClass def turnOffLogging() {
-    Logger.getRootLogger.setLevel(Level.OFF)
+    //Logger.getRootLogger.setLevel(Level.OFF)
   }
 
 }
