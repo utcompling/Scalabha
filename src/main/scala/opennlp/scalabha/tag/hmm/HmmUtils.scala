@@ -69,6 +69,7 @@ object HmmUtils {
           val transitionsFromPrev = transitions(prevTag)
           allTags.mapTo(transitionsFromPrev)
         }
+        .map { case (prevTag, currTagProbs) => (prevTag, currTagProbs.filter(tp => validTransitions(prevTag)(tp._1))) }
         .ungroup
         .map { case (prevTag, (currTag, p)) => currTag -> (prevTag -> p) }
         .groupByKey
