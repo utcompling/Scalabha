@@ -57,11 +57,20 @@ class Viterbi[Sym, Tag](
     this(edgeScorer, OptionalTagDict(SimpleTagDict(Map[Sym, Set[Tag]](), tagSet)))
 
   /**
+   * Tag each sequence using this model.
+   *
+   * @param rawSequences	unlabeled data to be tagged
+   * @return				sequences tagged by the model
+   */
+  override def tagOptions(rawSequences: Seq[IndexedSeq[Sym]]): Seq[Option[IndexedSeq[(Sym, Tag)]]] =
+    rawSequences.par.map(tagSequence).seq
+
+  /**
    * Find the most likely tagging for the sequence.
    *
    * @param sequence		sequence to be tagged
    */
-  override def tagSequence(sequence: IndexedSeq[Sym]): Option[IndexedSeq[Tag]] = {
+  override def tagSequence(sequence: IndexedSeq[Sym]): Option[IndexedSeq[(Sym, Tag)]] = {
     // viterbi(t)(j) = the probability of the most likely subsequence of states 
     // that accounts for the first t observations and ends in state j.
 
@@ -95,7 +104,7 @@ class Viterbi[Sym, Tag](
       }.map { case (_, backpointers, _) => backpointers }
 
     // Get the optimal tag sequence and map the tag indices back to their string values
-    backpointers.map(bp => backtrack(bp).flatten)
+    backpointers.map(bp => sequence zipSafe backtrack(bp).flatten)
   }
 
   /**

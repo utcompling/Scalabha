@@ -8,7 +8,7 @@ import opennlp.scalabha.util.CollectionUtil._
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.Pattern
-import opennlp.scalabha.util.Pattern.{ -> }
+import opennlp.scalabha.util.Pattern.{ ->, :+, +: }
 import opennlp.scalabha.tag.TagDict
 import opennlp.scalabha.tag.hmm.HmmUtils._
 import scala.annotation.tailrec
@@ -36,13 +36,14 @@ case class HmmTagger[Sym, Tag](
 
   private[this] val fastHmmTagger = new FastHmmTagger[Sym, Tag]
 
-  override protected def tags(rawSequences: Seq[IndexedSeq[Sym]]): Seq[Option[IndexedSeq[Tag]]] = {
+  override def tagOptions(rawSequences: Seq[IndexedSeq[Sym]]): Seq[Option[IndexedSeq[(Sym, Tag)]]] = {
     val newSequences = addDistributionsToRawSequences[Sym, Tag](rawSequences, tagDict, transitions, emissions, validTransitions)
     fastHmmTagger.tagAllFast(newSequences).map(Some(_))
   }
 
-  override protected def tagSequence(sequence: IndexedSeq[Sym]): Option[IndexedSeq[Tag]] = {
-    tags(Seq(sequence)) match { case Seq(x) => x }
+  override def tagSequence(sequence: IndexedSeq[Sym]): Option[IndexedSeq[(Sym, Tag)]] = {
+    val Seq(newSequence) = addDistributionsToRawSequences[Sym, Tag](Seq(sequence), tagDict, transitions, emissions, validTransitions)
+    Some(fastHmmTagger.tagSequenceFast(newSequence))
   }
 }
 
@@ -64,11 +65,11 @@ class FastHmmTagger[Sym, Tag] {
   type TokTag = (OTag, (Map[OTag, LogNum], LogNum))
   type Tok = (OSym, Vector[TokTag])
 
-  def tagAllFast(sequences: Seq[IndexedSeq[Tok]]): Seq[IndexedSeq[Tag]] = {
-    sequences.map(tagSequenceFast)
+  def tagAllFast(sequences: Seq[IndexedSeq[Tok]]): Seq[IndexedSeq[(Sym, Tag)]] = {
+    sequences.par.map(tagSequenceFast).seq
   }
 
-  def tagSequenceFast(sequence: IndexedSeq[Tok]): IndexedSeq[Tag] = {
+  def tagSequenceFast(sequence: IndexedSeq[Tok]): IndexedSeq[(Sym, Tag)] = {
     // viterbi(t)(j) = the probability of the most likely subsequence of states 
     // that accounts for the first t observations and ends in state j.
 
@@ -96,17 +97,17 @@ class FastHmmTagger[Sym, Tag] {
       }._2
 
     // Get the optimal tag sequence and map the tag indices back to their string values
-    backtrack(backpointers).flatten
+    sequence.flatMap(_._1) zipSafe backtrack(backpointers)
   }
 
   /**
    * Backtrack through the backpointer maps to recover the optimal tag sequence.
    */
-  private def backtrack(backpointers: List[Map[OTag, OTag]]): IndexedSeq[OTag] = {
-    @tailrec def inner(backpointers: List[Map[OTag, OTag]], curTag: OTag, tags: List[OTag]): List[OTag] =
+  private def backtrack(backpointers: List[Map[OTag, OTag]]): IndexedSeq[Tag] = {
+    @tailrec def inner(backpointers: List[Map[OTag, OTag]], curTag: OTag, tags: List[Tag]): List[Tag] =
       backpointers match {
         case Nil => assert(curTag == None); tags
-        case currPointers :: previousPointers => inner(previousPointers, currPointers(curTag), curTag :: tags)
+        case currPointers :: previousPointers => inner(previousPointers, currPointers(curTag), curTag.get :: tags)
       }
     val Pattern.Map(None -> lastTag) :: previousPointers = backpointers
     inner(previousPointers, lastTag, Nil).toIndexedSeq

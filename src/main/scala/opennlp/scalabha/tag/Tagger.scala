@@ -19,7 +19,7 @@ trait Tagger[Sym, Tag] {
    * @return				sequences tagged by the model
    */
   final def tag(rawSequences: Seq[IndexedSeq[Sym]]): Seq[IndexedSeq[(Sym, Tag)]] =
-    (rawSequences zipSafe tagAll(rawSequences)).mapt((ws, tagged) =>
+    (rawSequences zipSafe tagOptions(rawSequences)).mapt((ws, tagged) =>
       tagged.getOrElse(throw new RuntimeException("could not tag sentence: '%s'".format(ws.mkString(" ")))))
 
   /**
@@ -28,17 +28,7 @@ trait Tagger[Sym, Tag] {
    * @param rawSequences	unlabeled data to be tagged
    * @return				sequences tagged by the model
    */
-  final def tagAll(rawSequences: Seq[IndexedSeq[Sym]]): Seq[Option[IndexedSeq[(Sym, Tag)]]] =
-    (rawSequences zipSafe tags(rawSequences)).map { case (ws, ts) => ts.map(ws zipSafe _) }
-
-  /**
-   * Tag each sequence using this model.
-   *
-   * @param rawSequences	unlabeled data to be tagged
-   * @return				sequences of tags returned from the model
-   */
-  protected def tags(rawSequences: Seq[IndexedSeq[Sym]]): Seq[Option[IndexedSeq[Tag]]] =
-    rawSequences.map(tagSequence)
+  def tagOptions(rawSequences: Seq[IndexedSeq[Sym]]): Seq[Option[IndexedSeq[(Sym, Tag)]]]
 
   /**
    * Tag the sequence using this model.
@@ -46,7 +36,7 @@ trait Tagger[Sym, Tag] {
    * @param sequence 	a single sequence to be tagged
    * @return			the tagging of the input sequence assigned by the model
    */
-  protected def tagSequence(sequence: IndexedSeq[Sym]): Option[IndexedSeq[Tag]] = sys.error("not implemented")
+  def tagSequence(sequence: IndexedSeq[Sym]): Option[IndexedSeq[(Sym, Tag)]]
 
 }
 
