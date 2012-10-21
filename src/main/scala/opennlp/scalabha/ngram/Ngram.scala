@@ -49,7 +49,7 @@ class Ngram[T, S](
     require(seq.length >= n, "seq must have length at least N=%s".format(n))
     seq
       .sliding(n)
-      .map { case context :+ word => cfd(context.toIndexedSeq)(word) }
+      .map { case context :+ word => cfd(context.toVector)(word) }
       .product
   }
 

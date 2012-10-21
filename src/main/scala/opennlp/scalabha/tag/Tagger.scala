@@ -18,7 +18,7 @@ trait Tagger[Sym, Tag] {
    * @param rawSequences	unlabeled data to be tagged
    * @return				sequences tagged by the model
    */
-  final def tag(rawSequences: Seq[IndexedSeq[Sym]]): Seq[IndexedSeq[(Sym, Tag)]] =
+  final def tag(rawSequences: Vector[Vector[Sym]]): Vector[Vector[(Sym, Tag)]] =
     (rawSequences zipSafe tagOptions(rawSequences)).mapt((ws, tagged) =>
       tagged.getOrElse(throw new RuntimeException("could not tag sentence: '%s'".format(ws.mkString(" ")))))
 
@@ -28,7 +28,7 @@ trait Tagger[Sym, Tag] {
    * @param rawSequences	unlabeled data to be tagged
    * @return				sequences tagged by the model
    */
-  def tagOptions(rawSequences: Seq[IndexedSeq[Sym]]): Seq[Option[IndexedSeq[(Sym, Tag)]]]
+  def tagOptions(rawSequences: Vector[Vector[Sym]]): Vector[Option[Vector[(Sym, Tag)]]]
 
   /**
    * Tag the sequence using this model.
@@ -36,7 +36,7 @@ trait Tagger[Sym, Tag] {
    * @param sequence 	a single sequence to be tagged
    * @return			the tagging of the input sequence assigned by the model
    */
-  def tagSequence(sequence: IndexedSeq[Sym]): Option[IndexedSeq[(Sym, Tag)]]
+  def tagSequence(sequence: Vector[Sym]): Option[Vector[(Sym, Tag)]]
 
 }
 
@@ -55,7 +55,7 @@ trait SupervisedTaggerTrainer[Sym, Tag] {
    * @param tagDict				a tag dictionary
    * @return					a trained Tagger
    */
-  final def train(taggedSequences: Iterable[IndexedSeq[(Sym, Tag)]]): Tagger[Sym, Tag] = {
+  final def train(taggedSequences: Vector[Vector[(Sym, Tag)]]): Tagger[Sym, Tag] = {
     val (transitionCounts, emissionCounts) = HmmUtils.getCountsFromTagged(taggedSequences)
     makeTagger(transitionCounts, emissionCounts)
   }
@@ -88,7 +88,7 @@ trait TypesupervisedTaggerTrainer[Sym, Tag] {
    * @return						a trained Tagger
    */
   def train(
-    rawSequences: Iterable[IndexedSeq[Sym]],
+    rawSequences: Vector[Vector[Sym]],
     tagDict: TagDict[Sym, Tag]): Tagger[Sym, Tag]
 
   /**
@@ -102,8 +102,8 @@ trait TypesupervisedTaggerTrainer[Sym, Tag] {
    * @return						a trained Tagger
    */
   def trainWithSomeGoldLabeled(
-    rawSequences: Iterable[IndexedSeq[Sym]],
-    goldTaggedSequences: Iterable[IndexedSeq[(Sym, Tag)]],
+    rawSequences: Vector[Vector[Sym]],
+    goldTaggedSequences: Vector[Vector[(Sym, Tag)]],
     tagDict: TagDict[Sym, Tag]): Tagger[Sym, Tag]
 
   /**
@@ -117,8 +117,8 @@ trait TypesupervisedTaggerTrainer[Sym, Tag] {
    * @return						a trained Tagger
    */
   def trainWithSomeNoisyLabeled(
-    rawSequences: Iterable[IndexedSeq[Sym]],
-    noisyTaggedSequences: Iterable[IndexedSeq[(Sym, Tag)]],
+    rawSequences: Vector[Vector[Sym]],
+    noisyTaggedSequences: Vector[Vector[(Sym, Tag)]],
     tagDict: TagDict[Sym, Tag]): Tagger[Sym, Tag]
 
 }

@@ -14,7 +14,7 @@ object HmmUtils {
    *
    * @param taggedTrainSequences	labeled sequences from which to extract counts
    */
-  def getCountsFromTagged[Sym, Tag](taggedSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
+  def getCountsFromTagged[Sym, Tag](taggedSequences: Vector[Vector[(Sym, Tag)]]) = {
     // Separate symbols from tags.  Add start/final symbols and tags to each sequence
     val endedSequences = taggedSequences.map(((None -> None) +: _.map { case (s, t) => Some(s) -> Some(t) } :+ (None -> None)))
     getCountsFromEndedTagged(endedSequences)
@@ -25,7 +25,7 @@ object HmmUtils {
    *
    * @param taggedTrainSequences	labeled sequences from which to extract counts
    */
-  def getCountsFromEndedTagged[Sym, Tag](endedTaggedSequences: Iterable[IndexedSeq[(Sym, Tag)]]) = {
+  def getCountsFromEndedTagged[Sym, Tag](endedTaggedSequences: Vector[Vector[(Sym, Tag)]]) = {
     // Get the tag transitions, including start/final tags
     val tagPairs = endedTaggedSequences.map(_.map(_._2).sliding2).flatten
     val transitionCounts = tagPairs.groupByKey.mapVals(_.counts)
@@ -47,20 +47,20 @@ object HmmUtils {
   }
 
   def addDistributionsToRawSequences[Sym, Tag](
-    rawSequences: Seq[IndexedSeq[Sym]],
+    rawSequences: Vector[Vector[Sym]],
     tagDict: OptionalTagDict[Sym, Tag],
     transitions: Option[Tag] => Option[Tag] => LogNum,
-    emissions: Option[Tag] => Option[Sym] => LogNum): Seq[IndexedSeq[(Option[Sym], Vector[(Option[Tag], (Map[Option[Tag], LogNum], LogNum))])]] = {
+    emissions: Option[Tag] => Option[Sym] => LogNum): Vector[Vector[(Option[Sym], Vector[(Option[Tag], (Map[Option[Tag], LogNum], LogNum))])]] = {
     val allTags = tagDict.allTags + None
     addDistributionsToRawSequences(rawSequences, tagDict, transitions, emissions, allTags.mapToVal(allTags).toMap)
   }
 
   def addDistributionsToRawSequences[Sym, Tag](
-    rawSequences: Seq[IndexedSeq[Sym]],
+    rawSequences: Vector[Vector[Sym]],
     tagDict: OptionalTagDict[Sym, Tag],
     transitions: Option[Tag] => Option[Tag] => LogNum,
     emissions: Option[Tag] => Option[Sym] => LogNum,
-    validTransitions: Map[Option[Tag], Set[Option[Tag]]]): Seq[IndexedSeq[(Option[Sym], Vector[(Option[Tag], (Map[Option[Tag], LogNum], LogNum))])]] = {
+    validTransitions: Map[Option[Tag], Set[Option[Tag]]]): Vector[Vector[(Option[Sym], Vector[(Option[Tag], (Map[Option[Tag], LogNum], LogNum))])]] = {
 
     val allTags = tagDict.allTags + None
     val reverseTransitions =

@@ -7,7 +7,11 @@ import opennlp.scalabha.util.CollectionUtil._
 
 class TaggerEvaluator[Sym, Tag] {
 
-  def evaluate(taggerOutput: Iterable[IndexedSeq[(Sym, Tag)]], goldData: Iterable[IndexedSeq[(Sym, Tag)]], tagDict: TagDict[Sym, Tag]): ScoreResults[Sym, Tag] = {
+  def evaluate(
+    taggerOutput: TraversableOnce[Vector[(Sym, Tag)]],
+    goldData: TraversableOnce[Vector[(Sym, Tag)]],
+    tagDict: TagDict[Sym, Tag]): ScoreResults[Sym, Tag] = {
+
     var correct = 0
     var total = 0
     var knownCorrect = 0
@@ -16,8 +20,7 @@ class TaggerEvaluator[Sym, Tag] {
     var unkTotal = 0
     var mistakes = List[(Tag, Tag)]()
 
-    assert(taggerOutput.size == goldData.size, "number of sequences in output does not match gold: %d vs %d".format(taggerOutput.size, goldData.size))
-    for ((result, gold) <- taggerOutput zipSafe goldData) {
+    for ((result, gold) <- taggerOutput.toIterator zipSafe goldData) {
       assert(result.size == gold.size, "sequence length in result does not match gold: %s != %s".format(result, gold))
       for (((rsltSym, rsltTag), (goldSym, goldTag)) <- result zipSafe gold) {
         assert(rsltSym == goldSym, "result sentence and gold sentence are different: %s != %s".format(result.map(_._1), gold.map(_._1)))

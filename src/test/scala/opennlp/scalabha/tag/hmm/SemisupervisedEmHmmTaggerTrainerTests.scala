@@ -2,6 +2,7 @@ package opennlp.scalabha.tag.hmm
 
 import org.junit.Assert._
 import org.junit._
+import opennlp.scalabha.util.CollectionUtil._
 import opennlp.scalabha.util.CollectionUtils._
 import scala.io.Source
 import opennlp.scalabha.tag._
@@ -55,7 +56,7 @@ class SemisupervisedEmHmmTaggerTrainerTests {
     // TODO: WRITE THIS TEST
   }
 
-  private def runUnsupervisedTrainingTest(tagDict: TagDict[String, String], trainLab: Seq[IndexedSeq[(String, String)]]) = {
+  private def runUnsupervisedTrainingTest(tagDict: TagDict[String, String], trainLab: Vector[Vector[(String, String)]]) = {
     val trainRaw = RawFile("data/postag/english/enraw20k")
     val gold = TaggedFile("data/postag/english/entest")
 
@@ -80,28 +81,28 @@ class SemisupervisedEmHmmTaggerTrainerTests {
   }
 
   object TaggedFile {
-    def apply(filename: String): List[IndexedSeq[(String, String)]] =
+    def apply(filename: String): Vector[Vector[(String, String)]] =
       FileUtils.readLines(filename)
         .map(_.trim)
         .split("###/###")
         .filter(_.nonEmpty)
-        .map(_.map(_.split("/").toTuple2).toIndexedSeq)
-        .toList
+        .map(_.map(_.split("/").toTuple2).toVector)
+        .toVector
   }
 
   object AsRawFile {
-    def apply(filename: String): List[IndexedSeq[String]] =
+    def apply(filename: String): Vector[Vector[String]] =
       TaggedFile(filename).map(_.map(_._1))
   }
 
   object RawFile {
-    def apply(filename: String): List[IndexedSeq[String]] =
+    def apply(filename: String): Vector[Vector[String]] =
       FileUtils.readLines(filename)
         .map(_.trim)
         .split("###")
         .filter(_.nonEmpty)
-        .map(_.toIndexedSeq)
-        .toList
+        .map(_.toVector)
+        .toVector
   }
 
   def assertResultsEqual(expectedString: String, results: ScoreResults[String, String]) {

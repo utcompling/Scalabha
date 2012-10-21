@@ -5,7 +5,7 @@ import scala.io.Source
 import org.apache.commons.logging.LogFactory
 import org.apache.log4j.Level
 import org.apache.log4j.Logger
-import org.junit.Assert.assertEquals
+import org.junit.Assert._
 import org.junit.BeforeClass
 import org.junit.Test
 import opennlp.scalabha.tag.hmm._
@@ -21,7 +21,7 @@ class UnsupervisedEmHmmTaggerTrainerTests {
 
   @Test
   def tiny_beforeEM() {
-    val trainRaw = List(
+    val trainRaw = Vector(
       "the dog walks quickly",
       "the cat walks quietly",
       "the dog saw the cat",
@@ -30,7 +30,7 @@ class UnsupervisedEmHmmTaggerTrainerTests {
       "the bird sings",
       "the mouse walks",
       "the aardvark walks",
-      "the aardvark meanders").map(_.split(" ").toIndexedSeq)
+      "the aardvark meanders").map(_.split(" ").toVector)
 
     val tagDict = SimpleTagDict(Map(
       "bird" -> Set("N"),
@@ -45,7 +45,7 @@ class UnsupervisedEmHmmTaggerTrainerTests {
       "the" -> Set("D"),
       "walks" -> Set("V")))
 
-    val gold = List(
+    val gold = Vector(
       Vector(("the", "D"), ("bird", "N"), ("walks", "V")),
       Vector(("the", "D"), ("horse", "N"), ("walks", "V")),
       Vector(("the", "D"), ("aardvark", "N"), ("walks", "V")),
@@ -81,7 +81,7 @@ class UnsupervisedEmHmmTaggerTrainerTests {
 
   @Test
   def tiny() {
-    val trainRaw = List(
+    val trainRaw = Vector(
       "the aardvark walks",
       "the aardvark meanders",
       "the dog walks quickly",
@@ -90,7 +90,7 @@ class UnsupervisedEmHmmTaggerTrainerTests {
       "the cat saw the dog",
       "the dog saw the saw",
       "the bird sings",
-      "the mouse walks").map(_.split(" ").toIndexedSeq)
+      "the mouse walks").map(_.split(" ").toVector)
 
     val tagDict = SimpleTagDict(Map(
       "bird" -> Set("N"),
@@ -105,7 +105,7 @@ class UnsupervisedEmHmmTaggerTrainerTests {
       "the" -> Set("D"),
       "walks" -> Set("V")))
 
-    val gold = List(
+    val gold = Vector(
       Vector(("a", "D"), ("dog", "N"), ("walks", "V"), ("quickly", "R")),
       Vector(("the", "D"), ("bird", "N"), ("walks", "V")),
       Vector(("the", "D"), ("horse", "N"), ("walks", "V")),
@@ -264,8 +264,8 @@ class UnsupervisedEmHmmTaggerTrainerTests {
         .map(_.trim)
         .split("###/###")
         .filter(_.nonEmpty)
-        .map(_.map(_.split("/").toTuple2).toIndexedSeq)
-        .toList
+        .map(_.map(_.split("/").toTuple2).toVector)
+        .toVector
   }
 
   object AsRawFile {
@@ -279,8 +279,8 @@ class UnsupervisedEmHmmTaggerTrainerTests {
         .map(_.trim)
         .split("###")
         .filter(_.nonEmpty)
-        .map(_.toIndexedSeq)
-        .toList
+        .map(_.toVector)
+        .toVector
   }
 
   def assertResultsEqual(expectedString: String, results: ScoreResults[String, String]) {

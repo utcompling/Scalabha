@@ -35,7 +35,7 @@ abstract class TypesupervisedHmmTaggerTrainer[Sym, Tag](
    * @return						a trained tagger
    */
   def trainFromInitialHmm(
-    rawSequences: Iterable[IndexedSeq[Sym]],
+    rawSequences: Vector[Vector[Sym]],
     initialHmm: HmmTagger[Sym, Tag],
     tagDict: TagDict[Sym, Tag],
     priorTransitionCounts: Map[Option[Tag], Map[Option[Tag], Double]],
@@ -52,7 +52,7 @@ abstract class TypesupervisedHmmTaggerTrainer[Sym, Tag](
    * The initial HMM is has UNIFORM distributions and NO priors are assumed.
    */
   final override def train(
-    rawSequences: Iterable[IndexedSeq[Sym]],
+    rawSequences: Vector[Vector[Sym]],
     tagDict: TagDict[Sym, Tag]): Tagger[Sym, Tag] = {
 
     trainWithPriors(
@@ -69,8 +69,8 @@ abstract class TypesupervisedHmmTaggerTrainer[Sym, Tag](
    * counts from the tagged data are used as priors.
    */
   final override def trainWithSomeGoldLabeled(
-    rawSequences: Iterable[IndexedSeq[Sym]],
-    goldTaggedSequences: Iterable[IndexedSeq[(Sym, Tag)]],
+    rawSequences: Vector[Vector[Sym]],
+    goldTaggedSequences: Vector[Vector[(Sym, Tag)]],
     tagDict: TagDict[Sym, Tag]): Tagger[Sym, Tag] = {
 
     val (transitionPriorCounts, emissionPriorCounts) = HmmUtils.getCountsFromTagged(goldTaggedSequences)
@@ -88,8 +88,8 @@ abstract class TypesupervisedHmmTaggerTrainer[Sym, Tag](
    * NO prior counts are assumed.
    */
   final override def trainWithSomeNoisyLabeled(
-    rawSequences: Iterable[IndexedSeq[Sym]],
-    noisyTaggedSequences: Iterable[IndexedSeq[(Sym, Tag)]],
+    rawSequences: Vector[Vector[Sym]],
+    noisyTaggedSequences: Vector[Vector[(Sym, Tag)]],
     tagDict: TagDict[Sym, Tag]): Tagger[Sym, Tag] = {
 
     val (transitionNoisyCounts, emissionNoisyCounts) = HmmUtils.getCountsFromTagged(noisyTaggedSequences)
@@ -120,7 +120,7 @@ abstract class TypesupervisedHmmTaggerTrainer[Sym, Tag](
    * @return						a trained Tagger
    */
   final def trainWithPriors(
-    rawSequences: Iterable[IndexedSeq[Sym]],
+    rawSequences: Vector[Vector[Sym]],
     initialTransitionCounts: Map[Option[Tag], Map[Option[Tag], Int]], initialEmissionCounts: Map[Option[Tag], Map[Option[Sym], Int]],
     priorTransitionCounts: Map[Option[Tag], Map[Option[Tag], Double]], priorEmissionCounts: Map[Option[Tag], Map[Option[Sym], Double]],
     tagDict: TagDict[Sym, Tag]): Tagger[Sym, Tag] = {
@@ -141,7 +141,7 @@ abstract class TypesupervisedHmmTaggerTrainer[Sym, Tag](
    * @return						a trained tagger
    */
   final def trainFromInitialHmm(
-    rawSequences: Iterable[IndexedSeq[Sym]],
+    rawSequences: Vector[Vector[Sym]],
     initialHmm: HmmTagger[Sym, Tag],
     tagDict: TagDict[Sym, Tag]): HmmTagger[Sym, Tag] = {
 

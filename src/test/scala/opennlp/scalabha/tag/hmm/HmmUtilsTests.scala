@@ -3,8 +3,10 @@ package opennlp.scalabha.tag.hmm
 import org.junit.Assert._
 import org.junit._
 import opennlp.scalabha.util.CollectionUtils._
+import opennlp.scalabha.util.FileUtils._
 import scala.io.Source
 import opennlp.scalabha.tag._
+import opennlp.scalabha.tag.TagUtils._
 import opennlp.scalabha.tag.support._
 import opennlp.scalabha.tag.hmm.support._
 import opennlp.scalabha.tag.TaggerEvaluator
@@ -67,6 +69,20 @@ class HmmUtilsTests {
       println
     }
 
+  }
+
+  object TaggedFile {
+    def apply(filename: String): Iterable[IndexedSeq[(String, String)]] = {
+      val WordTagRe = """^(.+)\|([^|]+)$""".r
+      new Iterable[IndexedSeq[(String, String)]] {
+        override def iterator =
+          readLines(filename)
+            .map(_.trim
+              .split("\\s+")
+              .map { case WordTagRe(word, tag) => (word, tag) }
+              .toIndexedSeq)
+      }
+    }
   }
 
 }

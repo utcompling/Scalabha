@@ -2,6 +2,7 @@ package opennlp.scalabha.tag.hmm
 
 import org.junit.Assert._
 import org.junit._
+import opennlp.scalabha.util.CollectionUtil._
 import opennlp.scalabha.util.CollectionUtils._
 import scala.io.Source
 import opennlp.scalabha.tag.SupervisedTaggerTrainer
@@ -24,11 +25,11 @@ class SupervisedHmmTaggerTrainerTests {
 
   @Test
   def tiny_noSmoothing() {
-    val train = List(
+    val train = Vector(
       "the/D dog/N walks/V ./.",
       "the/D cat/N walks/V ./.",
       "a/D dog/N barks/V ./.")
-      .map(_.split(" ").map(_.split("/").toTuple2).toIndexedSeq)
+      .map(_.split(" ").map(_.split("/").toTuple2).toVector)
 
     val tagDict = new SimpleTagDictFactory().make(train)
     val trainer: SupervisedTaggerTrainer[String, String] =
@@ -37,17 +38,17 @@ class SupervisedHmmTaggerTrainerTests {
         emissionCountsTransformer = EmissionCountsTransformer(),
         hmmTaggerFactory = new UnconstrainedHmmTaggerFactory(tagDict.allTags))
     val tagger: Tagger[String, String] = trainer.train(train)
-    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("the dog walks . ".split(" "))).map(_.map(_._2)))
-    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("a cat walks . ".split(" "))).map(_.map(_._2)))
+    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("the dog walks . ".split(" ").toVector)).map(_.map(_._2)))
+    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("a cat walks . ".split(" ").toVector)).map(_.map(_._2)))
   }
 
   @Test
   def tiny_smoothed() {
-    val train = List(
+    val train = Vector(
       "the/D dog/N walks/V ./.",
       "the/D cat/N walks/V ./.",
       "a/D dog/N barks/V ./.")
-      .map(_.split(" ").map(_.split("/").toTuple2).toIndexedSeq)
+      .map(_.split(" ").map(_.split("/").toTuple2).toVector)
 
     val tagDict = new SimpleTagDictFactory().make(train)
     val trainer: SupervisedTaggerTrainer[String, String] =
@@ -60,9 +61,9 @@ class SupervisedHmmTaggerTrainerTests {
             EisnerSmoothingCondCountsTransformer(lambda = 1.0, backoffCountsTransformer = AddLambdaSmoothingCountsTransformer(lambda = 1.0))),
         hmmTaggerFactory = new UnconstrainedHmmTaggerFactory(tagDict.allTags))
     val tagger: Tagger[String, String] = trainer.train(train)
-    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("the dog walks . ".split(" "))).map(_.map(_._2)))
-    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("a cat meows . ".split(" "))).map(_.map(_._2)))
-    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("this bird chirps . ".split(" "))).map(_.map(_._2)))
+    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("the dog walks . ".split(" ").toVector)).map(_.map(_._2)))
+    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("a cat meows . ".split(" ").toVector)).map(_.map(_._2)))
+    assertEquals(Vector(Vector("D", "N", "V", ".")), tagger.tag(Vector("this bird chirps . ".split(" ").toVector)).map(_.map(_._2)))
   }
 
   @Test
@@ -127,7 +128,7 @@ class SupervisedHmmTaggerTrainerTests {
     val train = TaggedFile("data/postag/english/entrain")
     val tagDict = new SimpleTagDictFactory().make(train)
     val gold = TaggedFile("data/postag/english/entest")
-    //val gold = List(Vector(("The", "D"), ("<unknown>", "N"), ("runs", "V"), (".", ".")))
+    //val gold = Vector(Vector(("The", "D"), ("<unknown>", "N"), ("runs", "V"), (".", ".")))
 
     LOG.debug("tagDictTrain.size = " + tagDict.setIterator.ungroup.size)
     LOG.debug("labeledTrain.size = " + train.size)
@@ -170,7 +171,7 @@ class SupervisedHmmTaggerTrainerTests {
     val train = TaggedFile("data/postag/english/entrain")
     val tagDict = new SimpleTagDictFactory().make(train)
     val gold = TaggedFile("data/postag/english/entest")
-    //val gold = List(Vector(("The", "D"), ("<unknown>", "N"), ("runs", "V"), (".", ".")))
+    //val gold = Vector(Vector(("The", "D"), ("<unknown>", "N"), ("runs", "V"), (".", ".")))
 
     LOG.debug("tagDictTrain.size = " + tagDict.setIterator.ungroup.size)
     LOG.debug("labeledTrain.size = " + train.size)
@@ -209,7 +210,7 @@ class SupervisedHmmTaggerTrainerTests {
     val train = TaggedFile("data/postag/english/entrain")
     val tagDict = new SimpleTagDictFactory().make(train)
     val gold = TaggedFile("data/postag/english/entest")
-    //val gold = List(Vector(("The", "D"), ("<unknown>", "N"), ("runs", "V"), (".", ".")))
+    //val gold = Vector(Vector(("The", "D"), ("<unknown>", "N"), ("runs", "V"), (".", ".")))
 
     LOG.debug("tagDictTrain.size = " + tagDict.setIterator.ungroup.size)
     LOG.debug("labeledTrain.size = " + train.size)
@@ -247,7 +248,7 @@ class SupervisedHmmTaggerTrainerTests {
     val train = TaggedFile("data/postag/english/entrain")
     val tagDict = new SimpleTagDictFactory().make(train)
     val gold = TaggedFile("data/postag/english/entest")
-    //val gold = List(Vector(("The", "D"), ("<unknown>", "N"), ("runs", "V"), (".", ".")))
+    //val gold = Vector(Vector(("The", "D"), ("<unknown>", "N"), ("runs", "V"), (".", ".")))
 
     LOG.debug("tagDictTrain.size = " + tagDict.setIterator.ungroup.size)
     LOG.debug("labeledTrain.size = " + train.size)
@@ -287,8 +288,8 @@ class SupervisedHmmTaggerTrainerTests {
         .map(_.trim)
         .split("###/###")
         .filter(_.nonEmpty)
-        .map(_.map(_.split("/").toSeq match { case Seq(w, t) => (w, t) }).toIndexedSeq)
-        .toList
+        .map(_.map(_.split("/").toSeq match { case Seq(w, t) => (w, t) }).toVector)
+        .toVector
   }
 
   object AsRawFile {

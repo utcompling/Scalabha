@@ -2,6 +2,7 @@ package opennlp.scalabha.tag.support
 
 import org.junit.Assert._
 import org.junit.Test
+import opennlp.scalabha.util.CollectionUtil._
 import opennlp.scalabha.util.CollectionUtils._
 import opennlp.scalabha.util.LogNum
 import opennlp.scalabha.util.LogNum._
@@ -60,7 +61,7 @@ class ViterbiTests {
       }
     }
     
-    val s = "the big dog walks".split(" ")
+    val s = "the big dog walks".split(" ").toVector
 
     assertEquals(Some(List('D, 'N, 'N, 'V)), new Viterbi[Sym, Tag](edgeScorer, fullTagset).tagSequence(s))
     assertEquals(Some(List('D, 'A, 'N, 'V)), new Viterbi[Sym, Tag](edgeScorer, fullTagDict).tagSequence(s))

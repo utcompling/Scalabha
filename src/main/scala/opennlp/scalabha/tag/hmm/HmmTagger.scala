@@ -36,13 +36,13 @@ case class HmmTagger[Sym, Tag](
 
   private[this] val fastHmmTagger = new FastHmmTagger[Sym, Tag]
 
-  override def tagOptions(rawSequences: Seq[IndexedSeq[Sym]]): Seq[Option[IndexedSeq[(Sym, Tag)]]] = {
+  override def tagOptions(rawSequences: Vector[Vector[Sym]]): Vector[Option[Vector[(Sym, Tag)]]] = {
     val newSequences = addDistributionsToRawSequences[Sym, Tag](rawSequences, tagDict, transitions, emissions, validTransitions)
     fastHmmTagger.tagAllFast(newSequences).map(Some(_))
   }
 
-  override def tagSequence(sequence: IndexedSeq[Sym]): Option[IndexedSeq[(Sym, Tag)]] = {
-    val Seq(newSequence) = addDistributionsToRawSequences[Sym, Tag](Seq(sequence), tagDict, transitions, emissions, validTransitions)
+  override def tagSequence(sequence: Vector[Sym]): Option[Vector[(Sym, Tag)]] = {
+    val Vector(newSequence) = addDistributionsToRawSequences[Sym, Tag](Vector(sequence), tagDict, transitions, emissions, validTransitions)
     Some(fastHmmTagger.tagSequenceFast(newSequence))
   }
 }
@@ -65,11 +65,11 @@ class FastHmmTagger[Sym, Tag] {
   type TokTag = (OTag, (Map[OTag, LogNum], LogNum))
   type Tok = (OSym, Vector[TokTag])
 
-  def tagAllFast(sequences: Seq[IndexedSeq[Tok]]): Seq[IndexedSeq[(Sym, Tag)]] = {
+  def tagAllFast(sequences: Vector[Vector[Tok]]): Vector[Vector[(Sym, Tag)]] = {
     sequences.par.map(tagSequenceFast).seq
   }
 
-  def tagSequenceFast(sequence: IndexedSeq[Tok]): IndexedSeq[(Sym, Tag)] = {
+  def tagSequenceFast(sequence: Vector[Tok]): Vector[(Sym, Tag)] = {
     // viterbi(t)(j) = the probability of the most likely subsequence of states 
     // that accounts for the first t observations and ends in state j.
 
@@ -103,14 +103,14 @@ class FastHmmTagger[Sym, Tag] {
   /**
    * Backtrack through the backpointer maps to recover the optimal tag sequence.
    */
-  private def backtrack(backpointers: List[Map[OTag, OTag]]): IndexedSeq[Tag] = {
+  private def backtrack(backpointers: List[Map[OTag, OTag]]): Vector[Tag] = {
     @tailrec def inner(backpointers: List[Map[OTag, OTag]], curTag: OTag, tags: List[Tag]): List[Tag] =
       backpointers match {
         case Nil => assert(curTag == None); tags
         case currPointers :: previousPointers => inner(previousPointers, currPointers(curTag), curTag.get :: tags)
       }
     val Pattern.Map(None -> lastTag) :: previousPointers = backpointers
-    inner(previousPointers, lastTag, Nil).toIndexedSeq
+    inner(previousPointers, lastTag, Nil).toVector
   }
 
 }
