@@ -58,8 +58,8 @@ class EmHmmTaggerTrainer[Sym, Tag](
     rawSequences: Iterable[IndexedSeq[Sym]],
     initialHmm: HmmTagger[Sym, Tag],
     tagDict: TagDict[Sym, Tag],
-    priorTransitionCounts: Map[Option[Tag], Map[Option[Tag], Double]],
-    priorEmissionCounts: Map[Option[Tag], Map[Option[Sym], Double]]): HmmTagger[Sym, Tag] = {
+    priorTransitionCounts: Map[OTag, Map[OTag, Double]],
+    priorEmissionCounts: Map[OTag, Map[OSym, Double]]): HmmTagger[Sym, Tag] = {
 
     // Train an HMM using EM
     val emHmm =
@@ -86,8 +86,14 @@ class EmHmmTaggerTrainer[Sym, Tag](
     rawSequences: Iterable[IndexedSeq[Sym]],
     initialHmm: HmmTagger[Sym, Tag],
     tagDict: OptionalTagDict[Sym, Tag],
-    priorTransitionCounts: Map[Option[Tag], Map[Option[Tag], Double]],
-    priorEmissionCounts: Map[Option[Tag], Map[Option[Sym], Double]]): HmmTagger[Sym, Tag] = {
+    priorTransitionCounts: Map[OTag, Map[OTag, Double]],
+    priorEmissionCounts: Map[OTag, Map[OSym, Double]]): HmmTagger[Sym, Tag] = {
+
+    val symList = None +: rawSequences.flatten.toSet.toVector.map(Some(_))
+    val symIndex = symList.zipWithIndex.toMap
+
+    val tagList = None +: tagDict.allTags.toVector
+    val tagIndex = tagList.zipWithIndex.toMap
 
     estimateHmmWithEm(
       rawSequences,
@@ -109,8 +115,8 @@ class EmHmmTaggerTrainer[Sym, Tag](
     rawSequences: Iterable[IndexedSeq[Sym]],
     initialHmm: HmmTagger[Sym, Tag],
     tagDict: OptionalTagDict[Sym, Tag],
-    priorTransitionCounts: Map[Option[Tag], Map[Option[Tag], Double]],
-    priorEmissionCounts: Map[Option[Tag], Map[Option[Sym], Double]],
+    priorTransitionCounts: Map[OTag, Map[OTag, Double]],
+    priorEmissionCounts: Map[OTag, Map[OSym, Double]],
     remainingIterations: Int,
     prevAvgLogProb: Double): HmmTagger[Sym, Tag] = {
 
@@ -178,8 +184,8 @@ class EmHmmTaggerTrainer[Sym, Tag](
 
   protected def reestimateHmm(
     newRawSequences: Iterable[IndexedSeq[Tok]],
-    priorTransitionCounts: Map[Option[Tag], Map[Option[Tag], Double]],
-    priorEmissionCounts: Map[Option[Tag], Map[Option[Sym], Double]]) = {
+    priorTransitionCounts: Map[OTag, Map[OTag, Double]],
+    priorEmissionCounts: Map[OTag, Map[OSym, Double]]) = {
 
     // E Step:  Use the forward/backward procedure to determine the 
     //          probability of various possible state sequences for 
