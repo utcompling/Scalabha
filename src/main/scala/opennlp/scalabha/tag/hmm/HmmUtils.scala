@@ -75,12 +75,12 @@ object HmmUtils {
         .groupByKey
         .mapVals(_.toMap)
 
-    rawSequences.map(_.ended.map { sym =>
+    rawSequences.par.map(_.ended.map { sym =>
       val tags = tagDict.set(sym).toVector
       sym -> tags.mapTo { currTag =>
         (reverseTransitions(currTag), emissions(currTag)(sym))
       }
-    })
+    }).seq
 
   }
 

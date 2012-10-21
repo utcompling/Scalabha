@@ -31,10 +31,9 @@ case class HmmTagger[Sym, Tag](
   transitions: Option[Tag] => Option[Tag] => LogNum,
   emissions: Option[Tag] => Option[Sym] => LogNum,
   tagDict: OptionalTagDict[Sym, Tag],
-  validTransitions: Map[Option[Tag], Set[Option[Tag]]])
+  validTransitions: Map[Option[Tag], Set[Option[Tag]]],
+  fastHmmTagger: FastHmmTagger[Sym, Tag])
   extends Tagger[Sym, Tag] {
-
-  private[this] val fastHmmTagger = new FastHmmTagger[Sym, Tag]
 
   override def tagOptions(rawSequences: Vector[Vector[Sym]]): Vector[Option[Vector[(Sym, Tag)]]] = {
     val newSequences = addDistributionsToRawSequences[Sym, Tag](rawSequences, tagDict, transitions, emissions, validTransitions)
@@ -48,12 +47,16 @@ case class HmmTagger[Sym, Tag](
 }
 
 object HmmTagger {
-  def apply[Sym, Tag](
-    transitions: Option[Tag] => Option[Tag] => LogNum,
-    emissions: Option[Tag] => Option[Sym] => LogNum,
-    tagDict: OptionalTagDict[Sym, Tag]) = {
+  def apply[Sym, Tag](transitions: Option[Tag] => Option[Tag] => LogNum, emissions: Option[Tag] => Option[Sym] => LogNum, tagDict: OptionalTagDict[Sym, Tag]) = {
     val allTags = tagDict.allTags + None
-    new HmmTagger[Sym, Tag](transitions, emissions, tagDict, allTags.mapToVal(allTags).toMap)
+    new HmmTagger[Sym, Tag](transitions, emissions, tagDict, allTags.mapToVal(allTags).toMap, new FastHmmTagger[Sym, Tag])
+  }
+  def apply[Sym, Tag](transitions: Option[Tag] => Option[Tag] => LogNum, emissions: Option[Tag] => Option[Sym] => LogNum, tagDict: OptionalTagDict[Sym, Tag], validTransitions: Map[Option[Tag], Set[Option[Tag]]]) = {
+    new HmmTagger[Sym, Tag](transitions, emissions, tagDict, validTransitions, new FastHmmTagger[Sym, Tag])
+  }
+  def apply[Sym, Tag](transitions: Option[Tag] => Option[Tag] => LogNum, emissions: Option[Tag] => Option[Sym] => LogNum, tagDict: OptionalTagDict[Sym, Tag], fastHmmTagger: FastHmmTagger[Sym, Tag]) = {
+    val allTags = tagDict.allTags + None
+    new HmmTagger[Sym, Tag](transitions, emissions, tagDict, allTags.mapToVal(allTags).toMap, fastHmmTagger)
   }
 }
 
