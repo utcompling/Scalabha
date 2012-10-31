@@ -27,7 +27,7 @@ sealed trait TagDict[Sym, Tag] {
   /** An iterator over the symbols and their associated tag sets */
   def setIterator: Iterator[(Sym, Set[Tag])]
 
-  def opt: OptionalTagDict[Sym,Tag]
+  def opt: OptionalTagDict[Sym, Tag]
 
   //
   // Derived methods (all final)
@@ -47,6 +47,9 @@ sealed trait TagDict[Sym, Tag] {
 
   /** The set of all known tags */
   final def allTags: Set[Tag] = setIterator.flatMap(_._2).toSet ++ defaultSet
+
+  /** The number of entries in the tag dictionary */
+  final def size: Int = setIterator.sumBy(_._2.size)
 }
 
 trait WeightedTagDict[Sym, Tag] extends TagDict[Sym, Tag] {
@@ -71,8 +74,7 @@ trait WeightedTagDict[Sym, Tag] extends TagDict[Sym, Tag] {
   final override def defaultSet = default.keySet
   final override def doGetSet(s: Sym) = doGetMap(s).map(_.keySet)
   final override def setIterator = iterator.mapVals(_.keySet)
-  final override def opt: OptionalWeightedTagDict[Sym,Tag] = OptionalTagDict(this)
-
+  final override def opt: OptionalWeightedTagDict[Sym, Tag] = OptionalTagDict(this)
 
   //
   // Derived methods
