@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringEscapeUtils.unescapeHtml4
 
 /**
  * A very simple tokenizer that pulls most puncuation off the characters.
- * Given a raw string, tokenize it with a simple regular expression, returning 
+ * Given a raw string, tokenize it with a simple regular expression, returning
  * an IndexedSeq[String] with one token per element.
  */
 object SimpleTokenizer {
@@ -230,4 +230,17 @@ object StringUtils {
     str
 
   }
+
+  //==================
+  // Implicit Methods
+  //==================
+
+  val RTrimRe = """(.*\S)\s*""".r
+  class EnrichedString(self: String) {
+    def rtrim = self match {
+      case "" => ""
+      case RTrimRe(trimmed) => trimmed
+    }
+  }
+  implicit def enrichString(self: String) = new EnrichedString(self)
 }
