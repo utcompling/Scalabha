@@ -84,7 +84,8 @@ object FileUtils {
     }
 
     try {
-      return scala.sys.process.Process(List("which", name)) !!;
+      val found = scala.sys.process.Process(List("which", name)) !!;
+      return found.trim
     }
     catch {
       case _ => {
