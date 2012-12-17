@@ -61,6 +61,15 @@ object FileUtils {
     f.getAbsolutePath
   }
 
+  def findAllFiles(topDir: String, path: Vector[String] = Vector()): Set[Vector[String]] = {
+    new File(pathjoin((topDir +: path): _*)).listFiles.flatMap { f =>
+      if (f.isDirectory)
+        findAllFiles(topDir, path :+ f.getName)
+      else
+        Set(path :+ f.getName)
+    }.toSet
+  }
+
   def findBinary(name: String, binDir: Option[String] = None, envar: Option[String] = None, verbose: Boolean = false): String = {
     val checked = collection.mutable.Buffer[String]()
 
