@@ -132,7 +132,7 @@ class PorterStemmer {
   // process the list of tuples to find which prefix matches the case.
   // checker is the conditional checker for m.
   def processSubList(l: List[(String, String)], checker: Int => Boolean): Boolean = {
-    val iter = l.elements
+    val iter = l.iterator
     var done = false
 
     while (!done && iter.hasNext) {
