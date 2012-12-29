@@ -26,6 +26,8 @@ class MultinomialFreqDist[T](val distValues: Iterable[(T, LogNum)], default: Log
   }
 
   override def apply(key: T) = dist.getOrElse(key, default)
+  def get(key: T) = dist.get(key)
+  def getNoDefault(key: T) = dist(key)
   def iterator = distValues.iterator
 
   /*protected*/ def findSample(key: LogNum) = sampler.find(_._2 >= key)

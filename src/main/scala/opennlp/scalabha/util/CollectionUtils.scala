@@ -463,6 +463,14 @@ object CollectionUtils {
   }
   implicit def enrich_mapt_3_GenTraversableLike[A, B, C, Repr <: GenTraversable[(A, B, C)]](self: GenTraversableLike[(A, B, C), Repr]) = new Enriched_mapt_3_GenTraversableLike(self)
 
+  class Enriched_mapt_3_Iterator[A, B, C](self: Iterator[(A, B, C)]) {
+    def mapt[R](f: (A, B, C) => R) = new Iterator[R] {
+      override def next() = self.next match { case (x, y, z) => f(x, y, z) }
+      override def hasNext() = self.hasNext
+    }
+  }
+  implicit def enrich_mapt_3_Iterator[A, B, C](self: Iterator[(A, B, C)]) = new Enriched_mapt_3_Iterator(self)
+
   //////////////////////////////////////////////////////
   // takeSub[GenIterable[B]](n: Int): Repr[GenIterable[B]]
   //   - Take iterables from this collection until the total number of 
